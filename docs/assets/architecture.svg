@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 800" font-family="'PingFang SC','Noto Sans SC','Hiragino Sans GB',sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#252a30"/>
+    </marker>
+    <marker id="arrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a8473c"/>
+    </marker>
+  </defs>
+
+  <rect width="1120" height="800" fill="#f4f5f1"/>
+
+  <!-- 刊头 -->
+  <text x="42" y="48" font-family="'Songti SC','Noto Serif SC',serif" font-size="21" font-weight="700" letter-spacing="6" fill="#252a30">天道智能体 · 整体架构</text>
+  <text x="42" y="70" font-size="10" letter-spacing="3" fill="#8b9095">INGEST → RETRIEVE (SCOPED) → DRAFT → VERIFY · AGENT LOOP · DETERMINISTIC BAZI</text>
+  <line x1="42" y1="84" x2="1078" y2="84" stroke="#252a30" stroke-width="2"/>
+  <line x1="42" y1="89" x2="1078" y2="89" stroke="#252a30" stroke-opacity="0.14"/>
+
+  <!-- 学习中心徽 -->
+  <rect x="836" y="24" width="242" height="44" rx="4" fill="none" stroke="#5f7a74" stroke-width="1"/>
+  <text x="957" y="42" text-anchor="middle" font-size="11.5" font-weight="600" fill="#46605b">学习中心 · 双学径课程（Agent 为重）</text>
+  <text x="957" y="58" text-anchor="middle" font-size="9.5" fill="#5f7a74">下图每一环都是课程教具 · /learn 术语与文档</text>
+
+  <!-- ── 摄取管线 ── -->
+  <text x="42" y="122" font-size="11" font-weight="700" letter-spacing="4" fill="#3b4046">摄取 · 你的典籍如何变成记忆</text>
+  <g font-size="11.5" fill="#3b4046" text-anchor="middle">
+    <rect x="42" y="136" width="118" height="40" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-opacity="0.35"/>
+    <text x="101" y="154">上传典籍/笔记</text>
+    <text x="101" y="168" font-size="9" fill="#8b9095">PDF · md · txt</text>
+    <rect x="196" y="136" width="118" height="40" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-opacity="0.35"/>
+    <text x="255" y="154">解析来源单元</text>
+    <text x="255" y="168" font-size="9" fill="#8b9095">按页 / 按章节</text>
+    <rect x="350" y="136" width="100" height="40" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-opacity="0.35"/>
+    <text x="400" y="154">切块 chunk</text>
+    <text x="400" y="168" font-size="9" fill="#8b9095">不破坏出处</text>
+    <rect x="486" y="136" width="100" height="40" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-opacity="0.35"/>
+    <text x="536" y="154">向量化</text>
+    <text x="536" y="168" font-size="9" fill="#8b9095">embedding</text>
+    <rect x="622" y="136" width="128" height="40" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-width="1.2"/>
+    <text x="686" y="154">本地向量库</text>
+    <text x="686" y="168" font-size="9" fill="#8b9095">data/indexes</text>
+  </g>
+  <g stroke="#252a30" stroke-width="1" marker-end="url(#arr)">
+    <line x1="160" y1="156" x2="192" y2="156"/>
+    <line x1="314" y1="156" x2="346" y2="156"/>
+    <line x1="450" y1="156" x2="482" y2="156"/>
+    <line x1="586" y1="156" x2="618" y2="156"/>
+  </g>
+
+  <!-- ── RAG 默认链 ── -->
+  <text x="42" y="230" font-size="11" font-weight="700" letter-spacing="4" fill="#3b4046">问答 · 默认 RAG 链（每一步代码写死）</text>
+  <g font-size="11.5" fill="#3b4046" text-anchor="middle">
+    <rect x="42" y="246" width="96" height="46" rx="3" fill="#252a30"/>
+    <text x="90" y="273" fill="#f2f3f1">问者提问</text>
+    <rect x="172" y="246" width="96" height="46" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-opacity="0.35"/>
+    <text x="220" y="266">问题向量化</text>
+    <text x="220" y="281" font-size="9" fill="#8b9095">同一 embedding</text>
+    <rect x="302" y="240" width="168" height="58" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-opacity="0.35"/>
+    <text x="386" y="257">分库检索（带权限）</text>
+    <g font-size="9.5">
+      <text x="330" y="286" fill="#8a5f38">胡·易</text>
+      <text x="368" y="286" fill="#4d5a6b">李·存</text>
+      <text x="406" y="286" fill="#5d7565">玄·道</text>
+      <text x="446" y="286" fill="#8b9095">共享</text>
+    </g>
+    <rect x="504" y="246" width="90" height="46" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-opacity="0.35"/>
+    <text x="549" y="266">拼 Sources</text>
+    <text x="549" y="281" font-size="9" fill="#8b9095">cite_as 出处</text>
+    <rect x="628" y="246" width="104" height="46" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-width="1.2"/>
+    <text x="680" y="266">三贤起草</text>
+    <text x="680" y="281" font-size="9" fill="#8b9095">LLM · 铁律人设</text>
+    <rect x="766" y="240" width="120" height="58" rx="3" fill="#fdfdfb" stroke="#a8473c" stroke-width="1.2"/>
+    <text x="826" y="260" fill="#7c352d">双校验</text>
+    <text x="826" y="276" font-size="9.5" fill="#a8473c">引用逐条比对+库权</text>
+    <text x="826" y="289" font-size="9.5" fill="#a8473c">声口规则（防漂移）</text>
+    <rect x="920" y="246" width="158" height="46" rx="3" fill="#252a30"/>
+    <text x="999" y="266" fill="#f2f3f1">带出处的三贤回应</text>
+    <text x="999" y="281" font-size="9" fill="#9aa0a6">[《书名》, 位置] 可点开核对</text>
+  </g>
+  <g stroke="#252a30" stroke-width="1" marker-end="url(#arr)">
+    <line x1="138" y1="269" x2="168" y2="269"/>
+    <line x1="268" y1="269" x2="298" y2="269"/>
+    <line x1="470" y1="269" x2="500" y2="269"/>
+    <line x1="594" y1="269" x2="624" y2="269"/>
+    <line x1="732" y1="269" x2="762" y2="269"/>
+    <line x1="886" y1="269" x2="916" y2="269"/>
+  </g>
+  <line x1="686" y1="180" x2="401" y2="236" stroke="#252a30" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+  <path d="M 826 302 C 826 330 700 330 683 300" fill="none" stroke="#a8473c" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrRed)"/>
+  <text x="758" y="327" font-size="9.5" fill="#a8473c">不合格 → 定向重试（仅一次，仍败则宁素答不假引）</text>
+
+  <!-- ── Agent 循环 ── -->
+  <text x="42" y="392" font-size="11" font-weight="700" letter-spacing="4" fill="#3b4046">问答 · 循迹 Agent 循环（模型自己决定下一步）</text>
+  <g font-size="11.5" fill="#3b4046" text-anchor="middle">
+    <rect x="42" y="408" width="96" height="46" rx="3" fill="#252a30"/>
+    <text x="90" y="435" fill="#f2f3f1">问者提问</text>
+    <rect x="172" y="408" width="110" height="46" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-width="1.2"/>
+    <text x="227" y="428">调度模型</text>
+    <text x="227" y="443" font-size="9" fill="#8b9095">只找证据 · 不写答案</text>
+    <rect x="322" y="400" width="212" height="62" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-opacity="0.35"/>
+    <text x="428" y="416" font-size="10.5" font-weight="600">工具（zod 校验 · 限次 · 超时）</text>
+    <text x="428" y="432" font-size="9.5" fill="#5f656b">search_library　检索藏书</text>
+    <text x="428" y="445" font-size="9.5" fill="#5f656b">read_source_unit　精读一页（白名单）</text>
+    <text x="428" y="458" font-size="9.5" fill="#5f656b">ready_to_answer　自报收束</text>
+    <rect x="574" y="408" width="120" height="46" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-opacity="0.35"/>
+    <text x="634" y="428">证据台账</text>
+    <text x="634" y="443" font-size="9" fill="#8b9095">去重编号 ev_N</text>
+    <rect x="574" y="478" width="326" height="34" rx="3" fill="none" stroke="#252a30" stroke-opacity="0.3" stroke-dasharray="4 3"/>
+    <text x="737" y="499" font-size="9.5" fill="#5f656b">六个停止条件：步数６ · 单次45s · 全程90s · 重复调用 · 自报收束 · 不调工具</text>
+  </g>
+  <g stroke="#252a30" stroke-width="1">
+    <line x1="138" y1="431" x2="168" y2="431" marker-end="url(#arr)"/>
+    <line x1="282" y1="424" x2="318" y2="424" marker-end="url(#arr)"/>
+    <line x1="318" y1="440" x2="282" y2="440" marker-end="url(#arr)"/>
+    <line x1="534" y1="431" x2="570" y2="431" marker-end="url(#arr)"/>
+  </g>
+  <text x="300" y="416" font-size="9" fill="#8b9095">调用 / 观察</text>
+  <path d="M 694 420 C 740 400 700 320 690 300" fill="none" stroke="#252a30" stroke-width="1" marker-end="url(#arr)"/>
+  <text x="712" y="366" font-size="9.5" fill="#5f656b">证据交同一「起草 + 双校验」</text>
+  <rect x="920" y="408" width="158" height="46" rx="3" fill="none" stroke="#252a30" stroke-width="1"/>
+  <text x="999" y="428" text-anchor="middle" font-size="11" fill="#3b4046">执行轨迹面板</text>
+  <text x="999" y="443" text-anchor="middle" font-size="9" fill="#8b9095">每步工具/观察/证据可视</text>
+  <line x1="694" y1="448" x2="916" y2="434" stroke="#252a30" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+
+  <!-- ── 命理确定性引擎 ── -->
+  <text x="42" y="560" font-size="11" font-weight="700" letter-spacing="4" fill="#3b4046">命理 · 确定性引擎（模型零参与推算）</text>
+  <g font-size="11.5" fill="#3b4046" text-anchor="middle">
+    <rect x="42" y="574" width="86" height="46" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-opacity="0.35"/>
+    <text x="85" y="594">生辰档</text>
+    <text x="85" y="609" font-size="9" fill="#8b9095">只存本机</text>
+    <rect x="162" y="574" width="130" height="46" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-opacity="0.35"/>
+    <text x="227" y="594">真太阳时 + 排盘</text>
+    <text x="227" y="609" font-size="9" fill="#8b9095">经度差+均时差 · 起运精确</text>
+    <rect x="326" y="574" width="170" height="46" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-opacity="0.35"/>
+    <text x="411" y="594">规则引擎 · 完整分析</text>
+    <text x="411" y="609" font-size="9" fill="#8b9095">71 词条 · 记分强弱 · 喜忌</text>
+    <rect x="530" y="568" width="190" height="58" rx="3" fill="#fdfdfb" stroke="#252a30" stroke-width="1.2"/>
+    <text x="625" y="585">简报三档（材料隔离）</text>
+    <g font-size="9.5">
+      <text x="565" y="612" fill="#8a5f38">胡·全量</text>
+      <text x="625" y="612" fill="#5d7565">玄·气机</text>
+      <text x="686" y="612" fill="#4d5a6b">李·隔离</text>
+    </g>
+  </g>
+  <g stroke="#252a30" stroke-width="1" marker-end="url(#arr)">
+    <line x1="128" y1="597" x2="158" y2="597"/>
+    <line x1="292" y1="597" x2="322" y2="597"/>
+    <line x1="496" y1="597" x2="526" y2="597"/>
+  </g>
+  <path d="M 720 590 C 790 560 700 320 683 302" fill="none" stroke="#252a30" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+  <text x="760" y="546" font-size="9.5" fill="#5f656b">注入起草 system（各取各档）</text>
+
+  <!-- ── 存储 ── -->
+  <line x1="42" y1="672" x2="1078" y2="672" stroke="#252a30" stroke-opacity="0.14"/>
+  <g font-size="11" text-anchor="middle">
+    <rect x="42" y="692" width="600" height="52" rx="3" fill="#eaece6" stroke="#252a30" stroke-opacity="0.3"/>
+    <text x="342" y="713" fill="#3b4046">本地优先 · data/（app.json 元数据 · documents/ 原文 · indexes/ 向量） + 浏览器档案</text>
+    <text x="342" y="731" font-size="9" fill="#8b9095">全部 Git 忽略 · 不出本机</text>
+    <rect x="800" y="692" width="278" height="52" rx="3" fill="none" stroke="#252a30" stroke-opacity="0.35" stroke-dasharray="5 3"/>
+    <text x="939" y="713" fill="#5f656b">Supabase 云快照（可选）</text>
+    <text x="939" y="731" font-size="9" fill="#8b9095">npm run sync:supabase · 显式单向</text>
+  </g>
+  <line x1="642" y1="718" x2="796" y2="718" stroke="#252a30" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+
+  <text x="42" y="778" font-size="9.5" letter-spacing="2" fill="#8b9095">以茶代酒 · 以问代卜 —— 三原则：本地优先 / 确定性优先 / 学习优先</text>
+</svg>

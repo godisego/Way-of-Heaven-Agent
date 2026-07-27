@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="李 · 醒">
+  <defs>
+    <radialGradient id="li-bg" cx="50%" cy="40%" r="85%">
+      <stop offset="0%" stop-color="#2a3140"/>
+      <stop offset="55%" stop-color="#161a22"/>
+      <stop offset="100%" stop-color="#06080c"/>
+    </radialGradient>
+    <radialGradient id="li-key" cx="50%" cy="38%" r="48%">
+      <stop offset="0%" stop-color="#f4e7c8" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#f4e7c8" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#f4e7c8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="li-face" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f0dcc0"/>
+      <stop offset="55%" stop-color="#e2c69e"/>
+      <stop offset="100%" stop-color="#a88260"/>
+    </linearGradient>
+    <linearGradient id="li-hair" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3a2a1a"/>
+      <stop offset="100%" stop-color="#1a1208"/>
+    </linearGradient>
+    <linearGradient id="li-coat" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2a2f3a"/>
+      <stop offset="100%" stop-color="#0a0d14"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 夜底 + 暖侧光 -->
+  <rect width="160" height="160" fill="url(#li-bg)"/>
+  <rect width="160" height="160" fill="url(#li-key)"/>
+
+  <!-- 衣（先画后被遮） -->
+  <path d="M18 158 C28 122 50 110 80 110 C110 110 132 122 142 158 Z" fill="url(#li-coat)"/>
+  <!-- 翻领 -->
+  <path d="M58 116 L72 138 L80 122 L88 138 L102 116" fill="#0a0d14"/>
+  <path d="M68 118 L80 132 L92 118" fill="none" stroke="#3a4250" stroke-width="1.2"/>
+  <!-- 衬领 -->
+  <path d="M72 118 Q80 124 88 118 L86 132 Q80 136 74 132 Z" fill="#c8b894" opacity="0.7"/>
+  <!-- 衣纹 -->
+  <path d="M28 152 Q60 142 80 144" stroke="#1a1f28" stroke-width="1" fill="none" opacity="0.7"/>
+  <path d="M80 144 Q108 142 132 152" stroke="#1a1f28" stroke-width="1" fill="none" opacity="0.7"/>
+
+  <!-- 颈 -->
+  <path d="M70 102 L70 116 Q80 122 90 116 L90 102 Z" fill="#d4b890"/>
+  <path d="M72 112 Q80 115 88 112" stroke="#7a6048" stroke-width="0.8" fill="none" opacity="0.5"/>
+
+  <!-- 脸：宽额、方下颌，加缪型 -->
+  <path d="M48 70
+    C50 50 66 38 80 38
+    C94 38 110 50 112 70
+    C112 92 108 108 100 116
+    C90 122 70 122 60 116
+    C52 108 48 92 48 70Z" fill="url(#li-face)"/>
+  <!-- 颧骨微高光（提亮） -->
+  <ellipse cx="64" cy="82" rx="6" ry="4" fill="#f4dcc0" opacity="0.45"/>
+  <ellipse cx="96" cy="82" rx="6" ry="4" fill="#f4dcc0" opacity="0.45"/>
+  <!-- 下颌线 -->
+  <path d="M58 104 C68 118 80 122 92 118 C100 114 102 108 102 104" stroke="#a88260" stroke-width="0.8" fill="none" opacity="0.6"/>
+  <!-- 鼻：高挺、加缪型宽鼻 -->
+  <path d="M78 76 Q76 88 80 94 Q84 88 82 76" stroke="#7a5a40" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  <path d="M76 94 Q80 97 84 94" stroke="#7a5a40" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <!-- 鼻翼 -->
+  <path d="M77 92 Q78 94 79 93" stroke="#7a5a40" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <path d="M81 92 Q82 94 83 93" stroke="#7a5a40" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+
+  <!-- 眉：浓、自然弧 -->
+  <path d="M58 64 C66 60 76 60 82 64" stroke="#1a1208" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M78 64 C84 60 94 60 102 64" stroke="#1a1208" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+
+  <!-- 眼：温和、清醒、稍大 -->
+  <path d="M58 74 C66 70 78 71 82 75" stroke="#1a1208" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M78 75 C84 71 96 70 102 74" stroke="#1a1208" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- 眼珠 -->
+  <circle cx="70" cy="74" r="2.2" fill="#3a2818"/>
+  <circle cx="92" cy="74" r="2.2" fill="#3a2818"/>
+  <circle cx="71" cy="73" r="0.7" fill="#fff" opacity="0.9"/>
+  <circle cx="93" cy="73" r="0.7" fill="#fff" opacity="0.9"/>
+  <!-- 眼睑提亮 -->
+  <path d="M60 71 C66 69 76 69 80 71" stroke="#1a1208" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <path d="M82 71 C86 69 96 69 102 71" stroke="#1a1208" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- 唇：薄、微微上翘（清醒的笑意） -->
+  <path d="M72 102 Q80 105 88 102" stroke="#7a4a30" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <path d="M72 102 Q70 100 72 99" stroke="#7a4a30" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <path d="M88 102 Q90 100 88 99" stroke="#7a4a30" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <!-- 下唇微亮 -->
+  <path d="M74 104 Q80 106 86 104" stroke="#a06848" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- 耳 -->
+  <path d="M50 78 C46 82 46 90 50 94" stroke="#a88260" stroke-width="1" fill="none" opacity="0.6"/>
+  <path d="M110 78 C114 82 114 90 110 94" stroke="#a88260" stroke-width="1" fill="none" opacity="0.6"/>
+
+  <!-- 发：微卷、往后梳（加缪/萨特感） -->
+  <path d="M46 60
+    C46 36 62 26 82 28
+    C102 30 116 44 114 64
+    C108 52 96 46 82 46
+    C68 46 56 52 46 60Z" fill="url(#li-hair)"/>
+  <!-- 卷发纹 -->
+  <path d="M58 36 C62 30 70 28 76 32" stroke="#5a4028" stroke-width="1" fill="none" opacity="0.7"/>
+  <path d="M70 32 C76 28 86 28 92 32" stroke="#5a4028" stroke-width="1" fill="none" opacity="0.7"/>
+  <path d="M86 32 C92 30 100 34 104 40" stroke="#5a4028" stroke-width="1" fill="none" opacity="0.7"/>
+  <!-- 鬓角 -->
+  <path d="M48 62 C44 76 48 90 54 100" stroke="#1a1208" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M112 62 C116 76 112 90 106 100" stroke="#1a1208" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- 印：醒（朱章） -->
+  <rect x="118" y="118" width="26" height="26" rx="2" fill="#8b2e28"/>
+  <rect x="118" y="118" width="26" height="26" rx="2" fill="none" stroke="#5a1814" stroke-width="1"/>
+  <text x="131" y="137" text-anchor="middle" fill="#f5efe6" font-size="15" font-family="serif" font-weight="600">醒</text>
+</svg>

@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="老胡 · 时">
+  <defs>
+    <radialGradient id="hu-bg" cx="50%" cy="38%" r="80%">
+      <stop offset="0%" stop-color="#c89868"/>
+      <stop offset="55%" stop-color="#7a4e22"/>
+      <stop offset="100%" stop-color="#2a1808"/>
+    </radialGradient>
+    <radialGradient id="hu-warm" cx="50%" cy="30%" r="55%">
+      <stop offset="0%" stop-color="#fde4b8" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#fde4b8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hu-face" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f4d4ac"/>
+      <stop offset="60%" stop-color="#d8a878"/>
+      <stop offset="100%" stop-color="#9a6e44"/>
+    </linearGradient>
+    <linearGradient id="hu-robe" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8a5a2c"/>
+      <stop offset="100%" stop-color="#3a200a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 暖棕底 + 灶火暖光 -->
+  <rect width="160" height="160" fill="url(#hu-bg)"/>
+  <rect width="160" height="160" fill="url(#hu-warm)"/>
+
+  <!-- 衣（先画后被遮） -->
+  <path d="M12 158 C20 118 44 106 80 106 C116 106 140 118 148 158 Z" fill="url(#hu-robe)"/>
+  <!-- 宽厚肩线 -->
+  <path d="M12 158 C20 130 40 122 60 122" stroke="#2a1606" stroke-width="2" fill="none" opacity="0.5"/>
+  <path d="M148 158 C140 130 120 122 100 122" stroke="#2a1606" stroke-width="2" fill="none" opacity="0.5"/>
+  <!-- 对襟 -->
+  <path d="M80 108 L80 156" stroke="#2a1606" stroke-width="2" opacity="0.6"/>
+  <!-- 布纽扣 -->
+  <circle cx="80" cy="124" r="2.2" fill="#2a1606"/>
+  <circle cx="80" cy="138" r="2.2" fill="#2a1606"/>
+  <circle cx="80" cy="152" r="2.2" fill="#2a1606"/>
+  <!-- 衣纹 -->
+  <path d="M22 150 Q60 140 80 144" stroke="#2a1606" stroke-width="1" fill="none" opacity="0.55"/>
+  <path d="M80 144 Q108 140 138 150" stroke="#2a1606" stroke-width="1" fill="none" opacity="0.55"/>
+
+  <!-- 颈：粗壮 -->
+  <path d="M62 100 L62 116 Q80 124 98 116 L98 100 Z" fill="#c89878"/>
+  <path d="M64 110 Q80 116 96 110" stroke="#5a3a20" stroke-width="0.8" fill="none" opacity="0.5"/>
+
+  <!-- 脸：国字脸、宽额宽颔、武人相 -->
+  <path d="M44 68
+    C46 48 60 36 80 36
+    C100 36 114 48 116 68
+    C116 92 110 110 100 118
+    C88 124 72 124 60 118
+    C50 110 44 92 44 68Z" fill="url(#hu-face)"/>
+  <!-- 提亮：颧骨 -->
+  <ellipse cx="62" cy="80" rx="6" ry="4" fill="#fde4c0" opacity="0.4"/>
+  <ellipse cx="98" cy="80" rx="6" ry="4" fill="#fde4c0" opacity="0.4"/>
+  <!-- 下颌方正 -->
+  <path d="M50 100 C56 118 72 126 80 126 C88 126 104 118 110 100" stroke="#9a6e44" stroke-width="0.8" fill="none" opacity="0.6"/>
+  <!-- 鼻：山根鼻梁、挺直 -->
+  <path d="M76 70 L74 96 Q76 100 80 100 Q84 100 86 96 L84 70" stroke="#7a4a28" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M74 96 Q76 100 78 100" stroke="#7a4a28" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <path d="M86 96 Q84 100 82 100" stroke="#7a4a28" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <!-- 鼻翼 -->
+  <ellipse cx="76" cy="98" rx="1.6" ry="1.2" fill="#3a200a" opacity="0.5"/>
+  <ellipse cx="84" cy="98" rx="1.6" ry="1.2" fill="#3a200a" opacity="0.5"/>
+
+  <!-- 眉：浓、剑眉上扬 -->
+  <path d="M52 62 C60 56 72 56 78 62" stroke="#1a0a04" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <path d="M82 62 C88 56 100 56 108 62" stroke="#1a0a04" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+
+  <!-- 眼：圆大、有神光、**带笑意** -->
+  <path d="M56 74 C64 70 76 70 80 74" stroke="#1a0a04" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <path d="M80 74 C84 70 96 70 104 74" stroke="#1a0a04" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <circle cx="68" cy="76" r="2.4" fill="#1a0a04"/>
+  <circle cx="92" cy="76" r="2.4" fill="#1a0a04"/>
+  <circle cx="69" cy="75" r="0.8" fill="#fff" opacity="0.95"/>
+  <circle cx="93" cy="75" r="0.8" fill="#fff" opacity="0.95"/>
+  <!-- 笑眼尾纹 -->
+  <path d="M52 72 Q56 70 60 72" stroke="#7a4a28" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <path d="M100 72 Q104 70 108 72" stroke="#7a4a28" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <!-- 眼下卧蚕 -->
+  <path d="M60 80 Q68 82 76 80" stroke="#7a4a28" stroke-width="0.6" fill="none" opacity="0.5"/>
+  <path d="M84 80 Q92 82 100 80" stroke="#7a4a28" stroke-width="0.6" fill="none" opacity="0.5"/>
+
+  <!-- 嘴：爽朗大笑、露上齿 -->
+  <path d="M68 104 Q80 116 92 104" stroke="#2a1606" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <path d="M70 106 Q80 114 90 106" fill="#7a3a20" opacity="0.55"/>
+  <path d="M72 105 L74 102 M76 104 L78 102 M80 104 L82 102 M84 104 L86 102 M88 105 L90 102" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+  <!-- 嘴角上钩（武人相：豪气） -->
+  <path d="M68 104 Q64 102 66 100" stroke="#2a1606" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <path d="M92 104 Q96 102 94 100" stroke="#2a1606" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+
+  <!-- 三缕短髯（仁丹胡 + 山羊须雏形） -->
+  <path d="M76 112 Q74 122 78 128 Q80 130 82 128 Q86 122 84 112" stroke="#1a0a04" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M76 116 Q78 124 80 126" stroke="#1a0a04" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <path d="M84 116 Q82 124 80 126" stroke="#1a0a04" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <!-- 腮边短须 -->
+  <path d="M58 108 Q60 112 64 114" stroke="#1a0a04" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <path d="M102 108 Q100 112 96 114" stroke="#1a0a04" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- 发：黑色短寸、花白鬓角 -->
+  <path d="M44 60
+    C44 38 60 30 80 30
+    C100 30 116 38 116 60
+    C108 50 96 46 80 46
+    C64 46 52 50 44 60Z" fill="#1a0a04"/>
+  <!-- 发顶光泽 -->
+  <path d="M58 38 C66 32 80 32 88 36" stroke="#3a2410" stroke-width="1" fill="none" opacity="0.7"/>
+  <path d="M70 34 C78 30 88 32 96 36" stroke="#3a2410" stroke-width="0.8" fill="none" opacity="0.5"/>
+  <!-- 花白鬓角 -->
+  <path d="M44 60 C40 72 40 86 46 96" stroke="#cfc0a8" stroke-width="1.2" fill="none" opacity="0.7"/>
+  <path d="M116 60 C120 72 120 86 114 96" stroke="#cfc0a8" stroke-width="1.2" fill="none" opacity="0.7"/>
+  <!-- 耳 -->
+  <path d="M44 78 C40 80 40 88 44 90" stroke="#7a4a28" stroke-width="1" fill="none" opacity="0.7"/>
+  <path d="M116 78 C120 80 120 88 116 90" stroke="#7a4a28" stroke-width="1" fill="none" opacity="0.7"/>
+
+  <!-- 印：时（褐章） -->
+  <rect x="118" y="118" width="26" height="26" rx="2" fill="#8a5a2b"/>
+  <rect x="118" y="118" width="26" height="26" rx="2" fill="none" stroke="#4a2a0a" stroke-width="1"/>
+  <text x="131" y="137" text-anchor="middle" fill="#fff8f0" font-size="15" font-family="serif" font-weight="600">时</text>
+</svg>

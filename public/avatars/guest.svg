@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="问者">
+  <rect width="160" height="160" fill="#e8dccb"/>
+  <circle cx="80" cy="70" r="28" fill="#d4c4ad"/>
+  <ellipse cx="80" cy="128" rx="40" ry="28" fill="#c2ad90"/>
+  <circle cx="70" cy="68" r="2.5" fill="#5a5048"/>
+  <circle cx="90" cy="68" r="2.5" fill="#5a5048"/>
+  <path d="M72 84 Q80 90 88 84" stroke="#5a5048" stroke-width="1.5" fill="none"/>
+  <text x="80" y="148" text-anchor="middle" fill="#7a6d5d" font-size="11" font-family="serif" letter-spacing="2">问</text>
+</svg>
