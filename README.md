@@ -156,7 +156,7 @@ data/
 个人学习项目，欢迎 Issue 交流想法；提交 PR 前请先读 `docs/roadmap.md` 与相应设计文档，保持「本地优先 / 确定性优先 / 学习优先」三原则。
 
 - 作者：**kiko**
-- 邮箱：<lixingye@vigourverse.com>
+- 邮箱：<chikongmuzhi@gmail.com>
 - 许可：[MIT](LICENSE)。注意：你上传入库的典籍归各自版权方所有，默认只存本机、被 Git 忽略，**不要**把受版权保护的书随仓库提交。
 
 <div align="center"><sub>以茶代酒 · 以问代卜</sub></div>
