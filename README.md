@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-19-087ea4?logo=react&logoColor=white)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Tests](https://img.shields.io/badge/vitest-passing-6da55f)](docs/verification-plan.md)
-[![Local First](https://img.shields.io/badge/data-local--first-8a5f38)](#九--数据与隐私)
+[![Local First](https://img.shields.io/badge/data-local--first-8a5f38)](#十--数据与隐私)
 [![License: MIT](https://img.shields.io/badge/License-MIT-a8473c)](LICENSE)
 
 <img src="docs/assets/screenshot-chat.png" alt="三贤茶寮对谈界面" width="820" />
@@ -33,11 +33,11 @@
 
 ## 二 · 核心功能
 
-**最小 Agent 工具循环** — `mode:"agent"` 下由调度模型自主调用 `search_library` / `read_source_unit` / `ready_to_answer` 三个工具收集证据（zod 校验、次数与超时限制、证据台账去重），随后按三贤格式起草并过引用/声口双校验；停止条件、每步轨迹完整可查——刊头「**循迹**」开关一键切换，回答下方即是**执行轨迹面板（M4）**。设计见 [`docs/agent-loop-design.md`](docs/agent-loop-design.md)；验收 `npm run acceptance`。配套教学见学习中心 Agent 径第三课。
+**最小 Agent 工具循环** — 默认由调度模型自主调用 `search_library` / `read_source_unit` / `ready_to_answer` 三个工具收集证据（zod 校验、次数与超时限制、证据台账去重），随后按三贤格式起草并过引用/声口双校验；停止条件、每步轨迹完整可查——刊头「**循迹**」开关可切回固定 RAG，回答下方即是**执行轨迹面板（M4）**。设计见 [`docs/agent-loop-design.md`](docs/agent-loop-design.md)；验收 `npm run acceptance`。配套教学见学习中心 Agent 径第三课。
 
 **三贤对谈（分库 RAG + 引用校验）** — 每位贤者只允许引用自己专库的典籍（李=存在主义/斯多葛，老胡=易经命理/中华典籍，玄=道家/中华典籍；未标注文档三人共享）。回答格式强制 `[《书名》, 位置]`，逐条与检索证据比对：查无此据或越库引用，**整组引用作废并定向重试**；另有确定性「声口校验」防止三个角色漂成同一种 AI 腔。
 
-**学习中心（双学径课程，Agent 为重）** — 右下「学习」打开学习中心。**Agent 径五课**：RAG 之旅（十步走完摄取→校验全链）、可信链（反幻觉三道关与「整组作废」的博弈逻辑）、工具循环（受控执行 / 证据台账 / 六个停止条件 + curl 实操）、人设工程（三件套 / 铁律 / 材料隔离）、Agent 全景图（Tool use / Planning / Memory / Reflection / Multi-agent / Evals 六大件与本项目坐标）；**命理径三课**（认盘 / 干支十神 / 完整分析）。每课 3~5 分钟导览，逐步标注源码路径、带实操作业，进度存本机；另有全站术语悬浮、`/learn` 学习馆（走读文档站内直读 + 术语表），以及学习模式下每轮回答附带的**管线注解**（检索命中/分库分布/校验结果）。设计见 [`docs/learning-mode-design.md`](docs/learning-mode-design.md)。顶栏「看示例回复」可不调模型直接看一轮三贤对答范例。
+**学习中心与学习馆（双学径，Agent 为重）** — 右下「学习」提供 11 节页面内引导课：**Agent 径六课**覆盖 RAG、可信链、工具循环、人设工程、Agent 全景与轨迹调试，**命理径五课**覆盖认盘、干支十神、时间轴、完整分析与七步读盘；每课 3~5 分钟，进度只存本机。独立的 [`/learn`](http://localhost:3000/learn) 学习馆则收录 **18 篇系统讲义**（Agent 11 篇、命理 7 篇）、27 项 Agent 核心术语和 **71 项命理交叉速查**。两套入口的区别、课程目录和阅读路径见下文「[四 · 学习馆](#四--学习馆)」。
 
 **八字排盘（大师口径）** — 真太阳时（经度差 + 均时差）、起运精确到**几年几个月几天**、晚子时两派可选、大运小运流年神煞命宫身宫胎元俱全；干支按五行着色。方法与口径详见 [`docs/bazi-guide.md`](docs/bazi-guide.md)。
 
@@ -52,6 +52,8 @@
 ```bash
 npm ci
 cp .env.example .env.local   # 按下表填写
+npm run doctor                # 只读检查 Key 与当前索引状态
+npm run seed:sample          # 收入三贤示例藏书（每人 3 卷）
 npm run dev                  # http://localhost:3000
 ```
 
@@ -70,16 +72,77 @@ npm run dev                  # http://localhost:3000
 | `USE_MOCK_EMBEDDING` | `1` = 本地词法 mock（免 Key 验证链路；换真模型后需重建索引） | `1` |
 | `DATA_DIR` / `VECTOR_BACKEND` | 数据目录 / 向量后端 | `./data` / `local` |
 
+聊天和 Embedding 是两把独立的 Key：`CHAT_API_KEY` 负责回答，`OPENAI_COMPAT_API_KEY` 负责把问题和藏书转换成向量。没有第二把 Key 时保留 `USE_MOCK_EMBEDDING=1`；拿到真实 Embedding Key 后，将它填入 `.env.local`、把该开关改为 `0`，再执行 `npm run reindex:embeddings`。该命令会先完整生成新索引，成功后才替换旧索引。
+
 ### 使用流程
 
 1. 建立**问者档**（生辰 → 自动排盘），点盘面任意元素学命理，「盘面总览」看完整分析。
 2. **入阁藏书**：上传典籍或笔记，选思想传统标签，等待索引完成。
 3. 把困惑**送上茶案**，读三贤回应；打开「出典」核对原文。
 4. 释义卡「问三贤」可把带盘面语境的问题直接递入对谈。
-5. 刊头开「**循迹**」再问一次：改走 Agent 工具循环，回答下方展开**执行轨迹面板**，逐步看它调了什么工具、收了哪些证据、为何停下。
-6. 右下「学习」进双学径课程；[`/learn`](http://localhost:3000/learn) 学习馆有全部走读文档与术语表。
+5. 默认使用「**循迹**」Agent 工具循环，回答下方展开**执行轨迹面板**；关闭开关可切回固定 RAG，对照查看检索与工具调用差异。
+6. 右下「学习」进入页面内引导课；[`/learn`](http://localhost:3000/learn) 打开完整学习馆，按 Agent 学径、命理学径或命理速查继续深读。
 
-## 四 · 八字方法一览
+## 四 · 学习馆
+
+学习馆是项目的系统化自学入口：不是把 Markdown 文件平铺成目录，而是把内容组织成三种明确任务。打开 [`http://localhost:3000/learn`](http://localhost:3000/learn) 后，一次只会展示当前选择的任务，切换不会离开页面。
+
+### 三种学习入口
+
+| 入口 | 内容规模 | 适合解决的问题 | 完成目标 |
+| --- | --- | --- | --- |
+| **Agent 学径** | 11 篇讲义 / 5 个阶段 | RAG 怎么摄取与检索？Agent 为什么调用这个工具？引用、停止和评测怎样落到代码？ | 能沿执行轨迹找到第一处错误，并把失败写成可回归评测 |
+| **命理学径** | 7 篇讲义 / 5 个阶段 | 四柱、天干、地支、藏干、十神、强弱、起运和岁运分别是什么？ | 能按七步流程解释一张盘，并说清传统定义、项目算法与未覆盖边界 |
+| **命理速查** | 71 个词条 / 7 类 | 忘了某个字、十神或宫位的定义，想从一个概念继续追到相关概念 | 在同一套释义中完成搜索、分类、详情阅读与关联词跳转 |
+
+页面顶部的三段式入口用于切换任务；课程视图左侧是阶段目录，右侧是按顺序排列的讲义。每条学径都给出学习目标和「从第 01 课开始」入口，课程行显示顺序、难度、简介，以及可直达的命理词条。第一次进入时可点顶栏「**学习馆导览**」，用约 2 分钟走完入口选择、阶段目录、连续阅读、术语表和命理速查；导览会自动切换三种视图展示真实界面。
+
+### Agent 学径：从概念到可评测系统
+
+| 阶段 | 讲义 | 重点 |
+| --- | --- | --- |
+| 01 · 认地图 | RAG 概念入门、Agent 基础概念 | embedding、chunk、topK、工具、规划、记忆与反思的基本坐标 |
+| 02 · 拆系统 | 系统架构总览、技术栈逐层说明 | 一条请求如何经过前端、摄取、向量检索、Agent 循环和三贤生成 |
+| 03 · 建可信链 | RAG 代码走读、引用校验设计 | 来源锚定、分库检索、整组作废、定向重试与声口校验 |
+| 04 · 让模型行动 | 工具循环设计（M0-M5）、Agent 目标架构蓝图 | 工具注册表、证据台账、停止条件，以及 Planning / Memory / Evals 的演进位置 |
+| 05 · 调试与评测 | 执行轨迹调试手册、系统化验证计划、M5 真实服务验收 | 从 trace 找根因，把失败场景变成可判定、可重复的检查 |
+
+课程末尾还有默认收起的 **27 项 Agent 核心术语**。每个词条不仅解释概念，还标出它在仓库中的实现路径，适合在开始读源码前快速对齐语言。
+
+### 命理学径：从认盘到独立走盘
+
+| 阶段 | 讲义 | 重点 |
+| --- | --- | --- |
+| 01 · 先认盘 | 八字盘面解剖、天干地支与藏干 | 逐项解释盘面字段；用「天干=前端、地支=服务器、藏干=内部进程」理解外显层、承载层与内部层 |
+| 02 · 读懂关系 | 十神与强弱 | 以日主为坐标演算十神，再按得令、得地、得势完成透明粗评 |
+| 03 · 加上时间 | 起运、大运与流年 | 区分原局、十年阶段和年度环境，不从两个流年字直接跳到事件结论 |
+| 04 · 独立走盘 | 七步读盘工作流 | 校时 → 日主月令 → 根气 → 十神位置 → 强弱流通 → 岁运叠加 → 现实校准 |
+| 05 · 核对口径 | 排盘操作与算法口径、命理如何进入三贤 | 真太阳时、晚子时、宫位、神煞，以及老胡/玄/李三档材料隔离 |
+
+所有示例使用虚构命盘讲解关系，不对应真实人物。讲义会把「传统定义」「软件类比」「当前确定性算法」「尚未实现的边界」分开写，避免把方便理解的比喻误当成命理规则。
+
+### 命理交叉速查
+
+速查区使用 [`src/core/mingli/mingliKb.ts`](src/core/mingli/mingliKb.ts) 作为唯一数据源，与排盘点击释义共用同一套 71 词条，避免课程解释和盘面解释逐渐漂移。
+
+- 支持搜索词名、摘要和完整解释，例如「藏干」「甲」「正官」「大运」。
+- 可按基础概念、十天干、十二地支、十神、五行、四柱宫位和神煞分类收窄。
+- 桌面端采用「结果列表 → 当前词条详情」主从布局；手机端先展示当前解释，再展示结果。
+- 每个词条列出相关概念，可从「藏干」继续跳到「地支」「通根」「月令」。
+- 每个词条都有稳定深链，例如 [`/learn#mingli-canggan`](http://localhost:3000/learn#mingli-canggan) 会直接打开速查并定位「藏干」。
+
+### 两套学习方式怎样配合
+
+| 学习方式 | 入口 | 用法 |
+| --- | --- | --- |
+| 页面内引导课 | 右下「学习」 | 3~5 分钟跟随高亮步骤操作真实界面；Agent 6 课、命理 5 课，进度保存在浏览器本机 |
+| 系统讲义 | `/learn` 学习馆 | 按阶段连续阅读 18 篇 Markdown；文档页提供面包屑、课程进度、相关词条和上一篇/下一篇 |
+| 即时解释 | 排盘卡片或命理速查 | 在自己的盘上点击字段，或用 71 词条搜索与交叉跳转核对概念 |
+| 运行观察 | 刊头「循迹」 | 把课程概念带回一次真实问答，查看检索、工具调用、证据台账、停止原因和校验结果 |
+
+推荐的最短路径是：先完成对应学径的页面内引导课，建立整体印象；再从学习馆第 01 篇开始连续阅读；遇到命理概念随时进入速查；学习 Agent 时打开「循迹」，把讲义中的每个机制对回真实执行轨迹。
+
+## 五 · 八字方法一览
 
 | 事项 | 口径 | 依据 |
 | --- | --- | --- |
@@ -93,17 +156,17 @@ npm run dev                  # http://localhost:3000
 
 完整说明：[`docs/bazi-guide.md`](docs/bazi-guide.md)。
 
-## 五 · 产品边界
+## 六 · 产品边界
 
 不做恐吓式算命与必然性预测；命理内容是文化解释与自我观察参考，不是医学、法律或投资建议；模型不得自行推算干支与日期；无典籍证据时明说「暂未入藏」；不替你做最终人生决定。出生信息与私人典籍默认不离开本机。
 
-## 六 · 技术栈与架构
+## 七 · 技术栈与架构
 
 Next.js 15 + React 19 + TypeScript 全栈；本地 JSON 元数据与向量索引；`pdfjs-dist` 按页提取；自研命理规则引擎；Anthropic 兼容聊天 + OpenAI 兼容 Embedding；vitest + zod；Supabase 为可选云端快照。**为什么这么选、为什么不选 LangChain/LightRAG/GraphRAG**，见 [`docs/tech-stack.md`](docs/tech-stack.md)。
 
-<img src="docs/assets/architecture.svg" alt="整体架构：摄取管线、默认 RAG 链、循迹 Agent 循环、命理确定性引擎与本地存储" width="100%" />
+<img src="docs/assets/architecture.svg" alt="整体架构：摄取管线、默认 Agent 取证、固定 RAG 对照、命理确定性引擎与本地存储" width="100%" />
 
-四条泳道对应四套机制：**摄取**把典籍变成带出处坐标的向量记忆；**默认 RAG 链**每步代码写死、以双校验与定向重试收口；**循迹 Agent 循环**把「下一步做什么」交给调度模型（工具受控、证据入台账、六个停止条件、全程轨迹可视）；**命理引擎**纯确定性推算后按材料隔离三档注入。
+四条泳道对应四套机制：**摄取**把典籍变成带出处坐标的向量记忆；**默认 Agent 取证**把「下一步做什么」交给调度模型（工具受控、证据入台账、六个停止条件、全程轨迹可视）；**固定 RAG**作为可切换的稳定对照并以双校验与定向重试收口；**命理引擎**纯确定性推算后按材料隔离三档注入。
 
 ### 文档地图
 
@@ -116,30 +179,36 @@ Next.js 15 + React 19 + TypeScript 全栈；本地 JSON 元数据与向量索引
 | 视觉语言（新中式） | [`docs/design-language.md`](docs/design-language.md) |
 | 学习模式 v2 设计（双学径） | [`docs/learning-mode-design.md`](docs/learning-mode-design.md) |
 | RAG / Agent 入门走读 | [`docs/rag-concepts-primer.md`](docs/rag-concepts-primer.md) · [`docs/rag-beginner-walkthrough.md`](docs/rag-beginner-walkthrough.md) · [`docs/agent-beginner-walkthrough.md`](docs/agent-beginner-walkthrough.md) |
+| Agent 轨迹调试 | [`docs/agent-trace-debugging.md`](docs/agent-trace-debugging.md) |
+| 命理系统课程 | [`docs/bazi-chart-anatomy.md`](docs/bazi-chart-anatomy.md) · [`docs/bazi-stems-branches.md`](docs/bazi-stems-branches.md) · [`docs/bazi-ten-gods-strength.md`](docs/bazi-ten-gods-strength.md) · [`docs/bazi-luck-cycles.md`](docs/bazi-luck-cycles.md) · [`docs/bazi-reading-workflow.md`](docs/bazi-reading-workflow.md) |
 | 引用校验设计 | [`docs/rag-citation-design.md`](docs/rag-citation-design.md) |
 | 路线图 / 验收计划 | [`docs/roadmap.md`](docs/roadmap.md) · [`docs/verification-plan.md`](docs/verification-plan.md) · [`docs/m5-acceptance.md`](docs/m5-acceptance.md) |
 | 三贤声口范例 / 头像 | [`docs/tavern-demo.md`](docs/tavern-demo.md) · [`docs/avatar-guide.md`](docs/avatar-guide.md) · [`docs/avatar-prompts.md`](docs/avatar-prompts.md) |
 | Supabase 同步 | [`docs/supabase-setup.md`](docs/supabase-setup.md) |
 
-## 七 · 工程命令
+## 八 · 工程命令
 
 ```bash
 npm run typecheck   # 类型检查
 npm run lint        # 代码规范
 npm test            # vitest 全量测试
+npm run doctor      # 只读检查聊天/Embedding/Supabase 配置与本地索引
 npm run probe:tools # 探测聊天模型是否支持原生 tool use
 npm run acceptance  # M5 验收：五场景打真实服务，硬判确定性不变量
+npm run reindex:embeddings  # 切换真实 Embedding 模型后重建本地索引
 npm run build       # 生产构建
 npm run sync:supabase  # 本地快照单向推送云端（可选）
 ```
 
-## 八 · 项目状态
+## 九 · 项目状态
 
-**已完成**：最小 Agent 工具循环（M0–M3）+ **执行轨迹面板（M4）**与「循迹」开关、可信 RAG 主链路（分库检索 + 双重校验 + 定向重试 + 学习模式管线注解）、**M5 验收脚本**（`npm run acceptance`）、学习中心（Agent 径五课 + 命理径三课）与 `/learn` 学习馆（手写 Markdown 渲染 + 术语表）、完整排盘与命理规则引擎（含盘面完整分析）、三贤人设加固、新中式视觉语言 v5。
-**进行中**：M5 人工验收执行（清单见 [`docs/m5-acceptance.md`](docs/m5-acceptance.md)，五场景全过后翻转默认模式为 agent）。
-**未开始**：会话与长期记忆、BM25 混合检索、OCR/EPUB 摄取、系统化评测、多用户部署（Auth/RLS/限流）。详见 [`docs/roadmap.md`](docs/roadmap.md)。
+**已完成**：最小 Agent 工具循环（M0–M3）+ **执行轨迹面板（M4）**与「循迹」开关、可信 RAG 主链路（分库检索 + 双重校验 + 定向重试 + 学习模式管线注解）、**M5 验收脚本**（`npm run acceptance`）、学习中心（Agent 径六课 + 命理径五课）与 `/learn` 学习馆（18 篇系统讲义 + 27 项 Agent 术语 + 71 项命理交叉速查）、完整排盘与命理规则引擎（含盘面完整分析）、三贤人设加固、新中式视觉语言 v5。
+**已完成**：M5 自动与人工验收（26 项硬性检查通过，2 项人工内容复核通过），默认模式已切换为 Agent；关闭「循迹」可显式走固定 RAG。
+**进行中**：会话摘要、长期记忆和流式回答。真实 Embedding 的 Key 尚未配置，目前使用 Mock；真实 Key 到位后可用 `npm run reindex:embeddings` 安全重建。
+**已完成一部分**：本地会话持久化基础（会话 API、消息/引用/trace 落盘、前端恢复与切换）。
+**未开始**：BM25 混合检索、OCR/EPUB 摄取、系统化评测、多用户部署（Auth/RLS/限流）。详见 [`docs/roadmap.md`](docs/roadmap.md)。
 
-## 九 · 数据与隐私
+## 十 · 数据与隐私
 
 ```text
 data/
@@ -151,7 +220,7 @@ data/
 
 一切默认只写本机；`npm run sync:supabase` 是显式、单向的云端快照。**不要**把当前本地 API 直接开放为公网服务（尚无 Auth 与限流）。
 
-## 十 · 贡献与联系
+## 十一 · 贡献与联系
 
 个人学习项目，欢迎 Issue 交流想法；提交 PR 前请先读 `docs/roadmap.md` 与相应设计文档，保持「本地优先 / 确定性优先 / 学习优先」三原则。
 

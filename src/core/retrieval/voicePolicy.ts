@@ -28,9 +28,27 @@ const VOICE_MARKERS: Record<MentorId, string[]> = {
   xuan: ["贫道", "且去，莫急", "且去莫急"],
 };
 
-/** 李的命理语汇禁区：天干地支单字 + 明确命理术语 */
-const LI_MINGLI_PATTERN =
-  /[甲乙丙丁戊己庚辛壬癸]|大运|流年|八字|排盘|命理|五行|日主|神煞|太岁|生辰|命宫|干支|起运/;
+/** 李的命理语汇禁区：明确术语可直接判定，天干单字必须带命理上下文。 */
+const LI_MINGLI_TERM_PATTERN =
+  /大运|流年|八字|排盘|命理|五行|日主|日元|神煞|太岁|生辰|命宫|干支|起运/;
+const STEM = "[甲乙丙丁戊己庚辛壬癸]";
+const BRANCH = "[子丑寅卯辰巳午未申酉戌亥]";
+const FIVE_ELEMENT = "[木火土金水]";
+const LI_MINGLI_STEM_PATTERNS = [
+  new RegExp(`${STEM}(?:${BRANCH}|${FIVE_ELEMENT})`),
+  new RegExp(`(?:天干|年干|月干|日干|时干|日主|日元)(?:为|是|属|：|:|\\s)*${STEM}`),
+];
+
+/** 返回李段中第一个高置信度命理词；普通词“自己、甲方、辛苦”等不会命中。 */
+export function findLiMingliTerm(text: string): string | null {
+  const explicit = text.match(LI_MINGLI_TERM_PATTERN);
+  if (explicit) return explicit[0];
+  for (const pattern of LI_MINGLI_STEM_PATTERNS) {
+    const contextual = text.match(pattern);
+    if (contextual) return contextual[0];
+  }
+  return null;
+}
 
 /** AI 自指 / 出戏 */
 const BREAK_CHARACTER_PATTERN = /作为(一个|一名)?(AI|人工智能|大语言模型|语言模型|助手)|我是(一个|一名)?(AI|人工智能|大?语言模型)/i;
@@ -86,12 +104,12 @@ export function checkVoice(segments: DialogueSegment[]): VoiceViolation[] {
 
     // 4) 李禁命理语汇
     if (seg.mentorId === "li") {
-      const m = body.match(LI_MINGLI_PATTERN);
-      if (m) {
+      const term = findLiMingliTerm(body);
+      if (term) {
         violations.push({
           kind: "li-mingli",
           mentorId: "li",
-          detail: `李使用了命理语汇「${m[0]}」——李只谈处境、选择与责任，命理由老胡与玄负责`,
+          detail: `李使用了命理语汇「${term}」——李只谈处境、选择与责任，命理由老胡与玄负责`,
         });
       }
     }

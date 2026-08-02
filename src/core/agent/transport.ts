@@ -124,13 +124,22 @@ function parseDecision(blocks: ContentBlock[]): TransportDecision {
     .trim();
   const toolUse = blocks.find((b) => b.type === "tool_use" && typeof b.name === "string");
   if (toolUse) {
+    // Orchestrator 一次只执行一个工具。若模型在一轮里返回多个 tool_use（指令要求只调一个，
+    // 但模型未必遵守），只保留第一个，丢弃其余——否则 assistant 消息里有 N 个 tool_use、
+    // 下一轮却只补 1 个 tool_result，端点会以 "tool call result does not follow tool
+    // call"（MiniMax 2013）拒掉整条请求。
+    const kept = blocks.filter((b) => b.type !== "tool_use" || b === toolUse);
+    // 端点要求 tool_result.tool_use_id 与 assistant 中 tool_use.id 严格一致；个别兼容端点
+    // 不回 id，此处补一个并写回 block，避免 id 错配。
+    const toolUseId = toolUse.id ?? `tu_${Math.random().toString(36).slice(2, 10)}`;
+    if (!toolUse.id) toolUse.id = toolUseId;
     return {
       kind: "tool_call",
-      toolUseId: toolUse.id ?? `tu_${Math.random().toString(36).slice(2, 10)}`,
+      toolUseId,
       name: toolUse.name as string,
       args: toolUse.input ?? {},
       planSummary: text.slice(0, 80),
-      assistantContent: blocks,
+      assistantContent: kept,
     };
   }
   return { kind: "no_tool", text, assistantContent: blocks.length ? blocks : [{ type: "text", text }] };

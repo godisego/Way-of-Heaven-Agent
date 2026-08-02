@@ -1,58 +1,258 @@
 /** 学习馆 /learn 可读文档白名单（slug → 仓库内 Markdown）。 */
 
+export type LearnTrack = "agent" | "mingli";
+
 export type LearnDoc = {
   slug: string;
   file: string;
   title: string;
   blurb: string;
-  track: "agent" | "mingli";
+  track: LearnTrack;
+  /** 学径内的稳定顺序；用于课程卡与上一篇/下一篇。 */
+  order: number;
+  /** 课程阶段，如「一 · 认地图」。 */
+  stage: string;
+  level: "入门" | "进阶" | "工程" | "附录";
+  /** 命理文档可直达 71 词条交叉速查。 */
+  quickRefs?: Array<{ id: string; label: string }>;
 };
 
 export const LEARN_DOCS: LearnDoc[] = [
+  // Agent 径：概念地图 → 系统结构 → 可信 RAG → 工具循环 → 调试与评测。
   {
     slug: "rag-concepts",
     file: "docs/rag-concepts-primer.md",
     title: "RAG 概念入门",
-    blurb: "检索增强生成的基本拼图：embedding、向量库、topK、上下文窗口",
+    blurb: "先认 embedding、向量库、topK、上下文窗口等基本拼图",
     track: "agent",
-  },
-  {
-    slug: "rag-walkthrough",
-    file: "docs/rag-beginner-walkthrough.md",
-    title: "RAG 代码走读",
-    blurb: "对照本仓库源码，把摄取 → 检索 → 生成 → 校验一行行走一遍",
-    track: "agent",
+    order: 10,
+    stage: "一 · 认地图",
+    level: "入门",
   },
   {
     slug: "agent-walkthrough",
     file: "docs/agent-beginner-walkthrough.md",
     title: "Agent 基础概念",
-    blurb: "从 RAG 到 Agent：工具使用、规划、记忆、反思都是什么",
+    blurb: "从 RAG 到 Agent：工具、规划、记忆、反思分别解决什么问题",
     track: "agent",
+    order: 20,
+    stage: "一 · 认地图",
+    level: "入门",
   },
   {
-    slug: "agent-loop",
-    file: "docs/agent-loop-design.md",
-    title: "工具循环设计（M0–M5）",
-    blurb: "本项目最小 Agent 循环的完整设计：工具、台账、停止条件、轨迹",
+    slug: "architecture",
+    file: "docs/architecture.md",
+    title: "系统架构总览",
+    blurb: "请求怎样穿过前端、摄取、向量检索、Agent 循环与三贤生成",
     track: "agent",
+    order: 30,
+    stage: "二 · 拆系统",
+    level: "进阶",
+  },
+  {
+    slug: "tech-stack",
+    file: "docs/tech-stack.md",
+    title: "技术栈逐层说明",
+    blurb: "Next.js、provider、local JSON、Supabase 与测试工具各自负责哪一层",
+    track: "agent",
+    order: 40,
+    stage: "二 · 拆系统",
+    level: "进阶",
+  },
+  {
+    slug: "rag-walkthrough",
+    file: "docs/rag-beginner-walkthrough.md",
+    title: "RAG 代码走读",
+    blurb: "对照源码，把摄取 → 检索 → 生成 → 校验一行行走一遍",
+    track: "agent",
+    order: 50,
+    stage: "三 · 建可信链",
+    level: "进阶",
   },
   {
     slug: "citation-design",
     file: "docs/rag-citation-design.md",
     title: "引用校验设计",
-    blurb: "来源位置如何定义、假引用如何整组作废——可信链的图纸",
+    blurb: "来源位置如何定义、越库与假引用为什么整组作废",
     track: "agent",
+    order: 60,
+    stage: "三 · 建可信链",
+    level: "进阶",
+  },
+  {
+    slug: "agent-loop",
+    file: "docs/agent-loop-design.md",
+    title: "工具循环设计（M0-M5）",
+    blurb: "工具注册表、证据台账、停止条件、双阶段提示词与执行轨迹",
+    track: "agent",
+    order: 70,
+    stage: "四 · 让模型行动",
+    level: "工程",
+  },
+  {
+    slug: "agent-blueprint",
+    file: "docs/agent-blueprint.md",
+    title: "Agent 目标架构蓝图",
+    blurb: "从最小循环走向规划、记忆、安全与评测的完整坐标",
+    track: "agent",
+    order: 80,
+    stage: "四 · 让模型行动",
+    level: "工程",
+  },
+  {
+    slug: "agent-trace-debugging",
+    file: "docs/agent-trace-debugging.md",
+    title: "执行轨迹调试手册",
+    blurb: "从工具选择、观察、台账到停止原因，定位第一处真正错误",
+    track: "agent",
+    order: 90,
+    stage: "五 · 调试与评测",
+    level: "工程",
+  },
+  {
+    slug: "verification-plan",
+    file: "docs/verification-plan.md",
+    title: "系统化验证计划",
+    blurb: "把引用、权限、停止条件、角色一致性与高风险问题变成可判定测试",
+    track: "agent",
+    order: 100,
+    stage: "五 · 调试与评测",
+    level: "工程",
+  },
+  {
+    slug: "m5-acceptance",
+    file: "docs/m5-acceptance.md",
+    title: "M5 真实服务验收",
+    blurb: "五类真实场景、硬性不变量与失败记录方式",
+    track: "agent",
+    order: 110,
+    stage: "五 · 调试与评测",
+    level: "工程",
+  },
+
+  // 命理径：认盘 → 认关系 → 加时间 → 完整走盘 → 工程口径。
+  {
+    slug: "bazi-chart-anatomy",
+    file: "docs/bazi-chart-anatomy.md",
+    title: "八字盘面解剖",
+    blurb: "逐项解释四柱、藏干、十神、纳音、旬空、起运、岁运和三宫",
+    track: "mingli",
+    order: 10,
+    stage: "一 · 先认盘",
+    level: "入门",
+    quickRefs: [
+      { id: "riyuan", label: "日主" },
+      { id: "tiangan", label: "天干" },
+      { id: "dizhi", label: "地支" },
+      { id: "canggan", label: "藏干" },
+    ],
+  },
+  {
+    slug: "bazi-stems-branches",
+    file: "docs/bazi-stems-branches.md",
+    title: "天干、地支与藏干",
+    blurb: "用前端、服务器和内部进程理解外显层、承载层、根气与月令",
+    track: "mingli",
+    order: 20,
+    stage: "一 · 先认盘",
+    level: "入门",
+    quickRefs: [
+      { id: "tiangan", label: "十天干" },
+      { id: "dizhi", label: "十二地支" },
+      { id: "canggan", label: "藏干" },
+      { id: "tonggen", label: "通根" },
+      { id: "yueling", label: "月令" },
+    ],
+  },
+  {
+    slug: "bazi-ten-gods-strength",
+    file: "docs/bazi-ten-gods-strength.md",
+    title: "十神与强弱",
+    blurb: "从日主坐标演算十神，再按得令、得地、得势完成透明粗评",
+    track: "mingli",
+    order: 30,
+    stage: "二 · 读懂关系",
+    level: "进阶",
+    quickRefs: [
+      { id: "shishen", label: "十神" },
+      { id: "qiangruo", label: "身强身弱" },
+      { id: "wuxing-gk", label: "五行" },
+      { id: "yinyang", label: "阴阳" },
+    ],
+  },
+  {
+    slug: "bazi-luck-cycles",
+    file: "docs/bazi-luck-cycles.md",
+    title: "起运、大运与流年",
+    blurb: "把原局放入十年阶段与年度天气，学会三层叠读而不跳到事件",
+    track: "mingli",
+    order: 40,
+    stage: "三 · 加上时间",
+    level: "进阶",
+    quickRefs: [
+      { id: "qiyun", label: "起运" },
+      { id: "dayun", label: "大运" },
+      { id: "xiaoyun", label: "小运" },
+      { id: "liunian", label: "流年" },
+    ],
+  },
+  {
+    slug: "bazi-reading-workflow",
+    file: "docs/bazi-reading-workflow.md",
+    title: "七步读盘工作流",
+    blurb: "从校时、日主月令、根势、十神位置走到岁运叠加与现实校准",
+    track: "mingli",
+    order: 50,
+    stage: "四 · 独立走盘",
+    level: "进阶",
+    quickRefs: [
+      { id: "zhen-taiyang-shi", label: "真太阳时" },
+      { id: "riyuan", label: "日主" },
+      { id: "yueling", label: "月令" },
+      { id: "dayun", label: "大运" },
+    ],
   },
   {
     slug: "bazi-guide",
     file: "docs/bazi-guide.md",
-    title: "八字排盘使用指南",
-    blurb: "填档、真太阳时与起运口径、点击释义与完整分析",
+    title: "排盘操作与算法口径",
+    blurb: "建档、真太阳时、晚子时、点击释义、完整分析与三贤分发",
     track: "mingli",
+    order: 60,
+    stage: "五 · 核对口径",
+    level: "附录",
+    quickRefs: [
+      { id: "zhen-taiyang-shi", label: "真太阳时" },
+      { id: "wan-zi-shi", label: "晚子时" },
+      { id: "minggong", label: "命宫" },
+      { id: "taiyuan", label: "胎元" },
+    ],
+  },
+  {
+    slug: "mentor-libraries-bazi",
+    file: "docs/mentor-libraries-and-bazi-design.md",
+    title: "命理如何进入三贤",
+    blurb: "老胡全量、玄只取气机、李完全隔离：分发、边界与程序化校验",
+    track: "mingli",
+    order: 70,
+    stage: "五 · 核对口径",
+    level: "工程",
   },
 ];
 
 export function getLearnDoc(slug: string): LearnDoc | null {
   return LEARN_DOCS.find((d) => d.slug === slug) ?? null;
+}
+
+export function getTrackDocs(track: LearnTrack): LearnDoc[] {
+  return LEARN_DOCS.filter((d) => d.track === track).sort((a, b) => a.order - b.order);
+}
+
+export function getAdjacentDocs(doc: LearnDoc): { previous: LearnDoc | null; next: LearnDoc | null } {
+  const list = getTrackDocs(doc.track);
+  const index = list.findIndex((item) => item.slug === doc.slug);
+  return {
+    previous: index > 0 ? list[index - 1] : null,
+    next: index >= 0 && index < list.length - 1 ? list[index + 1] : null,
+  };
 }

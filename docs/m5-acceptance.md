@@ -5,13 +5,15 @@ description: M5 验收：五场景清单、自动脚本用法与翻转默认模�
 
 # M5 · 验收清单
 
-工具循环（M0–M3）与轨迹面板（M4）就绪后，用本清单验收；通过后才把 `/api/chat` 的默认模式翻转为 agent。
+工具循环（M0–M3）与轨迹面板（M4）就绪后，用本清单验收；本项目已完成验收并将 `/api/chat` 的默认模式翻转为 agent。
 
 ## 一 · 前置
 
-1. `.env.local` 配好 `CHAT_*`（`npm run probe:tools` 应为 ✅）；embedding 用真 Key 或 `USE_MOCK_EMBEDDING=1`。
-2. `npm run dev` 启动；上传 `data/samples/存在主义笔记.md`（标签选「存在主义」）等待「已藏」。
+1. `.env.local` 配好 `CHAT_*`（可先运行 `npm run doctor`，再运行 `npm run probe:tools`）；embedding 用真 Key 或 `USE_MOCK_EMBEDDING=1`。
+2. 执行 `npm run seed:sample` 收入示例存在主义笔记（或在界面上传 `data/samples/存在主义笔记.md` 并选择「存在主义」），再启动 `npm run dev`。
 3. 建议另传一份道家或易经材料，分库场景更有区分度。
+
+如果从 Mock 切到真实 Embedding，填写 `OPENAI_COMPAT_BASE_URL`、`OPENAI_COMPAT_API_KEY`、`OPENAI_COMPAT_EMBEDDING_MODEL`，将 `USE_MOCK_EMBEDDING` 改为 `0`，然后先运行 `npm run reindex:embeddings`，再启动验收。重建失败时旧索引不会被替换。
 
 ## 二 · 自动部分
 
@@ -34,7 +36,7 @@ BASE_URL=... npm run acceptance
 
 ## 四 · 通过后：翻转默认
 
-`src/app/api/chat/route.ts` 中把 `if (body.mode === "agent")` 的分支逻辑反转（默认走 `runAgentLoop`，`mode:"rag"` 时走固定链路），并同步：README「项目状态」、学习中心 Agent 径课三文案、`docs/agent-loop-design.md` 第 8 节勾选。
+已完成：`/api/chat` 默认走 `runAgentLoop`，`mode:"rag"` 时走固定链路；前端「循迹」默认开启，关闭后显式发送 `mode:"rag"`。
 
 ## 五 · 记录
 

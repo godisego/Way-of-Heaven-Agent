@@ -6,8 +6,6 @@
  * - 身宫：按月支 + 时支查表（与命宫同表不同起算）。
  */
 
-import { Solar } from "lunar-javascript";
-
 const ZHI_ORDER = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"] as const;
 const GAN_ORDER = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"] as const;
 type Zhi = typeof ZHI_ORDER[number];
@@ -58,6 +56,8 @@ export function calculateMingGong(monthZhi: string, timeZhi: string) {
 }
 
 export function calculateShenGong(monthZhi: string, _timeZhi: string) {
+  // 保留 timeZhi 参数以兼容排盘调用口径；当前身宫规则只按月支顺数。
+  void _timeZhi;
   const idx = ZHI_ORDER.indexOf(monthZhi as Zhi);
   const shenIdx = (idx + SHENGONG_OFFSET) % 12;
   const shenZhi = ZHI_ORDER[shenIdx];

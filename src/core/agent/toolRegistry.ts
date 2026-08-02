@@ -14,6 +14,8 @@ import type { EvidenceLedger } from "./evidenceLedger";
 export type ToolContext = {
   /** 证据台账（工具登记证据、生成 ev_N 观察文本用） */
   ledger: EvidenceLedger;
+  /** 原始问句；工具可用它做跨轮次的相关性安全校验 */
+  question?: string;
   /** 本轮已在检索结果中出现过的 documentId（read_source_unit 的白名单） */
   seenDocumentIds: Set<string>;
   /** 当前步序（登记证据用） */
@@ -98,7 +100,7 @@ export class ToolRegistry {
     this.hooks.beforeToolCall?.({ name, args: parsed.data });
     const startedAt = Date.now();
     try {
-      const result = await withTimeout(tool.execute(parsed.data, ctx), tool.timeoutMs, name);
+      const result = await withTimeout(tool.execute(parsed.data, ctx), tool.timeoutMs);
       this.hooks.afterToolCall?.({ name, args: parsed.data, result, durationMs: Date.now() - startedAt });
       return result;
     } catch (error) {
@@ -110,7 +112,7 @@ export class ToolRegistry {
   }
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number, name: string): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(`超时（${ms}ms）`)), ms);
     promise.then(

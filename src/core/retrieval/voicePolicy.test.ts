@@ -66,6 +66,22 @@ describe("checkVoice（声口校验器）", () => {
     expect(v.some((x) => x.kind === "li-mingli")).toBe(true);
   });
 
+  it("普通词中的天干字不误判", () => {
+    const text = GOOD.replace(
+      "今晚把那件事写成一句话",
+      "甲方再强势，你也要为自己负责；过程辛苦，也别因一点丁点阻力放弃",
+    );
+    expect(check(text).filter((x) => x.kind === "li-mingli")).toEqual([]);
+  });
+
+  it.each(["你是辛巳日出生", "日干为己", "先看看自己的大运"])(
+    "明确命理上下文仍会拦截：%s",
+    (phrase) => {
+      const text = GOOD.replace("今晚把那件事写成一句话", phrase);
+      expect(check(text).some((x) => x.kind === "li-mingli")).toBe(true);
+    },
+  );
+
   it("AI 自指 → broke-character", () => {
     const text = GOOD.replace("哎，老夫瞧着啊", "作为一个AI，我认为");
     const v = check(text);

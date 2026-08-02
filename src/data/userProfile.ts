@@ -9,7 +9,7 @@
  * 存储走 localStorage（src/data/userProfileStore.ts），将来切 Supabase 时只换 store 实现。
  */
 
-import { findDaYunForYear, type BaziResult } from "@/core/user/baziCalculator";
+import { calculateBazi, findDaYunForYear, type BaziResult } from "@/core/user/baziCalculator";
 import { currentLiuNian } from "@/core/mingli/liuNian";
 
 export type Gender = "male" | "female";
@@ -46,6 +46,28 @@ export type UserProfile = {
 export function isProfileComplete(p: UserProfile | null | undefined): p is UserProfile {
   if (!p) return false;
   return Boolean(p.birthDate && p.birthTime && p.birthPlace && p.currentPlace && p.gender);
+}
+
+/**
+ * API 调用方可能只提交生辰基础字段（例如验收脚本或第三方客户端）。
+ * 服务端在进入三贤 prompt 前补齐确定性排盘，避免只有网页表单保存过的档案才有命理材料。
+ */
+export function prepareUserProfileForAgent(
+  profile: UserProfile | null | undefined,
+): UserProfile | null {
+  if (!isProfileComplete(profile)) return null;
+  if (profile.bazi) return profile;
+
+  return {
+    ...profile,
+    bazi: calculateBazi({
+      birthDate: profile.birthDate,
+      birthTime: profile.birthTime,
+      gender: profile.gender,
+      birthLongitude: profile.birthLongitude,
+    }),
+    updatedAt: profile.updatedAt || new Date().toISOString(),
+  };
 }
 
 /** 问者档给 agent 看的摘要（一段话，注入 system prompt） */

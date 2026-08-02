@@ -1,73 +1,17 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import { LEARN_DOCS } from "@/data/learnDocs";
-import { GLOSSARY } from "@/data/concepts";
+import { LearningLibrary } from "@/components/learning/LearningLibrary";
+import styles from "@/components/learning/LearningLibrary.module.css";
 
 export const metadata: Metadata = {
   title: "学习馆 · 天道茶寮",
-  description: "Agent 与命理双学径的文档与术语表",
+  description: "从 Agent 原理、源码与评测，到八字盘面、十神、岁运和交叉速查的双学径课程",
 };
 
-/** 学习馆：走读文档 + 术语表（Agent 为重）。课程导览在主界面右下「学习」。 */
+/** 学习馆：两条系统课程 + Agent 术语 + 命理 71 词条交叉速查。 */
 export default function LearnPage() {
-  const agentDocs = LEARN_DOCS.filter((d) => d.track === "agent");
-  const mingliDocs = LEARN_DOCS.filter((d) => d.track === "mingli");
-
   return (
-    <main className="learn-shell">
-      <header className="learn-head">
-        <h1 className="learn-title">学习馆</h1>
-        <p className="learn-sub">AGENT 为重 · 文档与术语 · 课程导览在茶寮右下「学习」</p>
-      </header>
-      <Link className="learn-back" href="/">
-        ← 回茶寮
-      </Link>
-
-      <h2 className="learn-section-h">Agent 走读文档</h2>
-      <div className="learn-doc-list">
-        {agentDocs.map((doc) => (
-          <Link key={doc.slug} className="learn-doc-card" href={`/learn/${doc.slug}`}>
-            <strong>{doc.title}</strong>
-            <span>{doc.blurb}</span>
-          </Link>
-        ))}
-      </div>
-
-      <h2 className="learn-section-h">命理文档</h2>
-      <div className="learn-doc-list">
-        {mingliDocs.map((doc) => (
-          <Link key={doc.slug} className="learn-doc-card" href={`/learn/${doc.slug}`}>
-            <strong>{doc.title}</strong>
-            <span>{doc.blurb}</span>
-          </Link>
-        ))}
-      </div>
-
-      <h2 className="learn-section-h">Agent 术语表</h2>
-      <dl className="learn-glossary">
-        {GLOSSARY.agent.map((c) => (
-          <div className="learn-term" key={c.term}>
-            <dt>
-              {c.term}
-              {c.where ? <small>{c.where}</small> : null}
-            </dt>
-            <dd style={{ whiteSpace: "pre-line" }}>{c.explanation}</dd>
-          </div>
-        ))}
-      </dl>
-
-      <h2 className="learn-section-h">命理术语</h2>
-      <dl className="learn-glossary">
-        {GLOSSARY.mingli.map((c) => (
-          <div className="learn-term" key={c.term}>
-            <dt>
-              {c.term}
-              {c.where ? <small>{c.where}</small> : null}
-            </dt>
-            <dd style={{ whiteSpace: "pre-line" }}>{c.explanation}</dd>
-          </div>
-        ))}
-      </dl>
+    <main className={`learn-shell learn-home ${styles.home}`}>
+      <LearningLibrary />
     </main>
   );
 }

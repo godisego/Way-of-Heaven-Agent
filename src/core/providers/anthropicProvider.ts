@@ -30,7 +30,12 @@ export class AnthropicProvider implements LlmProvider {
         messages: [
           {
             role: "user",
-            content: buildMentorUserPrompt(input.question, input.context, input.userProfile ?? null),
+            content: buildMentorUserPrompt(
+              input.question,
+              input.context,
+              input.userProfile ?? null,
+              input.conversationContext,
+            ),
           },
         ],
       }),

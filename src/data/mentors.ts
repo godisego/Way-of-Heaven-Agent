@@ -384,12 +384,16 @@ export function buildMentorUserPrompt(
   question: string,
   context: string,
   userProfile?: UserProfile | null,
+  conversationContext?: string,
 ): string {
   const profileNote = isProfileComplete(userProfile)
     ? ""
     : "（我尚未建立问者档，命理处请勿妄断。）\n";
+  const historyNote = conversationContext?.trim()
+    ? `\n【此前对谈上下文 · 只用于理解本轮追问，不是典籍证据】\n${conversationContext.trim()}\n`
+    : "";
   return (
-    `我的困惑：\n${question}\n${profileNote}\n` +
+    `我的困惑：\n${question}\n${profileNote}${historyNote}\n` +
     `可参考的典籍片段（Sources）：\n${context}\n\n` +
     "请按茶寮仪轨：老胡先批（依你的【命理简报】论窗口宜忌）、李拆自欺（只谈处境与选择）、玄收束（依【气机简报】给方向节奏）。" +
     "我的背景与命理材料已在各位的专属材料中，不必向我复述排盘细节。" +

@@ -48,7 +48,7 @@
   </g>
 
   <!-- ── RAG 默认链 ── -->
-  <text x="42" y="230" font-size="11" font-weight="700" letter-spacing="4" fill="#3b4046">问答 · 默认 RAG 链（每一步代码写死）</text>
+  <text x="42" y="230" font-size="11" font-weight="700" letter-spacing="4" fill="#3b4046">问答 · 默认 Agent 取证（可切回固定 RAG）</text>
   <g font-size="11.5" fill="#3b4046" text-anchor="middle">
     <rect x="42" y="246" width="96" height="46" rx="3" fill="#252a30"/>
     <text x="90" y="273" fill="#f2f3f1">问者提问</text>

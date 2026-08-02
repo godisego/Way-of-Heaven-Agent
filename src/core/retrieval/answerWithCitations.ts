@@ -8,6 +8,8 @@ import {
   type ScopedCitationViolation,
 } from "./citationPolicy";
 import { checkVoice, violationRetryText, type VoiceViolation } from "./voicePolicy";
+import { buildNoEvidenceAnswer } from "./noEvidenceAnswer";
+import { hasLexicalEvidenceForCitationQuestion } from "./evidenceRelevance";
 
 export type RagPipelineNotes = {
   mode: "rag";
@@ -44,6 +46,7 @@ function describeCitationViolation(v: ScopedCitationViolation): string {
 export async function answerQuestion(
   question: string,
   userProfile?: import("@/data/userProfile").UserProfile | null,
+  conversationContext?: string,
 ): Promise<RagAnswer> {
   const scoped = await searchChunksForMentors(question, 4);
   const retrieved = {
@@ -52,10 +55,13 @@ export async function answerQuestion(
     xuan: scoped.byMentor.xuan.length,
     merged: scoped.merged.length,
   };
-  if (!scoped.merged.length || scoped.merged.every((item) => item.score <= 0)) {
+  if (
+    !scoped.merged.length ||
+    scoped.merged.every((item) => item.score <= 0) ||
+    !hasLexicalEvidenceForCitationQuestion(question, scoped.merged)
+  ) {
     return {
-      answerMarkdown:
-        "典籍中暂时没有能贴合你这个困惑的内容。你可以先上传一些相关的书籍或笔记（.md/.txt/.pdf），我再结合它们与你细聊。",
+      answerMarkdown: buildNoEvidenceAnswer(undefined, userProfile),
       citations: [],
       usedContext: [],
       pipeline: { mode: "rag", retrieved, retried: false, citationsValid: true, voiceValid: true },
@@ -64,7 +70,7 @@ export async function answerQuestion(
 
   const provider = getDefaultProvider();
   const context = buildScopedContext(scoped);
-  let answer = (await provider.generateAnswer({ question, context, userProfile })).text.trim();
+  let answer = (await provider.generateAnswer({ question, context, userProfile, conversationContext })).text.trim();
   let outcome = validateCitationsByMentor(answer, scoped);
   let voiceViolations: VoiceViolation[] = checkVoice(parseMentorDialogue(answer));
 
@@ -89,6 +95,7 @@ export async function answerQuestion(
         question: `${question}\n\n上一次回应存在以下问题，请整组重写并逐条修正（保持三段格式、各自声口、各引各库）：\n${problems.join("\n")}`,
         context,
         userProfile,
+        conversationContext,
       })
     ).text.trim();
     outcome = validateCitationsByMentor(answer, scoped);

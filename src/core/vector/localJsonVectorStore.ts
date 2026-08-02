@@ -13,7 +13,7 @@ export class LocalJsonVectorStore implements VectorStore {
     this.indexPath = path.join(getAppConfig().indexesDir, "chunks.json");
   }
 
-  private readAll(): VectorRecord[] {
+  readAll(): VectorRecord[] {
     if (!fs.existsSync(this.indexPath)) return [];
     const raw = fs.readFileSync(this.indexPath, "utf8");
     if (!raw.trim()) return [];
@@ -22,6 +22,20 @@ export class LocalJsonVectorStore implements VectorStore {
 
   private writeAll(records: VectorRecord[]) {
     fs.writeFileSync(this.indexPath, JSON.stringify(records, null, 2), "utf8");
+  }
+
+  /**
+   * 全量替换本地索引。先写同目录临时文件，再 rename，避免重建过程中留下半个索引。
+   */
+  replaceAll(records: VectorRecord[]): void {
+    const temporaryPath = `${this.indexPath}.rebuild-${process.pid}-${Date.now()}.tmp`;
+    fs.writeFileSync(temporaryPath, JSON.stringify(records, null, 2), "utf8");
+    try {
+      fs.renameSync(temporaryPath, this.indexPath);
+    } catch (error) {
+      if (fs.existsSync(temporaryPath)) fs.unlinkSync(temporaryPath);
+      throw error;
+    }
   }
 
   async upsert(records: VectorRecord[]): Promise<void> {
@@ -47,6 +61,14 @@ export class LocalJsonVectorStore implements VectorStore {
 
 export function getLocalVectorStore(): VectorStore {
   return new LocalJsonVectorStore();
+}
+
+export function readLocalVectorRecords(): VectorRecord[] {
+  return new LocalJsonVectorStore().readAll();
+}
+
+export function replaceLocalVectorRecords(records: VectorRecord[]): void {
+  new LocalJsonVectorStore().replaceAll(records);
 }
 
 /**

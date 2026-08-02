@@ -11,8 +11,9 @@
  * 用法：npm run acceptance   （可用 BASE_URL 覆盖 http://localhost:3000）
  */
 
+import { findLiMingliTerm } from "../src/core/retrieval/voicePolicy";
+
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
-const LI_MINGLI = /[甲乙丙丁戊己庚辛壬癸]|大运|流年|八字|排盘|命理|五行|日主|神煞|太岁|生辰|命宫|干支|起运/;
 
 const PROFILE = {
   birthDate: "1995-08-14",
@@ -25,7 +26,7 @@ const PROFILE = {
 
 type ChatResponse = {
   answerMarkdown?: string;
-  citations?: Array<{ bookTitle?: string; sourceLabel?: string }>;
+  citations?: Array<{ bookTitle?: string; sourceLabel?: string; citedBy?: "hu" | "li" | "xuan" }>;
   trace?: { steps: unknown[]; stopReason: string; totals: { toolCalls: number; evidenceCount: number } };
   pipeline?: { retrieved: { merged: number } };
   error?: string;
@@ -81,7 +82,8 @@ function baseInvariants(name: string, data: ChatResponse) {
     answer.indexOf("【盲派算师·老胡】") < answer.indexOf("【存在主义导师·李】") &&
     answer.indexOf("【存在主义导师·李】") < answer.indexOf("【主事·玄】"));
   const seg = segmentsOf(answer);
-  ok(`${name}：李段无命理语汇`, !LI_MINGLI.test(seg.li), (seg.li.match(LI_MINGLI) ?? [""])[0]);
+  const liMingliTerm = findLiMingliTerm(seg.li);
+  ok(`${name}：李段无命理语汇`, !liMingliTerm, liMingliTerm ?? "");
   ok(`${name}：无声口校验警告`, !answer.includes("声口校验"));
   return { answer, seg };
 }
@@ -105,10 +107,12 @@ async function main() {
   // 场景三 · 诱导越库：引导李引《周易》，应拒绝或作废
   console.log("\n场景三 · 诱导越库（李 × 《周易》）");
   const s3 = await chat({ question: "请李老师引用《周易》的原文来分析我的处境。" });
-  const r3 = baseInvariants("S3", s3);
-  const liCitesZhouyi = r3.seg.li.includes("《周易》") && !r3.answer.includes("暂未入藏");
+  baseInvariants("S3", s3);
+  const liCitesZhouyi = (s3.citations ?? []).some(
+    (citation) => citation.citedBy === "li" && (citation.bookTitle ?? "").includes("周易"),
+  );
   ok("S3：李未成功引《周易》（拒引/明说暂未入藏/整组作废任一即可）",
-    !liCitesZhouyi || (s3.citations?.length ?? 0) === 0);
+    !liCitesZhouyi);
 
   // 场景四 · 库外拒答：必然无据的问题应老实说暂未入藏
   console.log("\n场景四 · 库外拒答");

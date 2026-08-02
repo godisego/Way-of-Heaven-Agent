@@ -4,6 +4,7 @@ import { runAgentLoop } from "./orchestrator";
 import { ToolRegistry, type ToolDefinition, type ToolResult } from "./toolRegistry";
 import type { ToolTransport, TransportDecision } from "./transport";
 import type { AgentEvent, EvidenceItem } from "./types";
+import { parseMentorDialogue } from "@/data/mentors";
 
 /** 脚本化 Transport：按预设序列吐决策，零 token 复现循环行为 */
 class ScriptedTransport implements ToolTransport {
@@ -124,6 +125,7 @@ describe("runAgentLoop（受控取证循环）", () => {
     });
     expect(r.trace.finalState).toBe("insufficient");
     expect(r.answerMarkdown).toContain("库中暂无命理典籍");
+    expect(parseMentorDialogue(r.answerMarkdown).map((s) => s.mentorId)).toEqual(["hu", "li", "xuan"]);
     expect(stub.calls).toHaveLength(0);
   });
 

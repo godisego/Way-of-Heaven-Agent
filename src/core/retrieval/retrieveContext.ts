@@ -2,6 +2,7 @@ import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";
 import { getVectorStore } from "@/core/vector/localJsonVectorStore";
 import type { VectorSearchResult } from "@/core/vector/vectorStore";
 import { DIALOGUE_MENTORS, isSourceAllowedFor, type MentorId } from "@/data/mentors";
+import { citationEvidenceCoverage, isCitationQuestion } from "./evidenceRelevance";
 
 /** 每条 Source 送入 prompt 的文本上限（成本与串扰保护） */
 const MAX_CHUNK_CHARS = 800;
@@ -26,7 +27,8 @@ export type ScopedRetrieval = {
  *
  * 为什么不逐库下推过滤查三次：单次大召回 + 分拣对本地/云端后端行为完全一致
  * （云端 RPC 暂不支持多传统过滤），且共享池命中天然复用。个人书库量级下
- * 大召回（topKPerMentor × 6）的召回率足够；藏书量大后可改为逐库下推（接口已支持）。
+ * 引用型问题会扩大候选池并用词面覆盖率重排，避免 mock embedding 的 hash
+ * 碰撞把明确书名或主题章节挤出前列；普通问答仍保持原向量顺序。
  */
 export async function searchChunksForMentors(
   query: string,
@@ -36,12 +38,24 @@ export async function searchChunksForMentors(
   const embedding = await provider.embedTexts({ texts: [query] });
   const [queryEmbedding] = embedding.embeddings;
 
-  const candidates = await getVectorStore().search(queryEmbedding, topKPerMentor * 6);
+  const citationQuestion = isCitationQuestion(query);
+  const candidateLimit = citationQuestion ? Math.max(topKPerMentor * 6, 120) : topKPerMentor * 6;
+  const candidates = await getVectorStore().search(queryEmbedding, candidateLimit);
+
+  function rankCandidates(a: VectorSearchResult, b: VectorSearchResult): number {
+    if (citationQuestion) {
+      const coverageDifference =
+        citationEvidenceCoverage(query, [b]) - citationEvidenceCoverage(query, [a]);
+      if (coverageDifference !== 0) return coverageDifference;
+    }
+    return b.score - a.score;
+  }
 
   const byMentor = { hu: [], li: [], xuan: [] } as Record<MentorId, VectorSearchResult[]>;
   for (const mentor of DIALOGUE_MENTORS) {
     byMentor[mentor.id] = candidates
       .filter((r) => isSourceAllowedFor(mentor.id, r.tradition))
+      .sort(rankCandidates)
       .slice(0, topKPerMentor);
   }
 

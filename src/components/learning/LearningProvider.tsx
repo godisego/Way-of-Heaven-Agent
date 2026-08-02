@@ -25,8 +25,6 @@ const TOOLTIP_GAP = 10;
 function placeTooltip(target: HTMLElement, tip: HTMLDivElement) {
   const rect = target.getBoundingClientRect();
   const viewportW = window.innerWidth;
-  const viewportH = window.innerHeight;
-
   // 默认水平:tooltip 中心对齐元素中心,再 clamp 到视口内
   let left = rect.left + rect.width / 2 - TOOLTIP_WIDTH / 2;
   left = Math.max(8, Math.min(viewportW - TOOLTIP_WIDTH - 8, left));

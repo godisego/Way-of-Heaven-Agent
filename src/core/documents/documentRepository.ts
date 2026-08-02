@@ -81,6 +81,22 @@ export function updateChunkVector(chunkId: string, embeddingModel: string, vecto
   );
 }
 
+export function updateChunkVectors(
+  vectors: Array<{ chunkId: string; embeddingModel: string; vectorId: string }>,
+) {
+  const byChunkId = new Map(vectors.map((vector) => [vector.chunkId, vector]));
+  getDb().update<ChunkRow>(
+    "chunks",
+    (chunk) => byChunkId.has(chunk.id),
+    (chunk) => {
+      const vector = byChunkId.get(chunk.id);
+      return vector
+        ? { ...chunk, embeddingModel: vector.embeddingModel, vectorId: vector.vectorId }
+        : chunk;
+    },
+  );
+}
+
 export function listChunks(documentId: string): ChunkRow[] {
   return getDb()
     .filter<ChunkRow>("chunks", (chunk) => chunk.documentId === documentId)

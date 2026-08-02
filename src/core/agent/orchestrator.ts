@@ -18,6 +18,7 @@ import { parseMentorDialogue } from "@/data/mentors";
 import { buildContext } from "@/core/retrieval/retrieveContext";
 import { needsCitation, validateCitations, type Citation } from "@/core/retrieval/citationPolicy";
 import { checkVoice, violationRetryText, type VoiceViolation } from "@/core/retrieval/voicePolicy";
+import { buildNoEvidenceAnswer } from "@/core/retrieval/noEvidenceAnswer";
 import { EvidenceLedger } from "./evidenceLedger";
 import { ToolRegistry, type ToolHooks } from "./toolRegistry";
 import { defaultTools } from "./tools";
@@ -62,6 +63,7 @@ export type RunAgentOptions = {
   hooks?: ToolHooks;
   onEvent?: (event: AgentEvent) => void;
   signal?: AbortSignal;
+  conversationContext?: string;
 };
 
 function sanitizeArgs(args: unknown): Record<string, unknown> | undefined {
@@ -93,7 +95,13 @@ export async function runAgentLoop(
   let stopReason: StopReason = "max_steps";
   let insufficientMissing: string | undefined;
   const seenCalls = new Set<string>();
-  const turns: TransportTurn[] = [userTurn(`问者的困惑：${question}`)];
+  const turns: TransportTurn[] = [
+    userTurn(
+      opts.conversationContext?.trim()
+        ? `此前对谈上下文（只用于理解本轮追问，不是典籍证据）：\n${opts.conversationContext.trim()}\n\n本轮问者的困惑：${question}`
+        : `问者的困惑：${question}`,
+    ),
+  ];
 
   const emit = (event: AgentEvent) => opts.onEvent?.(event);
   const pushStep = (step: Omit<TraceStep, "index">) => {
@@ -177,6 +185,7 @@ export async function runAgentLoop(
       const t0 = Date.now();
       const result = await registry.run(decision.name, decision.args, {
         ledger,
+        question,
         seenDocumentIds,
         stepIndex,
       });
@@ -220,16 +229,14 @@ export async function runAgentLoop(
     answer = "取证过程出错，本轮未能生成回应。请稍后重试。";
   } else if (stopReason === "insufficient" || ledger.count() === 0) {
     finalState = "insufficient";
-    answer =
-      `典籍中暂时没有能贴合你这个困惑的内容${insufficientMissing ? `（${insufficientMissing}）` : ""}。` +
-      "你可以先上传一些相关的书籍或笔记（.md/.txt/.pdf），我再结合它们与你细聊。";
+    answer = buildNoEvidenceAnswer(insufficientMissing, userProfile);
   } else {
     const provider: DraftProvider = opts.draftProvider ?? getDefaultProvider();
     const context = buildContext(ledger.records());
 
     const tDraft = Date.now();
     modelCalls += 1;
-    answer = (await provider.generateAnswer({ question, context, userProfile })).text.trim();
+    answer = (await provider.generateAnswer({ question, context, userProfile, conversationContext: opts.conversationContext })).text.trim();
     pushStep({
       phase: "draft",
       observationSummary: `三贤生成完成（证据 ${ledger.count()} 条进入 Sources）`,
@@ -256,6 +263,7 @@ export async function runAgentLoop(
           question: `${question}\n\n上一次回应存在以下问题，请整组重写并逐条修正（保持三段格式与各自声口）：\n${problems.join("\n")}`,
           context,
           userProfile,
+          conversationContext: opts.conversationContext,
         })
       ).text.trim();
       citations = validateCitations(answer, ledger.records());

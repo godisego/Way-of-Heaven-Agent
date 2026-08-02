@@ -3,7 +3,6 @@
  * 内容与实现严格同源：凡引用口径处标注源码路径；改实现必须同步改课文。
  */
 
-import type { DriveStep } from "driver.js";
 import type { Lesson } from "./index";
 
 export const AGENT_LESSONS: Lesson[] = [
@@ -345,16 +344,70 @@ export const AGENT_LESSONS: Lesson[] = [
       },
       {
         popover: {
-          title: "⑥ Evals —— 缺，且最被低估",
+          title: "⑥ Evals —— 有了验收起点",
           description:
-            "没有评测，改提示词就全凭手感：这次像是好了？下次谁知道。\n系统化评测 = 固定问题集 + 可判定的通过标准（引用命中率、声口违规率、拒答正确率）+ 每次改动跑一遍。\n它在 roadmap 上，也是把「玩具」变「工程」的分界线。",
+            "没有评测，改提示词就全凭手感：这次像是好了？下次谁知道。\n项目已有 M5 五场景真实服务验收与大量确定性单测，这是起点；系统化评测还需扩成固定问题集 + 可判定指标 + 每次改动回归。\n评测不是收尾工作，而是把「玩具」变「工程」的分界线。",
         },
       },
       {
         popover: {
           title: "收束 · 你的坐标",
           description:
-            "本项目 = Tool use ✓ + 隐式 Planning ✓ + 半个 Reflection ✓ + Memory ✗ + Multi-agent ✗（刻意）+ Evals ✗（待补）。\n每补一件，都先问「这个产品需要吗」。\n深读：docs/agent-blueprint.md（目标架构与验收标准）、docs/agent-beginner-walkthrough.md。",
+            "本项目 = Tool use ✓ + 隐式 Planning ✓ + 半个 Reflection ✓ + Memory ✗ + Multi-agent ✗（刻意）+ Evals △（最小验收已有，体系待补）。\n每补一件，都先问「这个产品需要吗」。\n深读：docs/agent-blueprint.md（目标架构与验收标准）、docs/agent-beginner-walkthrough.md。",
+        },
+      },
+    ],
+  },
+  {
+    id: "agent-6",
+    no: "六",
+    title: "轨迹调试：从一次失败找到根因",
+    minutes: 4,
+    steps: () => [
+      {
+        popover: {
+          title: "Agent 径 · 第六课 轨迹调试",
+          description:
+            "Agent 出错时，别先问「模型为什么这么笨」。先把运行切成请求、调度、执行、观察、证据台账、答案校验六层，找到第一处异常。\n后面的坏答案，经常只是前面一次坏检索的回声。",
+        },
+      },
+      {
+        element: "[data-tour-id='agent-toggle']",
+        popover: {
+          title: "先打开循迹",
+          description:
+            "循迹模式让调度模型自主调用工具，并把每一步结构化记录下来。轨迹不是模型的私密思维过程，而是可审计的动作：工具、参数、观察、证据编号与停止原因。",
+          side: "bottom",
+        },
+      },
+      {
+        element: "[data-tour-id='trace-panel']",
+        popover: {
+          title: "读一步：动作 → 观察 → 增量",
+          description:
+            "先看调用了哪个工具，再看 query/topK/tradition 等参数；接着看工具返回证据、空结果还是错误；最后看新增了哪些 ev_N。\n工具选对但参数错，与工具根本选错，是两类修法。",
+          side: "left",
+        },
+      },
+      {
+        popover: {
+          title: "找第一处错误，不同时改三层",
+          description:
+            "找不到资料：先查 query 与 embedding；出处漂移：查台账元数据；重复搜索：查观察文案与重复调用刹车；跨库引用：查 tradition 与 citationPolicy；角色串味：查材料隔离与 voicePolicy。\n每次只改一个变量，再用同题回归。",
+        },
+      },
+      {
+        popover: {
+          title: "停止原因也是指标",
+          description:
+            "正常停止可能是 ready_to_answer；异常停止可能是最大步数、总超时、重复调用或错误。\n如果大量任务都撞到同一种刹车，问题通常不在某一道题，而在工具说明、观察结构或预算设计。",
+        },
+      },
+      {
+        popover: {
+          title: "从一次失败变成评测",
+          description:
+            "把真实失败固定下来：问题 + 知识库快照 + 期望工具路径 + 可判定不变量。以后每次改 prompt 或工具都重跑。\n深读：docs/agent-trace-debugging.md、docs/verification-plan.md、docs/m5-acceptance.md。",
         },
       },
     ],

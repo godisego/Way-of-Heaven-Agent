@@ -10,6 +10,7 @@
 import type { DriveStep } from "driver.js";
 import { MINGLI_LESSONS } from "./mingli";
 import { AGENT_LESSONS } from "./agent";
+import { LIBRARY_LESSON } from "./library";
 
 export type LessonId =
   | "agent-1"
@@ -17,9 +18,13 @@ export type LessonId =
   | "agent-3"
   | "agent-4"
   | "agent-5"
+  | "agent-6"
+  | "library-tour"
   | "mingli-1"
   | "mingli-2"
-  | "mingli-4";
+  | "mingli-3"
+  | "mingli-4"
+  | "mingli-5";
 
 export type Lesson = {
   id: LessonId;
@@ -66,6 +71,7 @@ export const LESSON_TRACKS: LessonTrack[] = [
       byId(AGENT_LESSONS, "agent-3"),
       byId(AGENT_LESSONS, "agent-4"),
       byId(AGENT_LESSONS, "agent-5"),
+      byId(AGENT_LESSONS, "agent-6"),
     ],
   },
   {
@@ -75,13 +81,15 @@ export const LESSON_TRACKS: LessonTrack[] = [
     lessons: [
       byId(MINGLI_LESSONS, "mingli-1"),
       byId(MINGLI_LESSONS, "mingli-2"),
-      { id: "mingli-3", no: "三", title: "运程：起运 · 大运 · 流年", lockNote: "后续" },
+      byId(MINGLI_LESSONS, "mingli-3"),
       byId(MINGLI_LESSONS, "mingli-4"),
+      byId(MINGLI_LESSONS, "mingli-5"),
     ],
   },
 ];
 
 export function getLesson(id: LessonId): Lesson | null {
+  if (id === LIBRARY_LESSON.id) return LIBRARY_LESSON;
   for (const track of LESSON_TRACKS) {
     for (const l of track.lessons) {
       if (isAvailable(l) && l.id === id) return l;

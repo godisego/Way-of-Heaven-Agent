@@ -91,13 +91,6 @@ export type ShenSha = {
   yueDe: { gan: string } | null;
 };
 
-const PILLAR_BRANCHES: Array<{ key: "year" | "month" | "day" | "time"; zhi: string }> = [
-  { key: "year", zhi: "" },
-  { key: "month", zhi: "" },
-  { key: "day", zhi: "" },
-  { key: "time", zhi: "" },
-];
-
 function findBranchPosition(target: Zhi, branches: { year: string; month: string; day: string; time: string }): Zhi | null {
   if (branches.year === target) return "year" as unknown as Zhi;
   if (branches.month === target) return "month" as unknown as Zhi;

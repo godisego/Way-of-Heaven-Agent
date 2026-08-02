@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useLearning } from "./LearningProvider";
 import { startLesson } from "./tourController";
 import { loadProgress, PROGRESS_EVENT } from "./learningProgress";
@@ -49,7 +50,7 @@ export function LearningToggle() {
         <div className="learning-center" role="dialog" aria-label="学习中心面板">
           <div className="learning-center-head">
             <strong>学习中心</strong>
-            <span className="learning-center-sub">双学径 · 每课约三分钟</span>
+            <span className="learning-center-sub">双学径 · 短课配系统讲义</span>
           </div>
 
           {LESSON_TRACKS.map((track) => (
@@ -84,9 +85,9 @@ export function LearningToggle() {
           ))}
 
           <div className="learning-center-foot">
-            <a className="learning-center-link" href="/learn">
+            <Link className="learning-center-link" href="/learn">
               学习馆 · 全部走读文档与术语表 →
-            </a>
+            </Link>
             <span className="learning-center-note">开启期间悬浮界面元素可看讲解</span>
             <button type="button" className="learning-center-off" onClick={closeAll}>
               关闭学习模式
