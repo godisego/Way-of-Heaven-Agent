@@ -86,6 +86,9 @@ npm run dev                  # http://localhost:3000
 ## 四 · 学习馆
 
 学习馆是项目的系统化自学入口：不是把 Markdown 文件平铺成目录，而是把内容组织成三种明确任务。打开 [`http://localhost:3000/learn`](http://localhost:3000/learn) 后，一次只会展示当前选择的任务，切换不会离开页面。
+<img width="2404" height="1354" alt="image" src="https://github.com/user-attachments/assets/f7eb195e-b91f-42ec-a014-7a2ae626b61d" />
+
+
 
 ### 三种学习入口
 
