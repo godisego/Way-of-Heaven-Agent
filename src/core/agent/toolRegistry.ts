@@ -8,6 +8,7 @@
  */
 
 import type { ZodType } from "zod";
+import type { ConfigOverride } from "@/core/config/appConfig";
 import type { EvidenceItem } from "./types";
 import type { EvidenceLedger } from "./evidenceLedger";
 
@@ -20,6 +21,8 @@ export type ToolContext = {
   seenDocumentIds: Set<string>;
   /** 当前步序（登记证据用） */
   stepIndex: number;
+  /** 运行时配置覆盖（前端面板提供）：search_library 据此用用户配置的 embedding */
+  configOverride?: ConfigOverride;
 };
 
 export type ToolResult = {

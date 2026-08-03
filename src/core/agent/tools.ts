@@ -54,7 +54,7 @@ export const searchLibraryTool: ToolDefinition<SearchLibraryArgs> = {
   timeoutMs: 15_000,
   maxCallsPerRun: 4,
   async execute(args, ctx): Promise<ToolResult> {
-    const provider = getDefaultProvider();
+    const provider = getDefaultProvider(ctx.configOverride);
     const { embeddings } = await provider.embedTexts({ texts: [args.query] });
     const topK = args.topK ?? 5;
     const candidateHits = await getVectorStore().search(

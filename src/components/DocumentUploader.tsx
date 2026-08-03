@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { MENTORS } from "@/data/mentors";
+import { providerSettingsApi } from "@/data/providerSettingsStore";
 
 /** 从三贤专库汇总标签，并保留斯多葛等扩展传统 */
 const TRADITION_OPTIONS: Array<{ value: string; label: string }> = (() => {
@@ -37,6 +38,9 @@ export function DocumentUploader() {
       form.append("file", file);
       if (bookTitle.trim()) form.append("bookTitle", bookTitle.trim());
       if (tradition.trim()) form.append("tradition", tradition.trim());
+      // 附带前端面板的 embedding 设置（切真实模型时用用户配置）
+      const settings = await providerSettingsApi.load();
+      form.append("settings", JSON.stringify(settings));
 
       const response = await fetch("/api/ingest", { method: "POST", body: form });
       const data = await response.json();

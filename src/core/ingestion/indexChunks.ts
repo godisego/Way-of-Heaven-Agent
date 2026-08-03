@@ -1,14 +1,15 @@
 import { getDocument, updateChunkVector } from "@/core/documents/documentRepository";
 import type { ChunkRow } from "@/core/documents/documentTypes";
 import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";
+import type { ConfigOverride } from "@/core/config/appConfig";
 import { getLocalVectorStore } from "@/core/vector/localJsonVectorStore";
 import type { VectorRecord } from "@/core/vector/vectorStore";
 
 const BATCH_SIZE = 32;
 
-export async function indexChunks(chunks: ChunkRow[]) {
+export async function indexChunks(chunks: ChunkRow[], configOverride?: ConfigOverride) {
   if (!chunks.length) return;
-  const provider = getDefaultProvider();
+  const provider = getDefaultProvider(configOverride);
   // 入库始终先写本地索引；Supabase 是本地快照的同步/读取后端。
   // 否则 VECTOR_BACKEND=supabase 时会尝试更新尚不存在的云端 chunk 行。
   const vectorStore = getLocalVectorStore();

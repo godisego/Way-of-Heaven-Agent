@@ -12,6 +12,7 @@
  */
 
 import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";
+import { mergeConfig, type ConfigOverride } from "@/core/config/appConfig";
 import type { GenerateAnswerInput, GenerateAnswerResult } from "@/core/providers/llmProvider";
 import type { UserProfile } from "@/data/userProfile";
 import { parseMentorDialogue } from "@/data/mentors";
@@ -24,8 +25,7 @@ import { ToolRegistry, type ToolHooks } from "./toolRegistry";
 import { defaultTools } from "./tools";
 import {
   AnthropicToolTransport,
-  toolResultTurn,
-  userTurn,
+  OpenAIToolTransport,
   type ToolTransport,
   type TransportTurn,
 } from "./transport";
@@ -53,6 +53,7 @@ const GATHERING_SYSTEM = `你是「天道茶寮」的取证调度者（不是三
 
 type DraftProvider = {
   generateAnswer(input: GenerateAnswerInput): Promise<GenerateAnswerResult>;
+  streamAnswer?(input: GenerateAnswerInput, onToken: (delta: string) => void): Promise<GenerateAnswerResult>;
 };
 
 export type RunAgentOptions = {
@@ -64,6 +65,8 @@ export type RunAgentOptions = {
   onEvent?: (event: AgentEvent) => void;
   signal?: AbortSignal;
   conversationContext?: string;
+  /** 运行时配置覆盖（前端面板提供）：透传给 transport/draftProvider/search_library 工具 */
+  configOverride?: ConfigOverride;
 };
 
 function sanitizeArgs(args: unknown): Record<string, unknown> | undefined {
@@ -77,6 +80,23 @@ function sanitizeArgs(args: unknown): Record<string, unknown> | undefined {
   return out;
 }
 
+/**
+ * 三贤正文生成：优先走 provider 的流式接口，每个 delta 即时 emit；
+ * provider 不支持流式时回退到 generateAnswer（行为与 v1 一致）。
+ * 返回完整文本（调用方负责 trim）。
+ */
+async function draftAnswer(
+  provider: DraftProvider,
+  input: GenerateAnswerInput,
+  emit: (event: AgentEvent) => void,
+): Promise<string> {
+  if (typeof provider.streamAnswer === "function") {
+    const result = await provider.streamAnswer(input, (delta) => emit({ type: "delta", text: delta }));
+    return result.text;
+  }
+  return (await provider.generateAnswer(input)).text;
+}
+
 export async function runAgentLoop(
   question: string,
   userProfile: UserProfile | null,
@@ -87,7 +107,13 @@ export async function runAgentLoop(
   const ledger = new EvidenceLedger();
   const seenDocumentIds = new Set<string>();
   const registry = opts.registry ?? new ToolRegistry(defaultTools(), opts.hooks);
-  const transport = opts.transport ?? new AnthropicToolTransport();
+  // 按聊天协议选 transport：openai 用 function calling，anthropic 用原生 tool use
+  const mergedConfig = mergeConfig(opts.configOverride);
+  const transport =
+    opts.transport ??
+    (mergedConfig.chatProtocol === "anthropic"
+      ? new AnthropicToolTransport(opts.configOverride ?? null)
+      : new OpenAIToolTransport(opts.configOverride ?? null));
 
   const steps: TraceStep[] = [];
   let toolCalls = 0;
@@ -95,13 +121,12 @@ export async function runAgentLoop(
   let stopReason: StopReason = "max_steps";
   let insufficientMissing: string | undefined;
   const seenCalls = new Set<string>();
-  const turns: TransportTurn[] = [
-    userTurn(
-      opts.conversationContext?.trim()
-        ? `此前对谈上下文（只用于理解本轮追问，不是典籍证据）：\n${opts.conversationContext.trim()}\n\n本轮问者的困惑：${question}`
-        : `问者的困惑：${question}`,
-    ),
-  ];
+  const turns: TransportTurn[] = transport.appendUserTurn(
+    [],
+    opts.conversationContext?.trim()
+      ? `此前对谈上下文（只用于理解本轮追问，不是典籍证据）：\n${opts.conversationContext.trim()}\n\n本轮问者的困惑：${question}`
+      : `问者的困惑：${question}`,
+  );
 
   const emit = (event: AgentEvent) => opts.onEvent?.(event);
   const pushStep = (step: Omit<TraceStep, "index">) => {
@@ -188,6 +213,7 @@ export async function runAgentLoop(
         question,
         seenDocumentIds,
         stepIndex,
+        configOverride: opts.configOverride,
       });
       const evidenceIds = result.evidence
         .map((e) => ledger.idOf(e.chunkId))
@@ -203,8 +229,11 @@ export async function runAgentLoop(
         error: result.isError ? result.observationSummary.slice(0, 120) : undefined,
       });
 
-      turns.push({ role: "assistant", content: decision.assistantContent });
-      turns.push(toolResultTurn(decision.toolUseId, result.observationForModel));
+      // 各协议的 assistant / tool_result turn 形状不同，交由 transport 构造
+      let nextTurns = transport.appendAssistantTurn(turns, decision.assistantContent);
+      nextTurns = transport.appendToolResult(nextTurns, decision.toolUseId, result.observationForModel);
+      turns.length = 0;
+      turns.push(...nextTurns);
     }
   } catch (error) {
     stopReason = opts.signal?.aborted ? "cancelled" : "failed";
@@ -231,12 +260,14 @@ export async function runAgentLoop(
     finalState = "insufficient";
     answer = buildNoEvidenceAnswer(insufficientMissing, userProfile);
   } else {
-    const provider: DraftProvider = opts.draftProvider ?? getDefaultProvider();
+    const provider: DraftProvider = opts.draftProvider ?? getDefaultProvider(opts.configOverride);
     const context = buildContext(ledger.records());
 
     const tDraft = Date.now();
     modelCalls += 1;
-    answer = (await provider.generateAnswer({ question, context, userProfile, conversationContext: opts.conversationContext })).text.trim();
+    answer = (
+      await draftAnswer(provider, { question, context, userProfile, conversationContext: opts.conversationContext }, emit)
+    ).trim();
     pushStep({
       phase: "draft",
       observationSummary: `三贤生成完成（证据 ${ledger.count()} 条进入 Sources）`,
@@ -259,13 +290,17 @@ export async function runAgentLoop(
       retried = true;
       modelCalls += 1;
       answer = (
-        await provider.generateAnswer({
-          question: `${question}\n\n上一次回应存在以下问题，请整组重写并逐条修正（保持三段格式与各自声口）：\n${problems.join("\n")}`,
-          context,
-          userProfile,
-          conversationContext: opts.conversationContext,
-        })
-      ).text.trim();
+        await draftAnswer(
+          provider,
+          {
+            question: `${question}\n\n上一次回应存在以下问题，请整组重写并逐条修正（保持三段格式与各自声口）：\n${problems.join("\n")}`,
+            context,
+            userProfile,
+            conversationContext: opts.conversationContext,
+          },
+          emit,
+        )
+      ).trim();
       citations = validateCitations(answer, ledger.records());
       voiceViolations = checkVoice(parseMentorDialogue(answer));
     }

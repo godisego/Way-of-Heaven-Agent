@@ -77,9 +77,15 @@ export const DEFAULT_AGENT_LIMITS: AgentLimits = {
   totalTimeoutMs: 90_000,
 };
 
-/** 事件流（Pi 式）：v1 由 API 层聚合返回；将来 SSE 逐步推送时内核零改动 */
+/**
+ * 事件流（Pi 式）：v1 由 API 层聚合返回；SSE 逐步推送时内核零改动。
+ * - step：取证/生成/校验阶段的结构化步骤（轨迹面板逐条填充）；
+ * - delta：三贤正文生成的文本增量（SSE 下逐字外发，v1 内部聚合）；
+ * - stop/done：收束信号。
+ */
 export type AgentEvent =
   | { type: "step"; step: TraceStep }
+  | { type: "delta"; text: string }
   | { type: "stop"; stopReason: StopReason }
   | { type: "done"; state: AgentState };
 

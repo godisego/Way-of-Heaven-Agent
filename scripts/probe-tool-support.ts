@@ -1,9 +1,11 @@
 /**
- * M0 探测：CHAT_BASE_URL 端点是否支持 Anthropic 原生 tool use。
+ * M0 探测：聊天端点是否支持工具调用（tool use / function calling）。
  *
- * 运行：npm run probe:tools   （读取 .env.local，约 5 秒出结论）
- * 支持   → AnthropicToolTransport 可直接用（agent-loop-design.md 方案 A）
- * 不支持 → 需要补 JSON 协议 Transport（方案 B），循环本体不受影响
+ * 按聊天协议自动分支：
+ * - anthropic 协议（/v1/messages）→ 探测原生 tool_use
+ * - openai 协议（/chat/completions）→ 探测 function calling
+ *
+ * 运行：npm run probe:tools（读取 .env.local，约 5 秒出结论）
  */
 
 import fs from "node:fs";
@@ -21,13 +23,25 @@ if (fs.existsSync(envPath)) {
 const baseUrl = (process.env.CHAT_BASE_URL ?? "").replace(/\/$/, "");
 const apiKey = process.env.CHAT_API_KEY ?? "";
 const model = process.env.CHAT_MODEL ?? "";
+// 协议：env 显式指定优先，否则按 baseUrl 含 /anthropic 推断
+const protocol =
+  (process.env.CHAT_PROTOCOL ?? "").toLowerCase() === "anthropic" ||
+  baseUrl.includes("/anthropic")
+    ? "anthropic"
+    : "openai";
 
 async function main() {
   if (!baseUrl || !apiKey || !model) {
     console.error("缺少 CHAT_BASE_URL / CHAT_API_KEY / CHAT_MODEL（检查 .env.local）");
     process.exit(2);
   }
-  console.log(`端点：${baseUrl}  模型：${model}`);
+  console.log(`端点：${baseUrl}  模型：${model}  协议：${protocol}`);
+  if (protocol === "anthropic") return probeAnthropic();
+  return probeOpenAI();
+}
+
+/** 探测 Anthropic 原生 tool use（/v1/messages） */
+async function probeAnthropic() {
   const response = await fetch(`${baseUrl}/v1/messages`, {
     method: "POST",
     headers: {
@@ -55,7 +69,7 @@ async function main() {
 
   if (!response.ok) {
     console.error(`HTTP ${response.status}：${await response.text()}`);
-    console.error("结论：请求被拒——检查端点是否接受 tools 参数（可能需要方案 B：JSON 协议 Transport）。");
+    console.error("结论：请求被拒——检查端点是否接受 tools 参数。");
     process.exit(1);
   }
   const data = (await response.json()) as {
@@ -64,12 +78,62 @@ async function main() {
   };
   const toolUse = (data.content ?? []).find((b) => b.type === "tool_use");
   if (toolUse) {
-    console.log(`✅ 支持原生 tool use：模型调用了 ${toolUse.name}，参数 ${JSON.stringify(toolUse.input)}`);
-    console.log(`   stop_reason=${data.stop_reason}。AnthropicToolTransport（方案 A）可用。`);
+    console.log(`✅ 支持 Anthropic 原生 tool use：模型调用了 ${toolUse.name}，参数 ${JSON.stringify(toolUse.input)}`);
+    console.log(`   stop_reason=${data.stop_reason}。AnthropicToolTransport 可用。`);
   } else {
     console.log("❌ 未返回 tool_use 块。原始 content：");
     console.log(JSON.stringify(data.content, null, 2).slice(0, 1200));
-    console.log("结论：端点可能不支持 tools——需要方案 B（JSON 协议 Transport），告诉 Claude 补上。");
+    process.exit(1);
+  }
+}
+
+/** 探测 OpenAI function calling（/chat/completions） */
+async function probeOpenAI() {
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 256,
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "echo",
+            description: "原样返回 text 参数。测试工具调用能力时必须调用它。",
+            parameters: {
+              type: "object",
+              properties: { text: { type: "string" } },
+              required: ["text"],
+            },
+          },
+        },
+      ],
+      messages: [{ role: "user", content: "请调用 echo 工具，text 参数传「天道」。只调用工具。" }],
+    }),
+  });
+
+  if (!response.ok) {
+    console.error(`HTTP ${response.status}：${await response.text()}`);
+    console.error("结论：请求被拒——检查端点是否接受 tools 参数。");
+    process.exit(1);
+  }
+  const data = (await response.json()) as {
+    choices?: Array<{
+      finish_reason?: string;
+      message?: { tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: string } }> };
+    }>;
+  };
+  const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.name) {
+    console.log(`✅ 支持 OpenAI function calling：模型调用了 ${toolCall.function.name}，参数 ${toolCall.function.arguments}`);
+    console.log(`   finish_reason=${data.choices?.[0]?.finish_reason}。OpenAIToolTransport 可用。`);
+  } else {
+    console.log("❌ 未返回 tool_calls。原始响应：");
+    console.log(JSON.stringify(data, null, 2).slice(0, 1200));
     process.exit(1);
   }
 }

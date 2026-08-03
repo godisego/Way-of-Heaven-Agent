@@ -1,0 +1,180 @@
+/**
+ * 供应商预设：内置常见供应商的 baseUrl 与协议风格，减少手填。
+ *
+ * 协议风格（authStyle）决定 /api/models 与实际请求的鉴权头：
+ * - "anthropic"：x-api-key 头；聊天走此风格（Anthropic /messages 兼容）
+ * - "openai"：Authorization: Bearer 头；嵌入走此风格（OpenAI /embeddings 兼容）
+ *
+ * 注意：聊天与嵌入分属不同协议。聊天面板只列聊天预设，嵌入面板只列嵌入预设。
+ */
+
+export type ProviderKind = "chat" | "embedding";
+export type AuthStyle = "anthropic" | "openai";
+
+export type ProviderPreset = {
+  id: string;
+  /** 显示名 */
+  label: string;
+  /** 聊天还是嵌入 */
+  kind: ProviderKind;
+  /** 默认 Base URL（用户可改） */
+  baseUrl: string;
+  /** 鉴权头风格 */
+  authStyle: AuthStyle;
+  /** 该供应商是否提供可拉取的 /models 列表（无则前端回退手填） */
+  supportsModelList: boolean;
+  /** 预填的常用模型名（用户可改 / 覆盖） */
+  defaultModel?: string;
+};
+
+/**
+ * 聊天供应商预设（Anthropic /messages 兼容协议）。
+ * 项目默认端点是 MiniMax 的 /anthropic 入口。
+ */
+export const CHAT_PRESETS: ProviderPreset[] = [
+  {
+    id: "minimax",
+    label: "MiniMax（Anthropic 兼容）",
+    kind: "chat",
+    baseUrl: "https://api.minimaxi.com/anthropic",
+    authStyle: "anthropic",
+    supportsModelList: false,
+    defaultModel: "MiniMax-M3",
+  },
+  {
+    id: "anthropic",
+    label: "Anthropic 官方",
+    kind: "chat",
+    baseUrl: "https://api.anthropic.com",
+    authStyle: "anthropic",
+    supportsModelList: true,
+    defaultModel: "claude-3-5-sonnet-20241022",
+  },
+  {
+    id: "deepseek",
+    label: "DeepSeek",
+    kind: "chat",
+    baseUrl: "https://api.deepseek.com",
+    authStyle: "openai",
+    supportsModelList: true,
+    defaultModel: "deepseek-chat",
+  },
+  {
+    id: "openai-chat",
+    label: "OpenAI",
+    kind: "chat",
+    baseUrl: "https://api.openai.com/v1",
+    authStyle: "openai",
+    supportsModelList: true,
+    defaultModel: "gpt-4o",
+  },
+  {
+    id: "dashscope-chat",
+    label: "通义千问（DashScope）",
+    kind: "chat",
+    baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    authStyle: "openai",
+    supportsModelList: true,
+    defaultModel: "qwen-plus",
+  },
+  {
+    id: "zhipu-chat",
+    label: "智谱（GLM）",
+    kind: "chat",
+    baseUrl: "https://open.bigmodel.cn/api/paas/v4",
+    authStyle: "openai",
+    supportsModelList: false,
+    defaultModel: "glm-4-plus",
+  },
+  {
+    id: "moonshot",
+    label: "Kimi（Moonshot）",
+    kind: "chat",
+    baseUrl: "https://api.moonshot.cn/v1",
+    authStyle: "openai",
+    supportsModelList: true,
+    defaultModel: "moonshot-v1-8k",
+  },
+  {
+    id: "siliconflow",
+    label: "硅基流动",
+    kind: "chat",
+    baseUrl: "https://api.siliconflow.cn/v1",
+    authStyle: "openai",
+    supportsModelList: true,
+    defaultModel: "Qwen/Qwen2.5-7B-Instruct",
+  },
+  {
+    id: "ollama",
+    label: "本地 Ollama",
+    kind: "chat",
+    baseUrl: "http://localhost:11434/v1",
+    authStyle: "openai",
+    supportsModelList: true,
+    defaultModel: "llama3.1",
+  },
+  {
+    id: "custom-chat",
+    label: "自定义",
+    kind: "chat",
+    baseUrl: "",
+    authStyle: "openai",
+    supportsModelList: false,
+  },
+];
+
+/** 嵌入供应商预设（OpenAI /embeddings 兼容协议）。 */
+export const EMBEDDING_PRESETS: ProviderPreset[] = [
+  {
+    id: "openai-embed",
+    label: "OpenAI",
+    kind: "embedding",
+    baseUrl: "https://api.openai.com/v1",
+    authStyle: "openai",
+    supportsModelList: true,
+    defaultModel: "text-embedding-3-large",
+  },
+  {
+    id: "minimax-embed",
+    label: "MiniMax（OpenAI 兼容）",
+    kind: "embedding",
+    baseUrl: "https://api.minimaxi.com/v1",
+    authStyle: "openai",
+    supportsModelList: false,
+    defaultModel: "embo-01",
+  },
+  {
+    id: "zhipu",
+    label: "智谱（embedding-3）",
+    kind: "embedding",
+    baseUrl: "https://open.bigmodel.cn/api/paas/v4",
+    authStyle: "openai",
+    supportsModelList: false,
+    defaultModel: "embedding-3",
+  },
+  {
+    id: "dashscope",
+    label: "通义千问（DashScope）",
+    kind: "embedding",
+    baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    authStyle: "openai",
+    supportsModelList: true,
+    defaultModel: "text-embedding-v3",
+  },
+  {
+    id: "custom-embed",
+    label: "自定义",
+    kind: "embedding",
+    baseUrl: "",
+    authStyle: "openai",
+    supportsModelList: false,
+  },
+];
+
+export function presetsFor(kind: ProviderKind): ProviderPreset[] {
+  return kind === "chat" ? CHAT_PRESETS : EMBEDDING_PRESETS;
+}
+
+export function findPreset(kind: ProviderKind, id: string): ProviderPreset | undefined {
+  return presetsFor(kind).find((p) => p.id === id);
+}

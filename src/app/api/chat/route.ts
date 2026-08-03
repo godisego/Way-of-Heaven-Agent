@@ -5,6 +5,7 @@ import { answerQuestion } from "@/core/retrieval/answerWithCitations";
 import { runAgentLoop } from "@/core/agent/orchestrator";
 import { buildConversationContext, sessionApi } from "@/data/sessionStore";
 import { prepareUserProfileForAgent, type UserProfile } from "@/data/userProfile";
+import { parseSettingsOverride } from "@/core/config/settingsMapping";
 
 export async function POST(request: Request) {
   try {
@@ -22,12 +23,14 @@ export async function POST(request: Request) {
     const previousMessages = sessionApi.getMessages(activeSession.id);
     const conversationContext = buildConversationContext(previousMessages);
     sessionApi.appendMessage(activeSession.id, { role: "user", content: question, citations: [] });
+    const configOverride = parseSettingsOverride(body.settings);
 
     // M5 已完成人工验收：默认走受控工具循环；显式 mode="rag" 时保留固定链路。
     if (body.mode !== "rag") {
       const answer = await runAgentLoop(question, safeProfile, {
         signal: request.signal,
         conversationContext,
+        configOverride,
       });
       sessionApi.appendMessage(activeSession.id, {
         role: "assistant",
@@ -38,7 +41,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ...answer, sessionId: activeSession.id });
     }
 
-    const answer = await answerQuestion(question, safeProfile, conversationContext);
+    const answer = await answerQuestion(question, safeProfile, conversationContext, configOverride);
     sessionApi.appendMessage(activeSession.id, {
       role: "assistant",
       content: answer.answerMarkdown,

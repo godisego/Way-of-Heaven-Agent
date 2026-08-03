@@ -9,6 +9,8 @@ export type AppConfig = {
   chatBaseUrl: string;
   chatApiKey: string;
   chatModel: string;
+  /** 聊天协议：anthropic（/v1/messages）或 openai（/chat/completions）。默认 openai（市面主流） */
+  chatProtocol: "anthropic" | "openai";
   // Embedding（OpenAI 兼容 /embeddings 协议，比如 ggniao /v1）
   openAICompatBaseUrl: string;
   openAICompatApiKey: string;
@@ -38,6 +40,8 @@ export function getAppConfig(): AppConfig {
     chatBaseUrl: process.env.CHAT_BASE_URL ?? "https://api.minimaxi.com/anthropic",
     chatApiKey: process.env.CHAT_API_KEY ?? "",
     chatModel: process.env.CHAT_MODEL ?? "MiniMax-M3",
+    // 聊天协议：env 可显式指定；默认按 CHAT_BASE_URL 推断（含 /anthropic 走 anthropic，否则 openai）
+    chatProtocol: resolveChatProtocol(),
     // Embedding 仍走 OpenAI 兼容端点（如 ggniao）
     openAICompatBaseUrl: process.env.OPENAI_COMPAT_BASE_URL ?? "https://api.openai.com/v1",
     openAICompatApiKey: process.env.OPENAI_COMPAT_API_KEY ?? "",
@@ -47,4 +51,40 @@ export function getAppConfig(): AppConfig {
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
     supabaseDocumentsBucket: process.env.SUPABASE_DOCUMENTS_BUCKET ?? "documents",
   };
+}
+
+/**
+ * 运行时配置覆盖（前端面板提供，随请求体传入）。
+ * 仅覆盖聊天/嵌入相关字段；dataDir/supabase 等保持 env（与 CLI 脚本一致）。
+ * 空覆盖 → mergeConfig 回退到 getAppConfig()，行为与 v1 完全一致。
+ */
+export type ConfigOverride = Partial<
+  Pick<
+    AppConfig,
+    | "chatBaseUrl"
+    | "chatApiKey"
+    | "chatModel"
+    | "chatProtocol"
+    | "openAICompatBaseUrl"
+    | "openAICompatApiKey"
+    | "embeddingModel"
+  >
+>;
+
+/** 环境配置 ⊕ 运行时覆盖（覆盖优先）。provider/transport 构造时统一走这里。 */
+export function mergeConfig(override?: ConfigOverride | null): AppConfig {
+  const base = getAppConfig();
+  if (!override) return base;
+  return { ...base, ...override };
+}
+
+/**
+ * 推断聊天协议：env 显式指定优先；否则按 CHAT_BASE_URL 是否含 /anthropic 判断。
+ * 含 /anthropic 的端点（如 minimax 官方入口）用 anthropic 协议；其余默认 openai。
+ */
+function resolveChatProtocol(): "anthropic" | "openai" {
+  const explicit = (process.env.CHAT_PROTOCOL ?? "").toLowerCase();
+  if (explicit === "anthropic" || explicit === "openai") return explicit;
+  const baseUrl = process.env.CHAT_BASE_URL ?? "";
+  return baseUrl.includes("/anthropic") ? "anthropic" : "openai";
 }

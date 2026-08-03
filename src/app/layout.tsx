@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
 import "./globals.css";
 import "@/components/learning/learning.css";
+import "@/components/settings/settings.css";
 import { LearningProvider } from "@/components/learning/LearningProvider";
+import { ProviderSettings } from "@/components/settings/ProviderSettings";
 
 export const metadata: Metadata = {
   title: "天道茶寮",
@@ -18,7 +20,10 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="zh-CN">
       <body style={bodyFontVars}>
-        <LearningProvider>{children}</LearningProvider>
+        <LearningProvider>
+          {children}
+          <ProviderSettings />
+        </LearningProvider>
       </body>
     </html>
   );

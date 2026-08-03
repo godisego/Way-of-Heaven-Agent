@@ -1,4 +1,5 @@
 import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";
+import type { ConfigOverride } from "@/core/config/appConfig";
 import { getMentor, parseMentorDialogue } from "@/data/mentors";
 import { buildScopedContext, searchChunksForMentors } from "./retrieveContext";
 import {
@@ -47,8 +48,9 @@ export async function answerQuestion(
   question: string,
   userProfile?: import("@/data/userProfile").UserProfile | null,
   conversationContext?: string,
+  configOverride?: ConfigOverride,
 ): Promise<RagAnswer> {
-  const scoped = await searchChunksForMentors(question, 4);
+  const scoped = await searchChunksForMentors(question, 4, configOverride);
   const retrieved = {
     hu: scoped.byMentor.hu.length,
     li: scoped.byMentor.li.length,
@@ -68,7 +70,7 @@ export async function answerQuestion(
     };
   }
 
-  const provider = getDefaultProvider();
+  const provider = getDefaultProvider(configOverride);
   const context = buildScopedContext(scoped);
   let answer = (await provider.generateAnswer({ question, context, userProfile, conversationContext })).text.trim();
   let outcome = validateCitationsByMentor(answer, scoped);

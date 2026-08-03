@@ -12,10 +12,13 @@ import {
 } from "@/data/mentors";
 import { TAVERN_DEMO_HINTS } from "@/data/tavernDemoReplies";
 import { userProfileApi } from "@/data/userProfileStore";
-import { isProfileComplete } from "@/data/userProfile";
+import { providerSettingsApi } from "@/data/providerSettingsStore";
+import type { ProviderSettings } from "@/data/providerSettings";
+import { isProfileComplete, type UserProfile } from "@/data/userProfile";
 import { TracePanel } from "./TracePanel";
 import { useLearning } from "./learning/LearningProvider";
-import type { AgentTrace } from "@/core/agent/types";
+import { readSseStream } from "./streamSse";
+import type { AgentTrace, TraceStep } from "@/core/agent/types";
 import type { RagPipelineNotes } from "@/core/retrieval/answerWithCitations";
 
 type Message = {
@@ -45,6 +48,20 @@ function toMessages(messages: StoredMessage[]): Message[] {
   }));
 }
 
+/** 流式中给一条助手消息追加轨迹步骤（trace 缺省时建空壳）。 */
+function appendStep(trace: AgentTrace | undefined, step: TraceStep): AgentTrace {
+  return {
+    mode: "agent",
+    runId: trace?.runId ?? "streaming",
+    startedAt: trace?.startedAt ?? new Date().toISOString(),
+    durationMs: trace?.durationMs ?? 0,
+    stopReason: trace?.stopReason ?? "ready",
+    finalState: trace?.finalState ?? "completed",
+    steps: [...(trace?.steps ?? []), step],
+    totals: trace?.totals ?? { toolCalls: 0, evidenceCount: 0, modelCalls: 0 },
+  };
+}
+
 export function ChatPanel() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -59,6 +76,10 @@ export function ChatPanel() {
   const [renameValue, setRenameValue] = useState("");
   const { enabled: learningOn } = useLearning();
   const listRef = useRef<HTMLDivElement>(null);
+  /** 流式中：已收到首个事件（步骤/正文）但 final 帧未到。用于把等待动画换成实时内容。 */
+  const [streaming, setStreaming] = useState(false);
+  /** 当前一轮的取消句柄；流式 agent 模式下用于「停止」。 */
+  const abortRef = useRef<AbortController | null>(null);
 
   const loadSession = useCallback(async (id: string) => {
     setSessionBusy(true);
@@ -214,35 +235,150 @@ export function ChatPanel() {
       return;
     }
 
+    const usingStream = agentMode;
+    // 流式：先插入一条占位助手消息，后续增量更新它的 content/trace/citations。
+    // trace 不预置——首个 step 事件到达时由 appendStep 建壳（此时 typing 让位于面板）。
+    if (usingStream) {
+      setMessages((prev) => [...prev, { role: "assistant", content: "" } as Message]);
+    }
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       const saved = await userProfileApi.load();
       const userProfile = isProfileComplete(saved) ? saved : null;
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ question, userProfile, sessionId, mode: agentMode ? "agent" : "rag" }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error ?? "未能得答");
-        return;
+      // 每次发问读取最新供应商设置（面板可能刚改过），随请求传服务端覆盖 env
+      const settings = await providerSettingsApi.load();
+
+      if (usingStream) {
+        await streamAgentReply(question, userProfile, sessionId, settings, controller.signal);
+      } else {
+        // RAG 模式：一次性 JSON（保持原行为，作为固定对照）
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ question, userProfile, sessionId, mode: "rag", settings }),
+          signal: controller.signal,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          setError(data.error ?? "未能得答");
+          return;
+        }
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: data.answerMarkdown ?? "",
+            citations: data.citations ?? [],
+            pipeline: data.pipeline,
+          },
+        ]);
+        if (typeof data.sessionId === "string") setSessionId(data.sessionId);
+        await refreshSessions();
       }
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: data.answerMarkdown ?? "",
-          citations: data.citations ?? [],
-          trace: data.trace,
-          pipeline: data.pipeline,
-        },
-      ]);
-      if (typeof data.sessionId === "string") setSessionId(data.sessionId);
-      await refreshSessions();
     } catch (err) {
+      // 用户主动取消不算错误
+      if (controller.signal.aborted) return;
       setError(err instanceof Error ? err.message : "未能得答");
     } finally {
+      abortRef.current = null;
       setBusy(false);
+      setStreaming(false);
+    }
+  }
+
+  /**
+   * agent 流式：消费 /api/chat/stream 的 SSE 帧，逐帧更新最后一条助手消息。
+   * - step → 追加轨迹步骤；首个事件到达后，把等待动画切换为实时内容（streaming=true）；
+   * - delta → 追加正文文本；
+   * - final → 写入完整 citations / trace / sessionId（覆盖占位）；
+   * - error → 抛出，交由 ask 的 catch 处理。
+   */
+  async function streamAgentReply(
+    question: string,
+    userProfile: UserProfile | null,
+    currentSessionId: string,
+    settings: ProviderSettings,
+    signal: AbortSignal,
+  ) {
+    const response = await fetch("/api/chat/stream", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ question, userProfile, sessionId: currentSessionId, mode: "agent", settings }),
+      signal,
+    });
+
+    if (!response.ok) {
+      // 非流式错误（如 400/404）：尝试读 JSON 错误体
+      let message = "未能得答";
+      try {
+        const data = await response.json();
+        if (data?.error) message = String(data.error);
+      } catch {
+        /* 忽略，用默认 message */
+      }
+      throw new Error(message);
+    }
+    if (!response.body) throw new Error("浏览器不支持流式读取");
+
+    // 末尾助手消息的索引（流式开始时已插入占位）
+    const lastAssistantIndex = -1;
+    let touched = false;
+
+    await readSseStream(response.body, (event) => {
+      if (!touched) {
+        touched = true;
+        setStreaming(true);
+      }
+      switch (event.type) {
+        case "step":
+          updateLastAssistant((msg) => ({
+            ...msg,
+            trace: appendStep(msg.trace, event.step as AgentTrace["steps"][number]),
+          }));
+          break;
+        case "delta":
+          if (typeof event.text === "string") {
+            updateLastAssistant((msg) => ({ ...msg, content: msg.content + (event.text as string) }));
+          }
+          break;
+        case "final": {
+          const final = event as {
+            answerMarkdown?: string;
+            citations?: Citation[];
+            trace?: AgentTrace;
+            usedContext?: unknown;
+            sessionId?: string;
+          };
+          updateLastAssistant((msg) => ({
+            ...msg,
+            content: typeof final.answerMarkdown === "string" ? final.answerMarkdown : msg.content,
+            citations: Array.isArray(final.citations) ? final.citations : msg.citations,
+            trace: final.trace ?? msg.trace,
+          }));
+          if (typeof final.sessionId === "string") setSessionId(final.sessionId);
+          void refreshSessions();
+          break;
+        }
+        case "error":
+          throw new Error(typeof event.message === "string" ? event.message : "流式问答失败");
+        default:
+          break; // stop / done / end 忽略
+      }
+    }, signal);
+
+    // 记录 lastAssistantIndex 给闭包（上面用 -1 标记「最后一条」）
+    function updateLastAssistant(updater: (msg: Message) => Message) {
+      setMessages((prev) => {
+        const next = [...prev];
+        const idx = next.length + lastAssistantIndex;
+        if (idx >= 0 && next[idx]?.role === "assistant") {
+          next[idx] = updater(next[idx]);
+        }
+        return next;
+      });
     }
   }
 
@@ -417,7 +553,7 @@ export function ChatPanel() {
           ),
         )}
 
-        {busy ? (
+        {busy && !streaming ? (
           <div className="typing-row">
             {DIALOGUE_MENTORS.map((m) => (
               <div key={m.id} className="typing-pill">
@@ -425,6 +561,17 @@ export function ChatPanel() {
                 <span>{m.shortName}在想…</span>
               </div>
             ))}
+          </div>
+        ) : null}
+        {busy && streaming ? (
+          <div className="streaming-stop">
+            <button
+              type="button"
+              className="room-stop"
+              onClick={() => abortRef.current?.abort()}
+            >
+              停止生成
+            </button>
           </div>
         ) : null}
       </div>

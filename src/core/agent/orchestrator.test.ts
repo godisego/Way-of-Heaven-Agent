@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { runAgentLoop } from "./orchestrator";
 import { ToolRegistry, type ToolDefinition, type ToolResult } from "./toolRegistry";
-import type { ToolTransport, TransportDecision } from "./transport";
+import type { ToolTransport, TransportDecision, TransportTurn } from "./transport";
 import type { AgentEvent, EvidenceItem } from "./types";
 import { parseMentorDialogue } from "@/data/mentors";
 
-/** 脚本化 Transport：按预设序列吐决策，零 token 复现循环行为 */
+/** 脚本化 Transport：按预设序列吐决策，零 token 复现循环行为。
+ *  turn 构造沿用 Anthropic 协议格式（与实际 AnthropicToolTransport 一致）。 */
 class ScriptedTransport implements ToolTransport {
   private queue: TransportDecision[];
   calls = 0;
@@ -18,6 +19,18 @@ class ScriptedTransport implements ToolTransport {
     const next = this.queue.shift();
     if (!next) throw new Error("ScriptedTransport 脚本耗尽");
     return next;
+  }
+  appendUserTurn(turns: TransportTurn[], text: string): TransportTurn[] {
+    return [...turns, { role: "user", content: text }];
+  }
+  appendAssistantTurn(turns: TransportTurn[], assistantContent: unknown): TransportTurn[] {
+    return [...turns, { role: "assistant", content: assistantContent }];
+  }
+  appendToolResult(turns: TransportTurn[], toolUseId: string, observation: string): TransportTurn[] {
+    return [
+      ...turns,
+      { role: "user", content: [{ type: "tool_result", tool_use_id: toolUseId, content: observation }] },
+    ];
   }
 }
 
@@ -74,18 +87,26 @@ const GOOD_ANSWER = `【盲派算师·老胡】
 【主事·玄】
 两位说的是一件事。这周只做一件：停下搅浑水的手。贫道听着。且去，莫急。`;
 
-function draftStub(answers: string[] = [GOOD_ANSWER]) {
+function draftStub(answers: string[] = [GOOD_ANSWER], opts: { stream?: boolean } = {}) {
   const queue = [...answers];
   const calls: string[] = [];
-  return {
-    calls,
-    provider: {
-      async generateAnswer(input: { question: string }) {
-        calls.push(input.question);
-        return { text: queue.shift() ?? GOOD_ANSWER };
-      },
+  const base = {
+    async generateAnswer(input: { question: string }) {
+      calls.push(input.question);
+      return { text: queue.shift() ?? GOOD_ANSWER };
     },
   };
+  // 流式版：把答案按字符切片逐字推送（模拟 token delta），返回完整文本。
+  const streaming = {
+    ...base,
+    async streamAnswer(input: { question: string }, onToken: (delta: string) => void) {
+      calls.push(input.question);
+      const full = queue.shift() ?? GOOD_ANSWER;
+      for (const ch of Array.from(full)) onToken(ch);
+      return { text: full };
+    },
+  };
+  return { calls, provider: opts.stream ? streaming : base };
 }
 
 function registryWith() {
@@ -234,5 +255,70 @@ describe("runAgentLoop（受控取证循环）", () => {
     expect(stub.calls[1]).toContain("命理语汇");
     expect(r.citations).toHaveLength(1);
     expect(r.trace.finalState).toBe("completed");
+  });
+
+  it("流式 provider：delta 事件逐字外发，最终 answerMarkdown 完整一致", async () => {
+    const stub = draftStub([GOOD_ANSWER], { stream: true });
+    const events: AgentEvent[] = [];
+    const r = await runAgentLoop("我该守还是动？", null, {
+      transport: new ScriptedTransport([
+        toolCall("search_library", { query: "进退" }),
+        toolCall("ready_to_answer", { sufficient: true }),
+      ]),
+      registry: registryWith(),
+      draftProvider: stub.provider,
+      onEvent: (e) => events.push(e),
+    });
+    const deltas = events.filter((e) => e.type === "delta") as Extract<AgentEvent, { type: "delta" }>[];
+    // 每个字符都推了一次，拼起来等于最终正文
+    expect(deltas.length).toBe(GOOD_ANSWER.length);
+    expect(deltas.map((d) => d.text).join("")).toBe(r.answerMarkdown);
+    expect(r.answerMarkdown).toBe(GOOD_ANSWER);
+    // 语义：delta 在生成过程中流出，draft 步骤标记「生成完成」(故 delta 先于 draft step)，
+    // verify 步骤在所有 delta 之后。
+    const firstDelta = events.findIndex((e) => e.type === "delta");
+    const lastDelta = events.map((e) => e.type).lastIndexOf("delta");
+    const draftStepIdx = events.findIndex((e) => e.type === "step" && e.step.phase === "draft");
+    const verifyStepIdx = events.findIndex((e) => e.type === "step" && e.step.phase === "verify");
+    expect(firstDelta).toBeGreaterThanOrEqual(0);
+    expect(lastDelta).toBeLessThan(draftStepIdx); // delta 全部先于 draft 完成
+    expect(draftStepIdx).toBeLessThan(verifyStepIdx); // draft 完成先于 verify
+  });
+
+  it("流式 provider 触发重试：两次生成都流式，delta 不会跨次串台", async () => {
+    const bad = "【盲派算师·老胡】\n没引用瞎说。\n\n【存在主义导师·李】\n你的大运不行。\n\n【主事·玄】\n且去。";
+    const stub = draftStub([bad, GOOD_ANSWER], { stream: true });
+    const deltas: string[] = [];
+    const r = await runAgentLoop("问", null, {
+      transport: new ScriptedTransport([
+        toolCall("search_library", { query: "q" }),
+        toolCall("ready_to_answer", { sufficient: true }),
+      ]),
+      registry: registryWith(),
+      draftProvider: stub.provider,
+      onEvent: (e) => {
+        if (e.type === "delta") deltas.push(e.text);
+      },
+    });
+    // 两次生成的字符全部流出，但最终 answerMarkdown 只取最后一次
+    expect(stub.calls).toHaveLength(2);
+    expect(deltas.join("")).toBe(`${bad}${GOOD_ANSWER}`);
+    expect(r.answerMarkdown).toBe(GOOD_ANSWER);
+  });
+
+  it("非流式 provider 回退：无 delta 事件，行为与 v1 一致", async () => {
+    const stub = draftStub([GOOD_ANSWER]); // 默认非流式
+    const events: AgentEvent[] = [];
+    const r = await runAgentLoop("问", null, {
+      transport: new ScriptedTransport([
+        toolCall("search_library", { query: "q" }),
+        toolCall("ready_to_answer", { sufficient: true }),
+      ]),
+      registry: registryWith(),
+      draftProvider: stub.provider,
+      onEvent: (e) => events.push(e),
+    });
+    expect(events.filter((e) => e.type === "delta")).toHaveLength(0);
+    expect(r.answerMarkdown).toBe(GOOD_ANSWER);
   });
 });

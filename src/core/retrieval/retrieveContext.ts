@@ -1,4 +1,5 @@
 import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";
+import type { ConfigOverride } from "@/core/config/appConfig";
 import { getVectorStore } from "@/core/vector/localJsonVectorStore";
 import type { VectorSearchResult } from "@/core/vector/vectorStore";
 import { DIALOGUE_MENTORS, isSourceAllowedFor, type MentorId } from "@/data/mentors";
@@ -8,8 +9,8 @@ import { citationEvidenceCoverage, isCitationQuestion } from "./evidenceRelevanc
 const MAX_CHUNK_CHARS = 800;
 
 /** 全库检索（调试接口 /api/search 与「查典籍」使用；跨库查询是特性） */
-export async function searchChunks(query: string, topK = 8): Promise<VectorSearchResult[]> {
-  const provider = getDefaultProvider();
+export async function searchChunks(query: string, topK = 8, configOverride?: ConfigOverride): Promise<VectorSearchResult[]> {
+  const provider = getDefaultProvider(configOverride);
   const embedding = await provider.embedTexts({ texts: [query] });
   const [queryEmbedding] = embedding.embeddings;
   return getVectorStore().search(queryEmbedding, topK);
@@ -33,8 +34,9 @@ export type ScopedRetrieval = {
 export async function searchChunksForMentors(
   query: string,
   topKPerMentor = 4,
+  configOverride?: ConfigOverride,
 ): Promise<ScopedRetrieval> {
-  const provider = getDefaultProvider();
+  const provider = getDefaultProvider(configOverride);
   const embedding = await provider.embedTexts({ texts: [query] });
   const [queryEmbedding] = embedding.embeddings;
 

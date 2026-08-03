@@ -2,6 +2,7 @@ import { chunkPages } from "./chunkPages";
 import { extractPdfPages } from "./pdfPageExtractor";
 import { extractTextSections } from "./textExtractor";
 import { indexChunks } from "./indexChunks";
+import type { ConfigOverride } from "@/core/config/appConfig";
 import {
   findDocumentByHash,
   getDocument,
@@ -28,6 +29,8 @@ export type IngestInput = {
   bookTitle?: string | null;
   author?: string | null;
   tradition?: string | null;
+  // 可选：前端面板的 embedding 配置覆盖（切真实模型时用用户配置的 embedding）
+  configOverride?: ConfigOverride;
 };
 
 const TEXT_EXTENSIONS = [".md", ".markdown", ".txt", ".text"];
@@ -63,7 +66,7 @@ export async function ingestDocumentBuffer(input: IngestInput): Promise<Document
   const existing = findDocumentByHash(fileHash);
   if (existing?.status === "indexed") return existing;
   if (existing) {
-    return processDocument(existing, input.buffer);
+    return processDocument(existing, input.buffer, input.configOverride);
   }
 
   const id = randomId("doc");
@@ -91,10 +94,14 @@ export async function ingestDocumentBuffer(input: IngestInput): Promise<Document
   };
   insertDocument(document);
 
-  return processDocument(document, input.buffer);
+  return processDocument(document, input.buffer, input.configOverride);
 }
 
-async function processDocument(document: DocumentRow, buffer: Buffer): Promise<DocumentRow> {
+async function processDocument(
+  document: DocumentRow,
+  buffer: Buffer,
+  configOverride?: ConfigOverride,
+): Promise<DocumentRow> {
   const { id } = document;
   const isPdf = document.fileType === "pdf";
   try {
@@ -131,7 +138,7 @@ async function processDocument(document: DocumentRow, buffer: Buffer): Promise<D
       chunks = chunkPages(pages);
       insertChunks(chunks);
     }
-    await indexChunks(chunks);
+    await indexChunks(chunks, configOverride);
 
     updateDocumentStatus(id, "indexed", { pageCount: pages.length });
     return (
