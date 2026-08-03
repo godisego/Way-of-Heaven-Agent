@@ -37,8 +37,12 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
     };
   }
 
+  /** 是否用本地 mock embedding：显式开 USE_MOCK_EMBEDDING=1，或没配真实 key 时自动回退。
+   *  这样不配嵌入也能对谈（用 mock 检索），符合「不配 Key 也能跑大半」的承诺。 */
   private useMockEmbedding(): boolean {
-    return process.env.USE_MOCK_EMBEDDING === "1";
+    if (process.env.USE_MOCK_EMBEDDING === "1") return true;
+    // 既无 env key、前端也没传嵌入配置 → 回退 mock，避免检索直接崩
+    return !this.cfg.openAICompatApiKey;
   }
 
   async embedTexts(input: EmbedTextsInput): Promise<EmbedTextsResult> {
