@@ -40,11 +40,14 @@ type StoredMessage = Message & { id: string; createdAt: string };
 function toMessages(messages: StoredMessage[]): Message[] {
   return messages.map(({ role, content, citations, isDemo, trace, pipeline }) => ({
     role,
-    content,
-    citations,
+    content: content ?? "",
+    // 防御：历史会话（旧版本写入）可能缺这些字段，兜底成空数组/丢弃残缺对象
+    citations: Array.isArray(citations) ? citations : [],
     isDemo,
-    trace,
-    pipeline,
+    // trace 残缺（无 steps 或 totals）则丢弃，避免 TracePanel 渲染崩溃
+    trace: trace && Array.isArray(trace.steps) && trace.totals ? trace : undefined,
+    // pipeline 残缺（无 retrieved）则丢弃
+    pipeline: pipeline && pipeline.retrieved ? pipeline : undefined,
   }));
 }
 
@@ -641,7 +644,7 @@ function AssistantRound({
           <TracePanel trace={trace} />
         </div>
       ) : null}
-      {!trace && learningOn && pipeline ? (
+      {!trace && learningOn && pipeline?.retrieved ? (
         <p className="round-pipeline" data-tip="RAG 管线注解：这轮回答背后的检索命中与校验结果——学习模式专属的轻量版轨迹。">
           检索 {pipeline.retrieved.merged} 条（胡 {pipeline.retrieved.hu} · 李 {pipeline.retrieved.li} · 玄 {pipeline.retrieved.xuan}）
           · 引用校验 {pipeline.citationsValid ? "✓" : "✕"} · 声口 {pipeline.voiceValid ? "✓" : "✕"} · {pipeline.retried ? "已定向重试" : "未重试"}

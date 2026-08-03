@@ -59,17 +59,20 @@ function StepRow({ step }: { step: TraceStep }) {
  * 只展示结构化摘要——轨迹里本就不含私有思维链与敏感信息。
  */
 export function TracePanel({ trace }: { trace: AgentTrace }) {
+  // 防御：历史会话可能存了结构不完整的 trace（旧版本写入），兜底避免渲染崩溃
+  const totals = trace.totals ?? { toolCalls: 0, evidenceCount: 0, modelCalls: 0 };
+  const steps = Array.isArray(trace.steps) ? trace.steps : [];
   return (
     <details className="trace-panel" data-tour-id="trace-panel" data-tip="Agent 执行轨迹：调度模型每一步调了什么工具、看到什么观察、收了哪些证据（ev_N），以及最终为何停下。这是学习中心 Agent 径第三课的实景教具。">
       <summary>
         <span className="trace-title">执行轨迹</span>
         <span className="trace-sum">
-          {trace.totals.toolCalls} 次工具 · {trace.totals.evidenceCount} 条证据 · {trace.totals.modelCalls} 次模型调用 · {trace.durationMs} ms
+          {totals.toolCalls} 次工具 · {totals.evidenceCount} 条证据 · {totals.modelCalls} 次模型调用 · {trace.durationMs ?? 0} ms
         </span>
-        <span className={`trace-stop is-${trace.finalState}`}>{STOP_LABEL[trace.stopReason]}</span>
+        <span className={`trace-stop is-${trace.finalState ?? "completed"}`}>{STOP_LABEL[trace.stopReason ?? "ready"] ?? trace.stopReason}</span>
       </summary>
       <ol className="trace-steps">
-        {trace.steps.map((step) => (
+        {steps.map((step) => (
           <StepRow key={step.index} step={step} />
         ))}
       </ol>

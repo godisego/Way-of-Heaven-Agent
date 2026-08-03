@@ -19,8 +19,9 @@ function citationLabel(citation: Citation): string {
   return `《${book}》 · ${section}`;
 }
 
-export function CitationList({ citations }: { citations: Citation[] }) {
+export function CitationList({ citations }: { citations?: Citation[] }) {
   const [selected, setSelected] = useState<Citation | null>(null);
+  const list = Array.isArray(citations) ? citations : [];
 
   return (
     <div
@@ -28,7 +29,7 @@ export function CitationList({ citations }: { citations: Citation[] }) {
       data-tip="导师引用的出处。程序会核对每个 [《书名》, 来源位置] 是否来自本轮 Sources；任意一条无法核对，整组引用都不会通过。"
     >
       <div className="citations-label">出典</div>
-      {citations.map((citation) => (
+      {list.map((citation) => (
         <div className="citation" key={`${citation.chunkId}-${citation.pageNumber}`}>
           <div className="citation-actions">
             <button
