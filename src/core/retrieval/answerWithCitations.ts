@@ -9,8 +9,8 @@ import {
   type ScopedCitationViolation,
 } from "./citationPolicy";
 import { checkVoice, violationRetryText, type VoiceViolation } from "./voicePolicy";
-import { buildNoEvidenceAnswer } from "./noEvidenceAnswer";
 import { hasLexicalEvidenceForCitationQuestion } from "./evidenceRelevance";
+import type { UserProfile } from "@/data/userProfile";
 
 export type RagPipelineNotes = {
   mode: "rag";
@@ -44,6 +44,19 @@ function describeCitationViolation(v: ScopedCitationViolation): string {
     : `- 【${who}】引用了 ${v.cite}——本轮任何 Sources 中都没有这个出处，不得杜撰。`;
 }
 
+/**
+ * 无典籍证据时的 context：明确告诉模型"暂未入藏"，约束它不杜撰引用，
+ * 但仍可基于问者背景给出个性化回应（而非固定模板）。
+ */
+function buildEmptyContext(_userProfile?: UserProfile | null): string {
+  return [
+    "[本轮检索结果]",
+    "典籍暂未入藏——三位均无可引用的典籍出处。",
+    "",
+    "约束：不得使用 [《书名》, 章节] 引用格式（无据可引）；可基于问者的困惑与背景给出各自的回应，但需如实说明这是基于一般理解而非典籍依据。",
+  ].join("\n");
+}
+
 export async function answerQuestion(
   question: string,
   userProfile?: import("@/data/userProfile").UserProfile | null,
@@ -57,22 +70,28 @@ export async function answerQuestion(
     xuan: scoped.byMentor.xuan.length,
     merged: scoped.merged.length,
   };
-  if (
+  const noEvidence =
     !scoped.merged.length ||
     scoped.merged.every((item) => item.score <= 0) ||
-    !hasLexicalEvidenceForCitationQuestion(question, scoped.merged)
-  ) {
+    !hasLexicalEvidenceForCitationQuestion(question, scoped.merged);
+
+  const provider = getDefaultProvider(configOverride);
+  // 即使检索无命中，也调用聊天模型让三贤基于"无典籍证据"的边界给出个性化回应，
+  // 而非短路返回固定模板——这样 RAG 模式（关闭循迹）也能正常对谈。
+  // context 为空时提示词会明确告诉模型"暂未入藏"，约束它不杜撰引用。
+  const context = noEvidence ? buildEmptyContext(userProfile) : buildScopedContext(scoped);
+  let answer = (await provider.generateAnswer({ question, context, userProfile, conversationContext })).text.trim();
+
+  if (noEvidence) {
+    // 无证据路径：不做引用校验（本就无引用），直接返回模型生成的内容
     return {
-      answerMarkdown: buildNoEvidenceAnswer(undefined, userProfile),
+      answerMarkdown: answer,
       citations: [],
       usedContext: [],
       pipeline: { mode: "rag", retrieved, retried: false, citationsValid: true, voiceValid: true },
     };
   }
 
-  const provider = getDefaultProvider(configOverride);
-  const context = buildScopedContext(scoped);
-  let answer = (await provider.generateAnswer({ question, context, userProfile, conversationContext })).text.trim();
   let outcome = validateCitationsByMentor(answer, scoped);
   let voiceViolations: VoiceViolation[] = checkVoice(parseMentorDialogue(answer));
 
