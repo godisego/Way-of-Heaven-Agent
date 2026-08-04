@@ -16,6 +16,7 @@ import {
 } from "./BranchRelationsFigures";
 import { TwelveStagesCard } from "./TwelveStagesFigure";
 import { YongshenFlowCard } from "./YongshenFlowFigure";
+import { SystemOverviewCard } from "./SystemOverviewFigure";
 
 /**
  * 讲义正文容器 + 命理图表注入器。
@@ -73,5 +74,7 @@ function FigureRouter({ fig }: { fig: string | null }) {
   if (fig === "twelvestages") return <TwelveStagesCard title="十二长生" />;
   // 用神决策流程
   if (fig === "yongshenflow") return <YongshenFlowCard title="用神取用决策" />;
+  // 命理系统分层
+  if (fig === "systemoverview") return <SystemOverviewCard title="命理系统七层结构" />;
   return null;
 }

@@ -26,6 +26,7 @@ const DOC_LINK: Record<string, string> = {
   "docs/verification-plan.md": "/learn/verification-plan",
   "docs/m5-acceptance.md": "/learn/m5-acceptance",
   "docs/bazi-chart-anatomy.md": "/learn/bazi-chart-anatomy",
+  "docs/bazi-overview.md": "/learn/bazi-overview",
   "docs/bazi-yinyang-wuxing-primer.md": "/learn/bazi-yinyang-wuxing-primer",
   "docs/bazi-stems-branches.md": "/learn/bazi-stems-branches",
   "docs/bazi-ten-gods-strength.md": "/learn/bazi-ten-gods-strength",
@@ -47,6 +48,8 @@ const FIGURE_FENCES = new Set([
   "twelvestages",
   // 用神决策流程图（YongshenFlowFigure）
   "yongshenflow",
+  // 命理系统分层图（SystemOverviewFigure）
+  "systemoverview",
 ]);
 
 function escapeHtml(s: string): string {

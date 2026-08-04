@@ -132,12 +132,26 @@ export const LEARN_DOCS: LearnDoc[] = [
 
   // 命理径：认盘 → 认关系 → 加时间 → 完整走盘 → 工程口径。
   {
+    slug: "bazi-overview",
+    file: "docs/bazi-overview.md",
+    title: "命理大局观",
+    blurb: "先看整张地图：八字是什么、整体系统七层结构、各模块如何拼接、能做什么不能做什么",
+    track: "mingli",
+    order: 0,
+    stage: "零 · 入门预备",
+    level: "入门",
+    quickRefs: [
+      { id: "yinyang", label: "阴阳" },
+      { id: "wuxing-gk", label: "五行" },
+    ],
+  },
+  {
     slug: "bazi-yinyang-wuxing-primer",
     file: "docs/bazi-yinyang-wuxing-primer.md",
     title: "阴阳五行入门",
     blurb: "命理第一课：阴阳不是黑白对立，五行不是五种物质——是分类与关系语言",
     track: "mingli",
-    order: 0,
+    order: 5,
     stage: "零 · 入门预备",
     level: "入门",
     quickRefs: [
