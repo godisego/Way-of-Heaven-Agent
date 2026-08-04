@@ -970,6 +970,9 @@ button {
   font-size: 15px;
   color: inherit;
   letter-spacing: 0.02em;
+  /* 显式允许选择复制（部分父级装饰元素设了 user-select:none，这里覆盖回来） */
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .mentor-bubble .bubble-text {

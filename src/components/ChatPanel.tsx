@@ -204,9 +204,17 @@ export function ChatPanel() {
     ]);
   }
 
+  // 自动滚动到底部：仅在用户已接近底部、且没有正在选择文字时触发。
+  // 这样用户往上翻看历史或拖选复制时，不会被强制拉回底部打断操作。
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
+    // 用户正在选择文字（复制中）→ 不打断
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) return;
+    // 用户已主动滚离底部（在看历史）→ 不强制拉回，除非距离底部很近
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distanceFromBottom > 120) return;
     el.scrollTop = el.scrollHeight;
   }, [messages, busy]);
 
@@ -590,7 +598,8 @@ export function ChatPanel() {
           rows={2}
           onChange={(event) => setInput(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
+            // Enter 发送、Shift+Enter 换行；中文输入法 composing 时回车是确认候选词，不发送
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
               event.preventDefault();
               void ask(input);
             }
