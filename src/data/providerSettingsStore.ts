@@ -29,7 +29,7 @@ class LocalStorageProviderSettingsApi implements ProviderSettingsApi {
       const embedding = { ...EMPTY_SETTINGS.embedding, ...parsed.embedding };
       if (!chat.protocol) chat.protocol = chat.baseUrl.includes("/anthropic") ? "anthropic" : "openai";
       if (!embedding.protocol) embedding.protocol = "openai";
-      return { chat, embedding, updatedAt: parsed.updatedAt ?? "" };
+      return { chat, embedding, unified: parsed.unified !== false, updatedAt: parsed.updatedAt ?? "" };
     } catch {
       return { ...EMPTY_SETTINGS };
     }

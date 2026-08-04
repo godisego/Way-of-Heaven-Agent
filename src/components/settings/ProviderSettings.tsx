@@ -35,10 +35,18 @@ export function ProviderSettings() {
     setSaved(false);
   }, []);
 
+  const chatReady = isProviderConfigComplete(settings.chat);
+  const embedReady = settings.unified ? chatReady : isProviderConfigComplete(settings.embedding);
+
+  // unified 模式下，保存时把聊天配置同步到嵌入（覆盖），让服务端两套都用同一份
+  const effectiveSettings: ProviderSettings = settings.unified
+    ? { ...settings, embedding: { ...settings.chat } }
+    : settings;
+
   const onSave = useCallback(async () => {
-    await providerSettingsApi.save(settings);
+    await providerSettingsApi.save(effectiveSettings);
     setSaved(true);
-  }, [settings]);
+  }, [effectiveSettings]);
 
   const onClear = useCallback(async () => {
     if (!window.confirm("确定清除所有供应商配置？清除后聊天与嵌入将回退到环境变量默认（或 mock）。")) return;
@@ -47,8 +55,10 @@ export function ProviderSettings() {
     setSaved(false);
   }, []);
 
-  const chatReady = isProviderConfigComplete(settings.chat);
-  const embedReady = isProviderConfigComplete(settings.embedding);
+  const toggleUnified = useCallback(() => {
+    setSettings((prev) => ({ ...prev, unified: !prev.unified }));
+    setSaved(false);
+  }, []);
 
   return (
     <>
@@ -78,20 +88,36 @@ export function ProviderSettings() {
 
             <ConfigSection
               title="聊天模型"
-              hint="三贤对谈与取证循环使用（Anthropic /messages 兼容）"
+              hint="三贤对谈与取证循环使用"
               kind="chat"
               config={settings.chat}
               ready={chatReady}
               onChange={update}
             />
-            <ConfigSection
-              title="嵌入模型"
-              hint="典籍检索与入库用（OpenAI /embeddings 兼容）。留空可继续用 mock"
-              kind="embedding"
-              config={settings.embedding}
-              ready={embedReady}
-              onChange={update}
-            />
+
+            <label className="settings-unified-toggle">
+              <input
+                type="checkbox"
+                checked={settings.unified}
+                onChange={toggleUnified}
+              />
+              <span>嵌入与聊天使用同一供应商</span>
+            </label>
+
+            {settings.unified ? (
+              <p className="settings-unified-hint">
+                ✓ 已开启：典籍检索将复用上方的供应商与密钥（需该供应商支持 embedding，如 OpenAI / 智谱 / 通义）。
+              </p>
+            ) : (
+              <ConfigSection
+                title="嵌入模型"
+                hint="典籍检索与入库用。留空可继续用 mock"
+                kind="embedding"
+                config={settings.embedding}
+                ready={embedReady}
+                onChange={update}
+              />
+            )}
 
             <footer className="settings-actions">
               <span className="settings-status">

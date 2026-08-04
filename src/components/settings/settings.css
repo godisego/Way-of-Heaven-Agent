@@ -93,6 +93,31 @@
   margin: 0 0 14px;
 }
 
+.settings-unified-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 0 4px;
+  margin-top: 4px;
+  border-top: 1px solid var(--line-faint, rgba(37, 42, 48, 0.08));
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--ink-soft, #3b4046);
+}
+
+.settings-unified-toggle input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.settings-unified-hint {
+  font-size: 11px;
+  color: var(--celadon, #5f7a74);
+  line-height: 1.6;
+  margin: 0 0 8px;
+  padding: 6px 0 0;
+}
+
 .settings-section {
   border: none;
   border-top: 1px solid var(--line-faint, rgba(37, 42, 48, 0.08));

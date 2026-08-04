@@ -25,10 +25,13 @@ export type ProviderConfig = {
   protocol: "anthropic" | "openai";
 };
 
-/** 完整供应商设置：聊天 + 嵌入 + 时间戳 */
+/** 完整供应商设置：聊天 + 嵌入 + 时间戳。
+ *  unified=true 时嵌入复用聊天配置（只填一次）。 */
 export type ProviderSettings = {
   chat: ProviderConfig;
   embedding: ProviderConfig;
+  /** 嵌入是否与聊天同一供应商（true=只填一次聊天，嵌入自动复用） */
+  unified: boolean;
   updatedAt: string;
 };
 
@@ -43,6 +46,7 @@ export const EMPTY_PROVIDER_CONFIG: ProviderConfig = {
 export const EMPTY_SETTINGS: ProviderSettings = {
   chat: { ...EMPTY_PROVIDER_CONFIG },
   embedding: { ...EMPTY_PROVIDER_CONFIG },
+  unified: true,
   updatedAt: "",
 };
 
