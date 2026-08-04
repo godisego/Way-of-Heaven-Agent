@@ -453,7 +453,7 @@ body[data-learning="true"] .concept-tip:hover {
 .mfig-svg {
   display: block;
   width: 100%;
-  max-width: 220px;
+  max-width: 300px;
   margin: 0 auto;
   user-select: none;
 }
@@ -563,3 +563,78 @@ body[data-learning="true"] .concept-tip:hover {
   font-size: 12px;
   padding: 24px;
 }
+
+/* 天干地支藏干三层结构图 */
+.gzcang-card { grid-column: 1 / -1; }
+.gzcang-layers {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.gzcang-layer {
+  display: grid;
+  grid-template-columns: 60px 50px 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  width: 100%;
+  max-width: 380px;
+  padding: 10px 14px;
+  background: var(--paper, #f4f5f1);
+  border: 1px solid var(--line-faint, rgba(37, 42, 48, 0.08));
+  border-radius: 5px;
+  gap: 4px 10px;
+}
+.gzcang-layer-tag {
+  grid-row: 1 / 3;
+  font-family: var(--font-serif, serif);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--muted, #5f656b);
+  font-weight: 600;
+}
+.gzcang-layer-char {
+  font-family: var(--font-serif, serif);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+.gzcang-layer-wx {
+  font-size: 11px;
+  color: var(--muted, #5f656b);
+  align-self: end;
+  padding-bottom: 2px;
+}
+.gzcang-layer-role {
+  font-size: 11px;
+  color: var(--ink-soft, #3b4046);
+  font-weight: 600;
+}
+.gzcang-layer-desc {
+  grid-column: 2 / 4;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--muted, #5f656b);
+}
+.gzcang-arrow {
+  font-size: 10px;
+  color: var(--muted-faint, #8b9095);
+  letter-spacing: 0.1em;
+  padding: 1px 0;
+}
+.gzcang-cang .gzcang-layer-char { display: none; }
+.gzcang-layer-chars {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.gzcang-layer-chars > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.gzcang-cang-name { font-family: var(--font-serif, serif); font-size: 22px; font-weight: 700; }
+.gzcang-cang-role { font-size: 9.5px; color: var(--muted, #5f656b); }
+.gzcang-cang { grid-template-columns: 60px 1fr; }
+.gzcang-cang .gzcang-layer-chars { grid-column: 2 / 3; }

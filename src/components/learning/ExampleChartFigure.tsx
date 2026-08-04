@@ -60,15 +60,14 @@ export function ExampleChartFigure() {
     <div className="mfig-card exchart-card">
       <h4 className="mfig-title">示例盘面（虚构八字 · 非真实人物）</h4>
       <p className="exchart-intro">
-        四柱从右到左为<strong>年·月·日·时</strong>（传统排盘右起）。
+        四柱从左到右为<strong>年·月·日·时</strong>。
         日柱天干（戊）即<strong>日主</strong>，是整个八字的分析坐标。
         点击任一柱查看该柱结构。
       </p>
 
       <div className="exchart-grid">
-        {/* 从右到左：时日月年（传统），但 DOM 从左到右渲染，用 flex-direction: row-reverse */}
-        {[0, 1, 2, 3].map((idx) => {
-          const realIdx = 3 - idx; // 翻转：DOM 第0个=时柱(idx3)
+        {/* 从左到右：年·月·日·时（符合现代阅读习惯） */}
+        {[0, 1, 2, 3].map((realIdx) => {
           const gan = EXAMPLE.gan[realIdx];
           const zhi = EXAMPLE.zhi[realIdx];
           const cang = ZHI_CANG[zhi] ?? [];
@@ -137,6 +136,65 @@ function PillarDetail({ idx }: { idx: number }) {
         藏干：{cang.map((c) => `${c}（${GAN_WX[c]}）`).join("、")}。
         藏干是地支内部"藏着"的天干，决定地支的实质力量与暗藏十神。
       </p>
+    </div>
+  );
+}
+
+/**
+ * 天干·地支·藏干 三层结构示例图。
+ * 用软件类比讲解：天干=前端（外显）、地支=服务器（承载）、藏干=进程（内部）。
+ * 展示一柱内部的层次关系。
+ */
+export function GanZhiCangFigure() {
+  // 用月柱 丙寅 做示例（寅藏 甲丙戊，三层都有内容，适合讲解）
+  const gan = "丙";
+  const zhi = "寅";
+  const cang = ZHI_CANG["寅"]; // 甲、丙、戊
+
+  return (
+    <div className="mfig-card gzcang-card">
+      <h4 className="mfig-title">一柱的三层结构（以月柱 丙寅 为例）</h4>
+      <p className="exchart-intro">
+        一柱不是两个字，而是<strong>三层</strong>：天干露在外面、地支承载节令、藏干藏在里面。
+        借用软件类比理解层次关系。
+      </p>
+      <div className="gzcang-layers">
+        <div className="gzcang-layer gzcang-gan">
+          <span className="gzcang-layer-tag">天干</span>
+          <span className="gzcang-layer-char" style={{ color: WX_COLOR[GAN_WX[gan]] }}>{gan}</span>
+          <span className="gzcang-layer-wx">{GAN_WX[gan]}</span>
+          <span className="gzcang-layer-role">前端 · 外显层</span>
+          <span className="gzcang-layer-desc">公开显露的力量，{GAN_WX[gan]}气当令透出，直接可见</span>
+        </div>
+        <div className="gzcang-arrow">↓ 承载</div>
+        <div className="gzcang-layer gzcang-zhi">
+          <span className="gzcang-layer-tag">地支</span>
+          <span className="gzcang-layer-char" style={{ color: WX_COLOR[ZHI_WX[zhi]] }}>{zhi}</span>
+          <span className="gzcang-layer-wx">{ZHI_WX[zhi]}</span>
+          <span className="gzcang-layer-role">服务器 · 承载层</span>
+          <span className="gzcang-layer-desc">承载节令与时辰，{ZHI_WX[zhi]}气为当季主调</span>
+        </div>
+        <div className="gzcang-arrow">↓ 内藏</div>
+        <div className="gzcang-layer gzcang-cang">
+          <span className="gzcang-layer-tag">藏干</span>
+          <span className="gzcang-layer-chars">
+            {cang.map((c, i) => (
+              <span key={c}>
+                <span className="gzcang-cang-name" style={{ color: WX_COLOR[GAN_WX[c]] }}>{c}</span>
+                <span className="gzcang-cang-role">{i === 0 ? "本气" : i === 1 ? "中气" : "余气"}</span>
+              </span>
+            ))}
+          </span>
+          <span className="gzcang-layer-role">进程 · 内部层</span>
+          <span className="gzcang-layer-desc">地支内部藏着的天干，是实质力量来源；本气权重最高</span>
+        </div>
+      </div>
+      <div className="mfig-desc">
+        <p className="mfig-desc-default">
+          <strong>通根</strong>：若天干的五行在地支藏干中出现（如丙火在寅中找到丙），说明这个力量"有根"、站得住。
+          没根的天干像浮在表面的功能，遇到压力容易垮。
+        </p>
+      </div>
     </div>
   );
 }

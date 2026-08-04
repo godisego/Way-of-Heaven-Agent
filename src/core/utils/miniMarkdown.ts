@@ -34,7 +34,7 @@ const DOC_LINK: Record<string, string> = {
 };
 
 /** 命理图表围栏标记 → 占位 div 的 data 值 */
-const FIGURE_FENCES = new Set(["wuxing", "shishen", "chart"]);
+const FIGURE_FENCES = new Set(["wuxing", "shishen", "chart", "ganzhi"]);
 
 function escapeHtml(s: string): string {
   return s
