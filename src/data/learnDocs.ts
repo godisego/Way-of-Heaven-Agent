@@ -132,6 +132,20 @@ export const LEARN_DOCS: LearnDoc[] = [
 
   // 命理径：认盘 → 认关系 → 加时间 → 完整走盘 → 工程口径。
   {
+    slug: "bazi-yinyang-wuxing-primer",
+    file: "docs/bazi-yinyang-wuxing-primer.md",
+    title: "阴阳五行入门",
+    blurb: "命理第一课：阴阳不是黑白对立，五行不是五种物质——是分类与关系语言",
+    track: "mingli",
+    order: 0,
+    stage: "零 · 入门预备",
+    level: "入门",
+    quickRefs: [
+      { id: "yinyang", label: "阴阳" },
+      { id: "wuxing-gk", label: "五行" },
+    ],
+  },
+  {
     slug: "bazi-chart-anatomy",
     file: "docs/bazi-chart-anatomy.md",
     title: "八字盘面解剖",
@@ -178,6 +192,22 @@ export const LEARN_DOCS: LearnDoc[] = [
       { id: "qiangruo", label: "身强身弱" },
       { id: "wuxing-gk", label: "五行" },
       { id: "yinyang", label: "阴阳" },
+    ],
+  },
+  {
+    slug: "bazi-twelve-stages",
+    file: "docs/bazi-twelve-stages.md",
+    title: "十二长生",
+    blurb: "五行在十二地支中的生命周期：长生到养的十二阶段、四相位与五阳干长生位",
+    track: "mingli",
+    order: 32,
+    stage: "二 · 读懂关系",
+    level: "进阶",
+    quickRefs: [
+      { id: "wuxing-gk", label: "五行" },
+      { id: "tiangan", label: "天干" },
+      { id: "dizhi", label: "地支" },
+      { id: "tonggen", label: "通根" },
     ],
   },
   {

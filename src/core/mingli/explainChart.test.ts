@@ -83,6 +83,30 @@ describe("知识库完整性", () => {
       expect(crossToRelations.length, `${id} 应至少交叉引用一条关系词条`).toBeGreaterThan(0);
     }
   });
+
+  it("十二长生五条词条齐全且与五行通根关联", () => {
+    const stageIds = [
+      "twelve-stages", // 总览
+      "stage-shengwang", // 生旺相位
+      "stage-shuai", // 衰相位
+      "stage-bingsi-mu", // 病死墓相位
+      "stage-juetai-yang", // 绝胎养相位
+    ];
+    for (const id of stageIds) {
+      const e = getEntry(id);
+      expect(e, `词条 ${id} 应存在`).not.toBeNull();
+      expect(e?.category).toBe("concept");
+    }
+    // 总览词条应引用到五行/天干/地支/通根
+    const overview = getEntry("twelve-stages");
+    expect(overview?.links).toContain("wuxing-gk");
+    expect(overview?.links).toContain("tonggen");
+    // 四相位词条都应回链到总览
+    for (const id of stageIds.slice(1)) {
+      const e = getEntry(id);
+      expect(e?.links, `${id} 应回链 twelve-stages`).toContain("twelve-stages");
+    }
+  });
 });
 
 describe("流年计算", () => {

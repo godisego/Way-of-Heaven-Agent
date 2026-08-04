@@ -26,9 +26,11 @@ const DOC_LINK: Record<string, string> = {
   "docs/verification-plan.md": "/learn/verification-plan",
   "docs/m5-acceptance.md": "/learn/m5-acceptance",
   "docs/bazi-chart-anatomy.md": "/learn/bazi-chart-anatomy",
+  "docs/bazi-yinyang-wuxing-primer.md": "/learn/bazi-yinyang-wuxing-primer",
   "docs/bazi-stems-branches.md": "/learn/bazi-stems-branches",
   "docs/bazi-ten-gods-strength.md": "/learn/bazi-ten-gods-strength",
   "docs/bazi-branch-relations.md": "/learn/bazi-branch-relations",
+  "docs/bazi-twelve-stages.md": "/learn/bazi-twelve-stages",
   "docs/bazi-luck-cycles.md": "/learn/bazi-luck-cycles",
   "docs/bazi-reading-workflow.md": "/learn/bazi-reading-workflow",
   "docs/mentor-libraries-and-bazi-design.md": "/learn/mentor-libraries-bazi",
@@ -39,6 +41,8 @@ const FIGURE_FENCES = new Set([
   "wuxing", "shishen", "chart", "ganzhi", "vector", "agentloop",
   // 干支字间关系图（BranchRelationsFigures）
   "tianganhe", "liuhe", "sanhe", "sanhui", "liuchong", "sanxing", "liuhai",
+  // 十二长生图（TwelveStagesFigure）
+  "twelvestages",
 ]);
 
 function escapeHtml(s: string): string {
