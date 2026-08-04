@@ -29,6 +29,8 @@ export type ProviderPreset = {
   embeddingModel?: string;
   /** embedding 的 Base URL（与聊天不同时填，如 MiniMax 聊天走 /anthropic、嵌入走 /v1） */
   embeddingBaseUrl?: string;
+  /** 选定该供应商时显示的注意事项（如套餐限制），空=无特殊提醒 */
+  note?: string;
 };
 
 /**
@@ -38,7 +40,7 @@ export type ProviderPreset = {
 export const CHAT_PRESETS: ProviderPreset[] = [
   {
     id: "minimax",
-    label: "MiniMax（Anthropic 兼容）",
+    label: "MiniMax",
     kind: "chat",
     baseUrl: "https://api.minimaxi.com/anthropic",
     authStyle: "anthropic",
@@ -46,16 +48,17 @@ export const CHAT_PRESETS: ProviderPreset[] = [
     defaultModel: "MiniMax-M3",
     embeddingModel: "embo-01",
     embeddingBaseUrl: "https://api.minimaxi.com/v1",
+    note: "⚠ Coding Plan / TokenPlan 不含嵌入（embedding）权限，典籍检索将回退本地 mock。需嵌入请开通按量付费，或典籍检索另配智谱/Ollama 等。",
   },
   {
     id: "anthropic",
-    label: "Anthropic 官方",
+    label: "Anthropic Claude",
     kind: "chat",
     baseUrl: "https://api.anthropic.com",
     authStyle: "anthropic",
     supportsModelList: true,
     defaultModel: "claude-3-5-sonnet-20241022",
-    // Anthropic 不提供 embedding 接口
+    note: "Anthropic 不提供嵌入接口。典籍检索将用本地 mock，或另配智谱/Ollama。",
   },
   {
     id: "deepseek",
@@ -65,7 +68,7 @@ export const CHAT_PRESETS: ProviderPreset[] = [
     authStyle: "openai",
     supportsModelList: true,
     defaultModel: "deepseek-chat",
-    // DeepSeek 暂未开放 embedding 接口
+    note: "DeepSeek 暂未开放嵌入接口。典籍检索将用本地 mock，或另配智谱/Ollama。",
   },
   {
     id: "openai-chat",
@@ -105,7 +108,7 @@ export const CHAT_PRESETS: ProviderPreset[] = [
     authStyle: "openai",
     supportsModelList: true,
     defaultModel: "moonshot-v1-8k",
-    // Moonshot 暂未开放 embedding 接口
+    note: "Moonshot 暂未开放嵌入接口。典籍检索将用本地 mock，或另配智谱/Ollama。",
   },
   {
     id: "siliconflow",
@@ -150,21 +153,23 @@ export const EMBEDDING_PRESETS: ProviderPreset[] = [
   },
   {
     id: "minimax-embed",
-    label: "MiniMax（OpenAI 兼容）",
+    label: "MiniMax",
     kind: "embedding",
     baseUrl: "https://api.minimaxi.com/v1",
     authStyle: "openai",
     supportsModelList: false,
     defaultModel: "embo-01",
+    note: "需按量付费账户；Coding Plan / TokenPlan 无嵌入权限。",
   },
   {
     id: "zhipu",
-    label: "智谱（embedding-3）",
+    label: "智谱",
     kind: "embedding",
     baseUrl: "https://open.bigmodel.cn/api/paas/v4",
     authStyle: "openai",
     supportsModelList: false,
     defaultModel: "embedding-3",
+    note: "新用户有免费额度，适合没有嵌入 key 的用户。",
   },
   {
     id: "dashscope",

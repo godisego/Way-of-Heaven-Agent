@@ -53,11 +53,23 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
     // - input（OpenAI/智谱/通义/Ollama/硅基流动标准）
     // - texts（MiniMax 原生读这个）
     // - type=db（MiniMax 必填，"db"=入库用 / "query"=查询用；其他端点忽略此字段）
-    const response = await fetch(`${this.cfg.openAICompatBaseUrl.replace(/\/$/, "")}/embeddings`, {
-      method: "POST",
-      headers: this.headers(),
-      body: JSON.stringify({ model: this.cfg.embeddingModel, input: input.texts, texts: input.texts, type: "db" }),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${this.cfg.openAICompatBaseUrl.replace(/\/$/, "")}/embeddings`, {
+        method: "POST",
+        headers: this.headers(),
+        body: JSON.stringify({ model: this.cfg.embeddingModel, input: input.texts, texts: input.texts, type: "db" }),
+      });
+    } catch (e) {
+      // 网络层失败（DNS/连接拒绝）→ 回退 mock，不阻塞聊天
+      console.warn("[embedding] 网络失败，回退 mock：", e instanceof Error ? e.message : e);
+      return this.mockEmbedding.embedTexts(input);
+    }
+    // 401/403（无权限，如 MiniMax Coding Plan 不含嵌入）→ 回退 mock，不阻塞聊天
+    if (response.status === 401 || response.status === 403) {
+      console.warn(`[embedding] 鉴权失败（${response.status}），回退 mock。可能是套餐不含嵌入权限。`);
+      return this.mockEmbedding.embedTexts(input);
+    }
     if (!response.ok) throw new Error(`Embedding 接口失败：${response.status} ${await response.text()}`);
     const data = await response.json();
     // 供应商返回错误（如 MiniMax 的 {base_resp:{status_msg}}）也要识别

@@ -204,6 +204,18 @@
   gap: 6px;
 }
 
+/* 供应商注意事项提醒 */
+.settings-note {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--cinnabar, #a8473c);
+  background: rgba(168, 71, 60, 0.06);
+  border: 1px solid rgba(168, 71, 60, 0.18);
+  border-radius: var(--radius-sm, 2px);
+  padding: 7px 9px;
+  margin: 6px 0 10px;
+}
+
 .settings-section.is-ready legend {
   color: var(--cinnabar, #a8473c);
 }

@@ -218,6 +218,7 @@ function ConfigSection({
         {title}
         {ready ? <span className="settings-dot" aria-hidden /> : null}
       </legend>
+      {preset?.note ? <p className="settings-note">{preset.note}</p> : null}
       <label className="settings-field">
         <span>供应商</span>
         <select value={config.provider} onChange={(e) => onPresetChange(e.target.value)}>
