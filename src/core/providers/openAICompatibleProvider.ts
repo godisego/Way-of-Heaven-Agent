@@ -49,17 +49,22 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
     if (this.useMockEmbedding()) {
       return this.mockEmbedding.embedTexts(input);
     }
+    // 同时发 input（OpenAI 标准）与 texts（MiniMax 原生）两个字段：
+    // 标准 OpenAI 端点忽略多余字段，MiniMax 端点读 texts。一次请求兼容两者。
     const response = await fetch(`${this.cfg.openAICompatBaseUrl.replace(/\/$/, "")}/embeddings`, {
       method: "POST",
       headers: this.headers(),
-      body: JSON.stringify({ model: this.cfg.embeddingModel, input: input.texts }),
+      body: JSON.stringify({ model: this.cfg.embeddingModel, input: input.texts, texts: input.texts }),
     });
     if (!response.ok) throw new Error(`Embedding 接口失败：${response.status} ${await response.text()}`);
     const data = await response.json();
+    // 供应商返回错误（如 MiniMax 的 {base_resp:{status_msg}}）也要识别
+    const errMsg = extractEmbeddingError(data);
+    if (errMsg) throw new Error(`Embedding 供应商返回错误：${errMsg}`);
     const embeddings = extractEmbeddings(data);
     if (!embeddings.length) {
       throw new Error(
-        `Embedding 接口返回格式无法识别（期望 {data:[{embedding}]} 或 {embeddings:[...]}）。原始响应前 200 字：${JSON.stringify(data).slice(0, 200)}`,
+        `Embedding 接口返回格式无法识别。原始响应前 200 字：${JSON.stringify(data).slice(0, 200)}`,
       );
     }
     return {
@@ -89,6 +94,7 @@ export function getDefaultProvider(override?: ConfigOverride | null) {
  * 兼容多种 embedding 响应格式：
  * - OpenAI 标准：{data: [{embedding: [...]}]}
  * - 智谱/部分国产：{data: {embedding: [...]}} 或 {embeddings: [[...]]}
+ * - MiniMax 原生：{vectors: [[...], ...]}
  * - 单条简写：{embedding: [...]}
  * 无法识别时返回空数组（调用方据此报错）。
  */
@@ -110,7 +116,30 @@ function extractEmbeddings(data: unknown): number[][] {
   if (Array.isArray(obj.embeddings)) {
     return obj.embeddings.filter((e): e is number[] => Array.isArray(e));
   }
+  // MiniMax 原生格式：{vectors: [[...], ...]}
+  if (Array.isArray(obj.vectors)) {
+    return obj.vectors.filter((e): e is number[] => Array.isArray(e));
+  }
   // 顶层 embedding（单条简写）
   if (Array.isArray(obj.embedding)) return [obj.embedding];
   return [];
+}
+
+/**
+ * 识别供应商在 HTTP 200 但业务错误时的报错格式（HTTP 状态正常但 body 含错误）。
+ * - MiniMax：{base_resp: {status_code, status_msg}}
+ * - 通用：{error: {message}} 或 {message}
+ * 无错误返回 null。
+ */
+function extractEmbeddingError(data: unknown): string | null {
+  if (!data || typeof data !== "object") return null;
+  const obj = data as Record<string, unknown>;
+  const baseResp = obj.base_resp as { status_msg?: string; status_code?: number } | undefined;
+  if (baseResp && typeof baseResp.status_msg === "string" && baseResp.status_msg) {
+    return `${baseResp.status_msg}（code ${baseResp.status_code ?? "?"}）`;
+  }
+  const err = obj.error as { message?: string } | undefined;
+  if (err && typeof err.message === "string" && err.message) return err.message;
+  if (typeof obj.message === "string" && obj.message) return obj.message;
+  return null;
 }
