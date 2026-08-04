@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { WuxingCard, ShishenCard } from "./MingliFigures";
 import { ExampleChartFigure, GanZhiCangFigure } from "./ExampleChartFigure";
+import { VectorSearchFigure, AgentLoopFigure } from "./AgentFigures";
 
 /**
  * 讲义正文容器 + 命理图表注入器。
@@ -47,5 +48,7 @@ function FigureRouter({ fig }: { fig: string | null }) {
   if (fig === "shishen") return <ShishenCard title="十神关系（以日主为轴）" />;
   if (fig === "chart") return <ExampleChartFigure />;
   if (fig === "ganzhi") return <GanZhiCangFigure />;
+  if (fig === "vector") return <VectorSearchFigure />;
+  if (fig === "agentloop") return <AgentLoopFigure />;
   return null;
 }

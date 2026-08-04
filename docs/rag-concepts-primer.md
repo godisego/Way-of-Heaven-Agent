@@ -55,6 +55,10 @@ G      Generation    生成     LLM 基于被增强的 prompt 生成回答
 
 ---
 
+
+```vector
+```
+
 ## 3. 总览：RAG 的两段流程
 
 ```

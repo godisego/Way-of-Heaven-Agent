@@ -564,80 +564,6 @@ body[data-learning="true"] .concept-tip:hover {
   padding: 24px;
 }
 
-/* 天干地支藏干三层结构图 */
-.gzcang-card { grid-column: 1 / -1; }
-.gzcang-layers {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.gzcang-layer {
-  display: grid;
-  grid-template-columns: 60px 50px 1fr;
-  grid-template-rows: auto auto;
-  align-items: center;
-  width: 100%;
-  max-width: 380px;
-  padding: 10px 14px;
-  background: var(--paper, #f4f5f1);
-  border: 1px solid var(--line-faint, rgba(37, 42, 48, 0.08));
-  border-radius: 5px;
-  gap: 4px 10px;
-}
-.gzcang-layer-tag {
-  grid-row: 1 / 3;
-  font-family: var(--font-serif, serif);
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  color: var(--muted, #5f656b);
-  font-weight: 600;
-}
-.gzcang-layer-char {
-  font-family: var(--font-serif, serif);
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1;
-}
-.gzcang-layer-wx {
-  font-size: 11px;
-  color: var(--muted, #5f656b);
-  align-self: end;
-  padding-bottom: 2px;
-}
-.gzcang-layer-role {
-  font-size: 11px;
-  color: var(--ink-soft, #3b4046);
-  font-weight: 600;
-}
-.gzcang-layer-desc {
-  grid-column: 2 / 4;
-  font-size: 11.5px;
-  line-height: 1.6;
-  color: var(--muted, #5f656b);
-}
-.gzcang-arrow {
-  font-size: 10px;
-  color: var(--muted-faint, #8b9095);
-  letter-spacing: 0.1em;
-  padding: 1px 0;
-}
-.gzcang-cang .gzcang-layer-char { display: none; }
-.gzcang-layer-chars {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.gzcang-layer-chars > span {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-}
-.gzcang-cang-name { font-family: var(--font-serif, serif); font-size: 22px; font-weight: 700; }
-.gzcang-cang-role { font-size: 9.5px; color: var(--muted, #5f656b); }
-.gzcang-cang { grid-template-columns: 60px 1fr; }
-.gzcang-cang .gzcang-layer-chars { grid-column: 2 / 3; }
 
 /* 正文：首行缩进，强化正文感 */
 .learn-article p {
@@ -648,4 +574,99 @@ body[data-learning="true"] .concept-tip:hover {
 .learn-article th,
 .learn-article blockquote p {
   text-indent: 0 !important;
+}
+
+/* 天干地支藏干 · 排盘样式 */
+.gzcang-chart-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+.gzcang-row-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  width: 76px;
+  padding-top: 22px;
+}
+.gzcang-row-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 4px;
+  border-radius: 4px;
+  font-family: var(--font-serif, serif);
+  font-size: 12px;
+  font-weight: 600;
+  flex: 1;
+  text-align: center;
+}
+.gzcang-label-sub { font-size: 9px; font-weight: 400; opacity: 0.75; margin-top: 2px; }
+.gzcang-label-gan { background: rgba(37,42,48,0.06); color: var(--ink, #252a30); }
+.gzcang-label-zhi { background: rgba(37,42,48,0.06); color: var(--ink, #252a30); }
+.gzcang-label-cang { background: rgba(168,71,60,0.08); color: var(--cinnabar, #a8473c); }
+
+.gzcang-pillars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  flex: 1;
+}
+.gzcang-pillar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  background: var(--paper, #f4f5f1);
+  border: 1px solid var(--line-faint, rgba(37,42,48,0.08));
+  border-radius: 5px;
+  font-family: var(--font-serif, serif);
+}
+.gzcang-pillar.is-rizhu { border-color: var(--cinnabar-line, rgba(168,71,60,0.48)); border-width: 1.5px; }
+.gzcang-pillar-name { font-size: 9.5px; letter-spacing: 0.1em; color: var(--muted, #5f656b); margin-bottom: 3px; }
+.gzcang-cell { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 30px; font-size: 22px; font-weight: 700; line-height: 1.2; }
+.gzcang-cell-gan { border-bottom: 1px solid var(--line-faint, rgba(37,42,48,0.08)); padding-bottom: 3px; margin-bottom: 3px; }
+.gzcang-cell-zhi { border-bottom: 1px solid var(--line-faint, rgba(37,42,48,0.08)); padding-bottom: 3px; margin-bottom: 3px; }
+.gzcang-cell-cang { font-size: 14px; min-height: 26px; opacity: 0.82; padding-top: 2px; }
+.gzcang-cell-cang span { margin: 0 1px; }
+@media (max-width: 520px) {
+  .gzcang-row-labels { width: 58px; }
+  .gzcang-row-label { font-size: 11px; }
+  .gzcang-label-sub { font-size: 8px; }
+  .gzcang-cell { font-size: 18px; }
+}
+
+/* Agent 工具循环流程图 */
+.agent-loop-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+  padding: 8px 0;
+}
+.agent-loop-step {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.agent-loop-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  min-width: 64px;
+  border: 1.5px solid;
+  border-radius: 6px;
+  background: var(--paper-bright, #fdfdfb);
+}
+.agent-loop-icon { font-size: 18px; line-height: 1; }
+.agent-loop-label { font-size: 10.5px; font-family: var(--font-serif, serif); text-align: center; }
+.agent-loop-arrow { color: var(--muted-faint, #8b9095); font-size: 14px; }
+@media (max-width: 520px) {
+  .agent-loop-node { min-width: 52px; padding: 8px 5px; }
+  .agent-loop-label { font-size: 9.5px; }
 }
