@@ -638,3 +638,59 @@ body[data-learning="true"] .concept-tip:hover {
 .gzcang-cang-role { font-size: 9.5px; color: var(--muted, #5f656b); }
 .gzcang-cang { grid-template-columns: 60px 1fr; }
 .gzcang-cang .gzcang-layer-chars { grid-column: 2 / 3; }
+
+/* ── 学习馆文章标题强化覆盖（确保视觉分明，不受缓存影响）── */
+.learn-article > h1:first-child {
+  font-size: 30px !important;
+  font-weight: 800 !important;
+  color: var(--ink) !important;
+  padding-bottom: 16px !important;
+  margin-bottom: 28px !important;
+  border-bottom: 3px solid var(--ink) !important;
+}
+
+.learn-article h2 {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  color: var(--ink) !important;
+  margin-top: 52px !important;
+  margin-bottom: 20px !important;
+  padding: 10px 14px !important;
+  background: rgba(37, 42, 48, 0.05) !important;
+  border-left: 5px solid var(--cinnabar) !important;
+  border-bottom: none !important;
+  border-radius: 0 4px 4px 0 !important;
+}
+
+.learn-article h3 {
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  color: var(--cinnabar) !important;
+  margin-top: 36px !important;
+  margin-bottom: 14px !important;
+  padding-left: 13px !important;
+  border-left: 4px solid var(--cinnabar) !important;
+}
+
+.learn-article h4 {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+  margin-top: 26px !important;
+}
+
+/* 正文：首行缩进，强化"正文感" */
+.learn-article p {
+  text-indent: 2em !important;
+}
+/* 表格/列表/代码/引用/图不缩进 */
+.learn-article table p,
+.learn-article li p,
+.learn-article blockquote p,
+.learn-article pre + p,
+.learn-article .mingli-fig-slot + p {
+  text-indent: 2em !important;
+}
+.learn-article li {
+  text-indent: 0 !important;
+}
