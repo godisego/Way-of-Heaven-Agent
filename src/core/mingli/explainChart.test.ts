@@ -61,6 +61,28 @@ describe("知识库完整性", () => {
       }
     }
   });
+
+  it("干支字间关系七条词条齐全且互相交叉引用", () => {
+    // 七条核心关系词条：天干五合 + 地支六合/三合/三会/六冲/三刑/六害
+    const relationIds = [
+      "tiangan-he",
+      "dizhi-liuhe",
+      "dizhi-sanhe",
+      "dizhi-sanhui",
+      "dizhi-liuchong",
+      "dizhi-sanxing",
+      "dizhi-liuhai",
+    ];
+    for (const id of relationIds) {
+      const e = getEntry(id);
+      expect(e, `词条 ${id} 应存在`).not.toBeNull();
+      expect(e?.category).toBe("concept");
+      expect(e?.links.length).toBeGreaterThan(0);
+      // 每条关系词条都应交叉引用到至少一条其他关系词条
+      const crossToRelations = e!.links.filter((l) => relationIds.includes(l));
+      expect(crossToRelations.length, `${id} 应至少交叉引用一条关系词条`).toBeGreaterThan(0);
+    }
+  });
 });
 
 describe("流年计算", () => {

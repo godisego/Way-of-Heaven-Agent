@@ -28,13 +28,18 @@ const DOC_LINK: Record<string, string> = {
   "docs/bazi-chart-anatomy.md": "/learn/bazi-chart-anatomy",
   "docs/bazi-stems-branches.md": "/learn/bazi-stems-branches",
   "docs/bazi-ten-gods-strength.md": "/learn/bazi-ten-gods-strength",
+  "docs/bazi-branch-relations.md": "/learn/bazi-branch-relations",
   "docs/bazi-luck-cycles.md": "/learn/bazi-luck-cycles",
   "docs/bazi-reading-workflow.md": "/learn/bazi-reading-workflow",
   "docs/mentor-libraries-and-bazi-design.md": "/learn/mentor-libraries-bazi",
 };
 
 /** 命理图表围栏标记 → 占位 div 的 data 值 */
-const FIGURE_FENCES = new Set(["wuxing", "shishen", "chart", "ganzhi", "vector", "agentloop"]);
+const FIGURE_FENCES = new Set([
+  "wuxing", "shishen", "chart", "ganzhi", "vector", "agentloop",
+  // 干支字间关系图（BranchRelationsFigures）
+  "tianganhe", "liuhe", "sanhe", "sanhui", "liuchong", "sanxing", "liuhai",
+]);
 
 function escapeHtml(s: string): string {
   return s

@@ -5,6 +5,15 @@ import { createRoot } from "react-dom/client";
 import { WuxingCard, ShishenCard } from "./MingliFigures";
 import { ExampleChartFigure, GanZhiCangFigure } from "./ExampleChartFigure";
 import { VectorSearchFigure, AgentLoopFigure } from "./AgentFigures";
+import {
+  TianganHeCard,
+  LiuheCard,
+  SanheCard,
+  SanhuiCard,
+  LiuchongCard,
+  SanxingCard,
+  LiuhaiCard,
+} from "./BranchRelationsFigures";
 
 /**
  * 讲义正文容器 + 命理图表注入器。
@@ -50,5 +59,13 @@ function FigureRouter({ fig }: { fig: string | null }) {
   if (fig === "ganzhi") return <GanZhiCangFigure />;
   if (fig === "vector") return <VectorSearchFigure />;
   if (fig === "agentloop") return <AgentLoopFigure />;
+  // 干支字间关系
+  if (fig === "tianganhe") return <TianganHeCard title="天干五合" />;
+  if (fig === "liuhe") return <LiuheCard title="地支六合" />;
+  if (fig === "sanhe") return <SanheCard title="地支三合局" />;
+  if (fig === "sanhui") return <SanhuiCard title="地支三会局" />;
+  if (fig === "liuchong") return <LiuchongCard title="地支六冲" />;
+  if (fig === "sanxing") return <SanxingCard title="地支三刑" />;
+  if (fig === "liuhai") return <LiuhaiCard title="地支六害" />;
   return null;
 }

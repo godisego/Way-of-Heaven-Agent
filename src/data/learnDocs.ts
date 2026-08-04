@@ -181,6 +181,22 @@ export const LEARN_DOCS: LearnDoc[] = [
     ],
   },
   {
+    slug: "bazi-branch-relations",
+    file: "docs/bazi-branch-relations.md",
+    title: "干支合冲刑害会",
+    blurb: "天干五合、地支六合/三合/三会/六冲/三刑/六害的系统图解与叠加判断",
+    track: "mingli",
+    order: 35,
+    stage: "二 · 读懂关系",
+    level: "进阶",
+    quickRefs: [
+      { id: "tiangan", label: "天干" },
+      { id: "dizhi", label: "地支" },
+      { id: "canggan", label: "藏干" },
+      { id: "yueling", label: "月令" },
+    ],
+  },
+  {
     slug: "bazi-luck-cycles",
     file: "docs/bazi-luck-cycles.md",
     title: "起运、大运与流年",
