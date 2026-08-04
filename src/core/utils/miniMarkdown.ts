@@ -82,8 +82,10 @@ function renderTable(lines: string[]): string {
 }
 
 export function renderMarkdownToHtml(markdown: string): string {
+  // 规范化行尾（Windows \r\n / \r 统一为 \n，否则按 \n 匹配的正则会失败）
+  const normalized = markdown.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   // 去 YAML frontmatter
-  const md = markdown.replace(/^---\n[\s\S]*?\n---\n/, "");
+  const md = normalized.replace(/^---\n[\s\S]*?\n---\n/, "");
   const lines = md.split("\n");
   const out: string[] = [];
   let i = 0;
