@@ -550,3 +550,16 @@ body[data-learning="true"] .concept-tip:hover {
   .exchart-gan, .exchart-zhi { font-size: 22px; }
   .exchart-pillar { padding: 10px 4px 8px; }
 }
+
+/* 内嵌图表占位符（讲义正文中 ```wuxing 等围栏渲染为占位 div，由 JS 注入图表） */
+.mingli-fig-slot {
+  margin: 20px 0;
+}
+.mingli-fig-slot:empty::before {
+  content: "图表加载中…";
+  display: block;
+  text-align: center;
+  color: var(--muted-faint, #8b9095);
+  font-size: 12px;
+  padding: 24px;
+}

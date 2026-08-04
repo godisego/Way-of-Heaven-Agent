@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LEARN_DOCS, getAdjacentDocs, getLearnDoc, getTrackDocs } from "@/data/learnDocs";
 import { renderMarkdownToHtml } from "@/core/utils/miniMarkdown";
-import { MingliFigures } from "@/components/learning/MingliFigures";
+import { LearnArticle } from "@/components/learning/MingliFigureInjector";
 import styles from "@/components/learning/LearningLibrary.module.css";
 
 export function generateStaticParams() {
@@ -63,9 +63,8 @@ export default async function LearnDocPage({ params }: { params: Promise<{ slug:
         </nav>
       ) : null}
       {/* 内容来自本仓库 docs/ 白名单，渲染前已逐行 HTML 转义；图表围栏由渲染器识别 */}
-      <article className="learn-article" dangerouslySetInnerHTML={{ __html: html }} />
-      {/* 命理径：文末展示相关可视化图表（五行生克/十神关系），按讲义内容匹配 */}
-      <MingliFigures slug={slug} track={doc.track} />
+      {/* 正文：图表围栏（```wuxing 等）由 miniMarkdown 渲染为占位符，LearnArticle 注入可交互图表 */}
+      <LearnArticle html={html} />
       <nav className="learn-doc-next" aria-label="学径内上一篇和下一篇">
         {adjacent.previous ? (
           <Link href={`/learn/${adjacent.previous.slug}`}>

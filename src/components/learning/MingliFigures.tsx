@@ -74,6 +74,9 @@ function FigureCard({ figId, title }: { figId: string; title: string }) {
   return null;
 }
 
+// 导出供 MingliFigureInjector 内联注入用
+export { WuxingCard, ShishenCard };
+
 // ── 五行生克图 ──
 const WUXING = [
   { id: "mu", name: "木", color: COLORS.mu, angle: -90, sheng: "火", ke: "土", shengBy: "水", keBy: "金", desc: "主仁·生发伸展。如春木萌动。" },
