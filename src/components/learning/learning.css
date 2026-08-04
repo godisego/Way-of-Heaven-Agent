@@ -416,3 +416,66 @@ body[data-learning="true"] .concept-tip:hover {
 .wuxing-rel.overcome { color: #c4503e; }
 .wuxing-rel.generatedBy { color: #4a6b8a; }
 .wuxing-rel.overcomeBy { color: #8a8a8f; }
+
+/* ── 命理图表（讲义文末相关图表区）── */
+.mingli-figures {
+  margin: 32px 0 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line-faint, rgba(37, 42, 48, 0.08));
+}
+.mingli-figures-title {
+  font-family: var(--font-serif, serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--muted, #5f656b);
+  margin: 0 0 14px;
+}
+.mingli-figures-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.mfig-card {
+  background: var(--paper-bright, #fdfdfb);
+  border: 1px solid var(--line-faint, rgba(37, 42, 48, 0.08));
+  border-radius: 6px;
+  padding: 14px;
+}
+.mfig-title {
+  font-family: var(--font-serif, serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #252a30);
+  margin: 0 0 6px;
+  letter-spacing: 0.06em;
+}
+.mfig-svg {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  margin: 0 auto;
+  user-select: none;
+}
+.mfig-node { cursor: pointer; }
+.mfig-node:hover circle { stroke: var(--ink, #252a30); stroke-width: 1.5; }
+.mfig-desc {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-faint, rgba(37, 42, 48, 0.08));
+  min-height: 56px;
+}
+.mfig-desc-default {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted, #5f656b);
+  margin: 0;
+}
+.mfig-desc-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.6;
+  margin: 0 0 6px;
+}
+.mfig-rels { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.mfig-rel { font-size: 11px; }
