@@ -31,6 +31,8 @@ const DOC_LINK: Record<string, string> = {
   "docs/bazi-ten-gods-strength.md": "/learn/bazi-ten-gods-strength",
   "docs/bazi-branch-relations.md": "/learn/bazi-branch-relations",
   "docs/bazi-twelve-stages.md": "/learn/bazi-twelve-stages",
+  "docs/bazi-shishen-zuhe.md": "/learn/bazi-shishen-zuhe",
+  "docs/bazi-gege-yongshen.md": "/learn/bazi-gege-yongshen",
   "docs/bazi-luck-cycles.md": "/learn/bazi-luck-cycles",
   "docs/bazi-reading-workflow.md": "/learn/bazi-reading-workflow",
   "docs/mentor-libraries-and-bazi-design.md": "/learn/mentor-libraries-bazi",
@@ -43,6 +45,8 @@ const FIGURE_FENCES = new Set([
   "tianganhe", "liuhe", "sanhe", "sanhui", "liuchong", "sanxing", "liuhai",
   // 十二长生图（TwelveStagesFigure）
   "twelvestages",
+  // 用神决策流程图（YongshenFlowFigure）
+  "yongshenflow",
 ]);
 
 function escapeHtml(s: string): string {

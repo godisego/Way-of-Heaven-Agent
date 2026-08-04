@@ -499,6 +499,225 @@ const CONCEPTS: MingliEntry[] = [
       "绝、胎、养是五行生命周期中最隐蔽的三段。绝是旧气彻底尽，但不是消失——是转入潜藏。胎是新气聚集成形，养是胎中滋育，再下一步即回到长生。实务上，某天干在绝位不代表完了，而代表在孕育新阶段——大运流年遇绝位，常读为转折、潜藏、待发，而非灾祸。",
     links: ["twelve-stages", "stage-bingsi-mu", "stage-shengwang"],
   },
+  // === 八种普通格局 ===
+  {
+    id: "ge-zhenguan",
+    term: "正官格",
+    category: "concept",
+    brief: "月令本气或透干为正官——管理系统。",
+    detail:
+      "正官代表规则、责任、地位、管理职能。正官格之人多见守秩序、重名誉、宜公职或管理路线。喜印化官生身、财生官；忌伤官见官（伤官克官破格）、七杀混官。身强喜财官，身弱最喜印化。",
+    links: ["shishen", "qiangruo", "gege", "yongshen-fuyi"],
+  },
+  {
+    id: "ge-qisha",
+    term: "七杀格",
+    category: "concept",
+    brief: "月令本气或透干为七杀——压力突破型。",
+    detail:
+      "七杀代表压力、突破、武断、险境中的成就。七杀格之人多见刚毅、有冲劲、宜武职或开拓型事业。喜食神制杀（制其暴）、印化杀（化其压）；忌财生杀过旺（杀攻身）。身强可任杀，身弱必须有制化。",
+    links: ["shishen", "qiangruo", "gege", "yongshen-fuyi", "zuhe-shishen-zhi-sha"],
+  },
+  {
+    id: "ge-zhengcai",
+    term: "正财格",
+    category: "concept",
+    brief: "月令本气或透干为正财——稳定积累型。",
+    detail:
+      "正财代表稳定收入、勤恳经营、节俭积累。正财格之人多见务实、守成、宜稳定职业。喜官杀护财、比劫制财（防过散）；忌财多身弱（财多压身）、比劫夺财过旺。身强喜财官，身弱财多需印比。",
+    links: ["shishen", "qiangruo", "gege", "zuhe-bijie-duo-cai"],
+  },
+  {
+    id: "ge-piancai",
+    term: "偏财格",
+    category: "concept",
+    brief: "月令本气或透干为偏财——经营变动型。",
+    detail:
+      "偏财代表经营之财、变动之财、流动之财。偏财格之人多见活跃、善交际、宜经商或变动型事业。喜官杀护、食神生；忌比劫夺（比劫夺偏财更凶于夺正财）。身强最喜，身弱财多需印比扶身。",
+    links: ["shishen", "qiangruo", "gege", "zuhe-bijie-duo-cai"],
+  },
+  {
+    id: "ge-zhengyin",
+    term: "正印格",
+    category: "concept",
+    brief: "月令本气或透干为正印——庇护学业型。",
+    detail:
+      "正印代表庇护、学业、传承、文职。正印格之人多见温文、好学、宜学术或文职。喜官杀生印、比劫助印；忌财破印（财克印破格）。身弱最喜印化官生身；身强则印过旺反滞。",
+    links: ["shishen", "qiangruo", "gege", "zuhe-cai-po-yin"],
+  },
+  {
+    id: "ge-pianyin",
+    term: "偏印格",
+    category: "concept",
+    brief: "月令本气或透干为偏印——偏门学问孤独型。",
+    detail:
+      "偏印代表偏门学问、玄学、孤独、非常规思维。偏印格之人多见孤峭、有偏门才能。喜比劫化偏印、官杀生；最忌偏印夺食（偏印克食神，称枭神夺食）。身弱喜偏印生身；身强则偏印为忌。",
+    links: ["shishen", "qiangruo", "gege", "zuhe-xiao-shen-duo-shi"],
+  },
+  {
+    id: "ge-shishen",
+    term: "食神格",
+    category: "concept",
+    brief: "月令本气或透干为食神——创造表达型。",
+    detail:
+      "食神代表创造、表达、福禄、享受。食神格之人多见温和有才华、宜文艺或服务类。喜财生食神、比劫助；最忌偏印夺食（枭神夺食）。身强最喜食神泄秀；身弱食神过旺则虚耗。",
+    links: ["shishen", "qiangruo", "gege", "zuhe-shishen-sheng-cai", "zuhe-xiao-shen-duo-shi"],
+  },
+  {
+    id: "ge-shangguan",
+    term: "伤官格",
+    category: "concept",
+    brief: "月令本气或透干为伤官——才华颠覆型。",
+    detail:
+      "伤官代表才华、颠覆、锐利、批判。伤官格之人多见聪明外露、有批判力、宜创作或挑战型事业。喜财化伤生官、印制伤官；最忌伤官见正官（伤官克官，破格）。身强喜伤官泄秀；身弱则伤官泄气过重。",
+    links: ["shishen", "qiangruo", "gege", "zuhe-shangguan-jian-guan", "zuhe-shangguan-peiyin"],
+  },
+  // === 五种用神取法 ===
+  {
+    id: "yongshen-fuyi",
+    term: "扶抑用神",
+    category: "concept",
+    brief: "身强用克泄耗、身弱用生扶——最基础用神法。",
+    detail:
+      "扶抑是用神取法中最基础的——身强则用食伤/财/官杀克泄耗，使力量流动；身弱则用印/比劫生扶，使日主能承载。但扶抑是优先级最低的用神法——要先排除从格、调候、通关、病药后才论扶抑。",
+    links: ["qiangruo", "yongshen-tiaohou", "yongshen-tongguan", "yongshen-bingyao", "yongshen-shuncong"],
+  },
+  {
+    id: "yongshen-tiaohou",
+    term: "调候用神",
+    category: "concept",
+    brief: "寒月需火暖、燥月需水润——气候调衡。",
+    detail:
+      "调候是看月令过寒或过燥时，先于扶抑制衡气温。如冬月（亥子丑）水旺，日主虽强仍需丙丁火暖；夏月（巳午未）火旺，日主虽弱仍需壬癸水润。调候用神有时与扶抑矛盾，要先调候后扶抑。",
+    links: ["yueling", "yongshen-fuyi", "wuxing-gk"],
+  },
+  {
+    id: "yongshen-tongguan",
+    term: "通关用神",
+    category: "concept",
+    brief: "两行相战、五行不通——用通关五行疏通。",
+    detail:
+      "原局两行相战（如木克土、金克木）且无化解时，取能疏通二者的五行为通关用神。如木土相战用火通关（木生火、火生土）；火金相战用土通关。通关的本质是在两端建立中间转化节点。",
+    links: ["wuxing-gk", "yongshen-fuyi"],
+  },
+  {
+    id: "yongshen-bingyao",
+    term: "病药用神",
+    category: "concept",
+    brief: "原局有病（过旺过弱）——用能治病的药。",
+    detail:
+      "病药用神看原局何处是病（过旺或过弱之字），用能治该病的五行作为药。如木过旺克土为病，用金克木或火泄木为药。病药比扶抑更精确——不是泛论身强身弱，而是具体定位病在何处。",
+    links: ["yongshen-fuyi", "qiangruo"],
+  },
+  {
+    id: "yongshen-shuncong",
+    term: "顺从用神",
+    category: "concept",
+    brief: "成从格或化格——顺势不逆势。",
+    detail:
+      "日主极弱无根且无破，或极旺无制，形成从格或化气格时，用神不是扶抑而是顺势——从财用财、从杀用官杀、从儿用食伤、从旺用比劫。判断从格要严：必须日主毫无根气、克泄之物极旺、无任何破势之字。",
+    links: ["qiangruo", "yongshen-fuyi", "gege"],
+  },
+  // === 十神组合断法 ===
+  {
+    id: "gege",
+    term: "格局",
+    category: "concept",
+    brief: "原局以何十神为本——八普通格 + 五特殊格。",
+    detail:
+      "格局是子平命理的核心判断框架。取格口诀：以月令本气为先，透干为用。八种普通格局：正官格、七杀格、正财格、偏财格、正印格、偏印格、食神格、伤官格。五种特殊格局：从财格、从杀格、从儿格、从旺格、化气格。格局告诉你这张盘是哪种类型的系统。",
+    links: ["yueling", "shishen", "yongshen-fuyi", "yongshen-shuncong"],
+  },
+  {
+    id: "zuhe-shishen-sheng-cai",
+    term: "食神生财",
+    category: "concept",
+    brief: "食神 + 财星——才华转出为利。",
+    detail:
+      "食神生财是食神生财星，将创造力转化为收入。身强则顺（才华有承载）；身弱则虚耗（输出过多而日主不支）。多见于靠表达、创作、技艺谋生的人。喜比劫助身、忌印制食神（夺食）。",
+    links: ["shishen", "ge-shishen", "ge-zhengcai", "ge-piancai"],
+  },
+  {
+    id: "zuhe-shangguan-jian-guan",
+    term: "伤官见官",
+    category: "concept",
+    brief: "伤官 + 正官同透——才华与规则冲突。",
+    detail:
+      "伤官见官是子平忌见组合之一——伤官克正官，才华与规则冲突，多见职场变动、言论招祸。但若有印星制伤官（印制伤护官），则化凶为吉。身强有印制则化；身弱无制则凶。古书言伤官见官为祸百端，但实务要看是否有制化。",
+    links: ["shishen", "ge-shangguan", "ge-zhenguan", "zuhe-shangguan-peiyin"],
+  },
+  {
+    id: "zuhe-guan-yin-xiang-sheng",
+    term: "官印相生",
+    category: "concept",
+    brief: "正官 + 正印——责任有学识庇护。",
+    detail:
+      "官印相生是正官生正印、正印生日主，形成责任-学识-自身的良性循环。多见于文职管理或学术行政路线。身弱最喜此组合（官生印、印生身）；身强则官印过旺反滞，需食伤泄秀。",
+    links: ["shishen", "ge-zhenguan", "ge-zhengyin"],
+  },
+  {
+    id: "zuhe-sha-yin-xiang-sheng",
+    term: "杀印相生",
+    category: "concept",
+    brief: "七杀 + 印星——压力转化为学识。",
+    detail:
+      "杀印相生是七杀生印星、印星生日主，把压力转化为学识与成就。多见于非传统路径的成就者（武职、技艺、玄学）。身弱最喜（杀重印化为贵）；杀重无印则灾（杀攻身无化）。比官印相生更显化于非主流路径。",
+    links: ["shishen", "ge-qisha", "ge-pianyin", "ge-zhengyin"],
+  },
+  {
+    id: "zuhe-cai-sheng-guan-sha",
+    term: "财生官杀",
+    category: "concept",
+    brief: "财星 + 官杀——资源带来责任或压力。",
+    detail:
+      "财生官杀是财星生官杀，资源带来责任与压力，也可能因财招祸（财生杀攻身）。身强喜财官（资源支撑责任）；身弱财官克身则凶（财生杀攻身）。要分辨是财生官（顺）还是财生杀（逆）。",
+    links: ["shishen", "ge-zhengcai", "ge-piancai", "ge-zhenguan", "ge-qisha"],
+  },
+  {
+    id: "zuhe-xiao-shen-duo-shi",
+    term: "枭神夺食",
+    category: "concept",
+    brief: "偏印 + 食神——庇护过强压住创造。",
+    detail:
+      "偏印克食神，称枭神夺食。食神为福禄之星，被偏印夺则福禄受损，多见于思虑过重、机会错过。食神为用最忌此组合；偏印为用（身弱喜偏印生身）则不忌。解法：用财破偏印（财克印解夺食）。",
+    links: ["shishen", "ge-pianyin", "ge-shishen", "zuhe-cai-po-yin"],
+  },
+  {
+    id: "zuhe-bijie-duo-cai",
+    term: "比劫夺财",
+    category: "concept",
+    brief: "比肩/劫财 + 财星——同辈资源竞争。",
+    detail:
+      "比劫夺财是比肩或劫财克财星，同辈资源竞争，多见于破财或感情分争。身强最忌此组合（比劫帮身已足，再夺财则灾）；身弱则比劫帮身不忌（比劫扶身胜过夺财之损）。偏财被夺比正财被夺更凶。",
+    links: ["shishen", "ge-zhengcai", "ge-piancai", "qiangruo"],
+  },
+  {
+    id: "zuhe-shishen-zhi-sha",
+    term: "食神制杀",
+    category: "concept",
+    brief: "食神 + 七杀——创造力化解压力。",
+    detail:
+      "食神制杀是食神克七杀，创造力化解压力，多见于武职或开拓型成就。身强则制有力（食神足够制杀）；身弱则制不力（食神无力，反被杀攻）。此组合是七杀格的喜用组合之一。",
+    links: ["shishen", "ge-qisha", "ge-shishen"],
+  },
+  {
+    id: "zuhe-shangguan-peiyin",
+    term: "伤官配印",
+    category: "concept",
+    brief: "伤官 + 印星——才华有学识收敛。",
+    detail:
+      "伤官配印是印星制伤官，让才华收敛而不招祸，多见于学者型表达者。印不能过旺（过旺则夺伤官之力）；平衡才顺。是伤官格见官的化解之一——有印制伤护官，化凶为吉。",
+    links: ["shishen", "ge-shangguan", "ge-zhengyin", "ge-pianyin", "zuhe-shangguan-jian-guan"],
+  },
+  {
+    id: "zuhe-cai-po-yin",
+    term: "财破印",
+    category: "concept",
+    brief: "财星 + 印星——资源干扰学识。",
+    detail:
+      "财破印是财星克印星，资源干扰学识，多见于因利忘本或学业受阻。印为用最忌此组合（印为庇护被破）；财为用则不忌。是正印格的忌见组合之一。",
+    links: ["shishen", "ge-zhengyin", "ge-pianyin", "ge-zhengcai", "ge-piancai"],
+  },
 ];
 
 function ganEntries(): MingliEntry[] {

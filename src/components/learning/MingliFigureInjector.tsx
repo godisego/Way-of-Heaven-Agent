@@ -15,6 +15,7 @@ import {
   LiuhaiCard,
 } from "./BranchRelationsFigures";
 import { TwelveStagesCard } from "./TwelveStagesFigure";
+import { YongshenFlowCard } from "./YongshenFlowFigure";
 
 /**
  * 讲义正文容器 + 命理图表注入器。
@@ -70,5 +71,7 @@ function FigureRouter({ fig }: { fig: string | null }) {
   if (fig === "liuhai") return <LiuhaiCard title="地支六害" />;
   // 十二长生
   if (fig === "twelvestages") return <TwelveStagesCard title="十二长生" />;
+  // 用神决策流程
+  if (fig === "yongshenflow") return <YongshenFlowCard title="用神取用决策" />;
   return null;
 }
