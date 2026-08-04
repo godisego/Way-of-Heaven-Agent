@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ExampleChartFigure } from "./ExampleChartFigure";
 
 /**
  * 命理可视化图表集（讲义页文末"相关图表"区，按 slug 显示对应图表）。
@@ -38,9 +39,15 @@ const DOC_FIGURES: Record<string, FigItem[]> = {
     { id: "wuxing", title: "五行生克关系" },
     { id: "shishen", title: "十神关系（以日主为轴）" },
   ],
-  "bazi-chart-anatomy": [{ id: "shishen", title: "十神关系（以日主为轴）" }],
+  "bazi-chart-anatomy": [
+    { id: "chart", title: "示例盘面（四柱结构）" },
+    { id: "shishen", title: "十神关系（以日主为轴）" },
+  ],
   "bazi-luck-cycles": [],
-  "bazi-reading-workflow": [{ id: "shishen", title: "十神关系（以日主为轴）" }],
+  "bazi-reading-workflow": [
+    { id: "chart", title: "示例盘面（四柱结构）" },
+    { id: "shishen", title: "十神关系（以日主为轴）" },
+  ],
 };
 
 export function MingliFigures({ slug, track }: { slug: string; track: string }) {
@@ -52,9 +59,10 @@ export function MingliFigures({ slug, track }: { slug: string; track: string }) 
     <section className="mingli-figures" aria-label="本节相关图表">
       <h3 className="mingli-figures-title">相关图表</h3>
       <div className="mingli-figures-grid">
-        {figs.map((f) => (
-          <FigureCard key={f.id} figId={f.id} title={f.title} />
-        ))}
+        {figs.map((f) => {
+          if (f.id === "chart") return <ExampleChartFigure key={f.id} />;
+          return <FigureCard key={f.id} figId={f.id} title={f.title} />;
+        })}
       </div>
     </section>
   );

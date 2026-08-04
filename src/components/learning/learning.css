@@ -479,3 +479,74 @@ body[data-learning="true"] .concept-tip:hover {
 }
 .mfig-rels { display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .mfig-rel { font-size: 11px; }
+
+/* ── 示例排盘图 ── */
+.exchart-card { grid-column: 1 / -1; }
+.exchart-intro {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted, #5f656b);
+  margin: 0 0 14px;
+}
+.exchart-intro strong { color: var(--ink-soft, #3b4046); }
+.exchart-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.exchart-pillar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 6px 10px;
+  background: var(--paper, #f4f5f1);
+  border: 1px solid var(--line-faint, rgba(37, 42, 48, 0.08));
+  border-radius: 5px;
+  cursor: pointer;
+  transition: border-color 0.16s, background 0.16s;
+  font-family: var(--font-serif, serif);
+}
+.exchart-pillar:hover { border-color: var(--line, rgba(37, 42, 48, 0.18)); }
+.exchart-pillar.is-active { border-color: var(--ink, #252a30); background: var(--paper-bright, #fdfdfb); }
+.exchart-pillar.is-rizhu { border-color: var(--cinnabar-line, rgba(168, 71, 60, 0.48)); border-width: 1.5px; }
+.exchart-pillar-name {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: var(--muted, #5f656b);
+  margin-bottom: 2px;
+}
+.exchart-gan, .exchart-zhi {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.exchart-shishen {
+  font-size: 10.5px;
+  color: var(--ink-soft, #3b4046);
+  margin-top: 2px;
+}
+.exchart-cang {
+  display: flex;
+  gap: 3px;
+  font-size: 11px;
+  margin-top: 2px;
+  min-height: 14px;
+}
+.exchart-cang span { opacity: 0.75; }
+.exchart-pillar.is-rizhu .exchart-shishen { color: var(--cinnabar, #a8473c); font-weight: 600; }
+.exchart-detail {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-faint, rgba(37, 42, 48, 0.08));
+}
+.exchart-info-text {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink-soft, #3b4046);
+  margin: 4px 0 0;
+}
+@media (max-width: 520px) {
+  .exchart-gan, .exchart-zhi { font-size: 22px; }
+  .exchart-pillar { padding: 10px 4px 8px; }
+}
