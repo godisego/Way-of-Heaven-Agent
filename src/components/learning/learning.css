@@ -639,58 +639,63 @@ body[data-learning="true"] .concept-tip:hover {
 .gzcang-cang { grid-template-columns: 60px 1fr; }
 .gzcang-cang .gzcang-layer-chars { grid-column: 2 / 3; }
 
-/* ── 学习馆文章标题强化覆盖（确保视觉分明，不受缓存影响）── */
+/* ── 学习馆文章标题强化（章节标签风格，参考用户图二）── */
 .learn-article > h1:first-child {
   font-size: 30px !important;
   font-weight: 800 !important;
   color: var(--ink) !important;
   padding-bottom: 16px !important;
-  margin-bottom: 28px !important;
+  margin: 0 0 32px !important;
   border-bottom: 3px solid var(--ink) !important;
 }
 
+/* h2 章节标题：深色背景条 + 白字，像章节标签 */
 .learn-article h2 {
-  font-size: 24px !important;
+  font-size: 22px !important;
   font-weight: 800 !important;
-  color: var(--ink) !important;
-  margin-top: 52px !important;
-  margin-bottom: 20px !important;
-  padding: 10px 14px !important;
-  background: rgba(37, 42, 48, 0.05) !important;
-  border-left: 5px solid var(--cinnabar) !important;
+  color: #fdfdfb !important;
+  background: var(--ink) !important;
+  margin-top: 56px !important;
+  margin-bottom: 22px !important;
+  padding: 12px 18px !important;
+  border-left: none !important;
   border-bottom: none !important;
-  border-radius: 0 4px 4px 0 !important;
+  border-radius: 4px !important;
+  letter-spacing: 0.06em !important;
 }
 
+/* h3 小节标题：沉朱底色 + 白字 */
 .learn-article h3 {
-  font-size: 19px !important;
+  font-size: 17px !important;
   font-weight: 700 !important;
-  color: var(--cinnabar) !important;
-  margin-top: 36px !important;
-  margin-bottom: 14px !important;
-  padding-left: 13px !important;
-  border-left: 4px solid var(--cinnabar) !important;
+  color: #fdfdfb !important;
+  background: var(--cinnabar) !important;
+  margin-top: 38px !important;
+  margin-bottom: 16px !important;
+  padding: 7px 14px !important;
+  padding-left: 14px !important;
+  border-left: none !important;
+  border-radius: 3px !important;
+  display: inline-block !important;
 }
 
 .learn-article h4 {
   font-size: 16px !important;
   font-weight: 700 !important;
-  color: var(--ink) !important;
-  margin-top: 26px !important;
+  color: var(--cinnabar) !important;
+  margin-top: 28px !important;
+  margin-bottom: 10px !important;
+  padding-left: 11px !important;
+  border-left: 3px solid var(--cinnabar) !important;
 }
 
-/* 正文：首行缩进，强化"正文感" */
+/* 正文：首行缩进，强化正文感 */
 .learn-article p {
   text-indent: 2em !important;
 }
-/* 表格/列表/代码/引用/图不缩进 */
-.learn-article table p,
-.learn-article li p,
-.learn-article blockquote p,
-.learn-article pre + p,
-.learn-article .mingli-fig-slot + p {
-  text-indent: 2em !important;
-}
-.learn-article li {
+.learn-article li,
+.learn-article td,
+.learn-article th,
+.learn-article blockquote p {
   text-indent: 0 !important;
 }
