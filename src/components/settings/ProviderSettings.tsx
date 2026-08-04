@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { resetOnboarding } from "@/components/learning/onboarding";
 import { providerSettingsApi } from "@/data/providerSettingsStore";
 import {
   EMPTY_SETTINGS,
@@ -170,6 +171,7 @@ export function ProviderSettings() {
               <span className="settings-status">
                 {saved ? "✓ 已保存" : chatReady || embedReady ? "有未保存改动" : ""}
               </span>
+              <button type="button" className="settings-clear" onClick={() => { resetOnboarding(); window.location.href = "/"; }}>重看引导</button>
               <button type="button" className="settings-clear" onClick={onClear}>
                 清除
               </button>

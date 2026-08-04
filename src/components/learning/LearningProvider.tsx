@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { hasSeenOnboarding, markOnboardingSeen } from "./onboarding";
 
 type LearningContextValue = {
   enabled: boolean;
@@ -54,6 +55,25 @@ export function LearningProvider({ children }: { children: ReactNode }) {
       }
     };
   }, [enabled]);
+
+  // 首次访问自动启动入门引导（只在首页，看过一次就不再弹）
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (hasSeenOnboarding()) return;
+    if (window.location.pathname !== "/") return;
+    const timer = setTimeout(() => {
+      try {
+        import("./tourController").then(({ startLesson }) => {
+          startLesson("agent-1");
+          markOnboardingSeen();
+        });
+      } catch {
+        markOnboardingSeen();
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
 
   // 全局 hover 监听,把单一 tooltip 元素定位到当前 [data-tip] 元素
   useEffect(() => {
