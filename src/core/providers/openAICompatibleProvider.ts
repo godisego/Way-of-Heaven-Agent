@@ -49,12 +49,14 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
     if (this.useMockEmbedding()) {
       return this.mockEmbedding.embedTexts(input);
     }
-    // 同时发 input（OpenAI 标准）与 texts（MiniMax 原生）两个字段：
-    // 标准 OpenAI 端点忽略多余字段，MiniMax 端点读 texts。一次请求兼容两者。
+    // 同时发多个字段以兼容各供应商：
+    // - input（OpenAI/智谱/通义/Ollama/硅基流动标准）
+    // - texts（MiniMax 原生读这个）
+    // - type=db（MiniMax 必填，"db"=入库用 / "query"=查询用；其他端点忽略此字段）
     const response = await fetch(`${this.cfg.openAICompatBaseUrl.replace(/\/$/, "")}/embeddings`, {
       method: "POST",
       headers: this.headers(),
-      body: JSON.stringify({ model: this.cfg.embeddingModel, input: input.texts, texts: input.texts }),
+      body: JSON.stringify({ model: this.cfg.embeddingModel, input: input.texts, texts: input.texts, type: "db" }),
     });
     if (!response.ok) throw new Error(`Embedding 接口失败：${response.status} ${await response.text()}`);
     const data = await response.json();

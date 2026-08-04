@@ -31,16 +31,40 @@ export function ProviderSettings() {
   }, []);
 
   const update = useCallback((kind: ProviderKind, patch: Partial<ProviderConfig>) => {
-    setSettings((prev) => ({ ...prev, [kind]: { ...prev[kind], ...patch } }));
+    setSettings((prev) => {
+      const next = { ...prev, [kind]: { ...prev[kind], ...patch } };
+      // unified 模式下改聊天供应商：若有配套 embeddingModel，自动更新嵌入的 model 与 baseUrl
+      if (next.unified && kind === "chat" && patch.provider) {
+        const preset = findPreset("chat", patch.provider);
+        if (preset?.embeddingModel) {
+          next.embedding = {
+            ...next.chat,
+            model: preset.embeddingModel,
+            baseUrl: preset.embeddingBaseUrl ?? next.chat.baseUrl,
+            // embedding 恒走 openai 协议
+            protocol: "openai" as const,
+          };
+        }
+      }
+      return next;
+    });
     setSaved(false);
   }, []);
 
   const chatReady = isProviderConfigComplete(settings.chat);
   const embedReady = settings.unified ? chatReady : isProviderConfigComplete(settings.embedding);
 
-  // unified 模式下，保存时把聊天配置同步到嵌入（覆盖），让服务端两套都用同一份
+  // unified 模式下，保存时把聊天配置同步到嵌入（baseUrl/key 复用，model 用配套嵌入模型）
   const effectiveSettings: ProviderSettings = settings.unified
-    ? { ...settings, embedding: { ...settings.chat } }
+    ? (() => {
+        const preset = findPreset("chat", settings.chat.provider);
+        const embModel = settings.embedding.model || preset?.embeddingModel || settings.chat.model;
+        const embBaseUrl = preset?.embeddingBaseUrl ?? settings.chat.baseUrl;
+        return {
+          ...settings,
+          embedding: { ...settings.chat, model: embModel, baseUrl: embBaseUrl, protocol: "openai" as const },
+        };
+      })()
     : settings;
 
   const onSave = useCallback(async () => {
@@ -106,7 +130,7 @@ export function ProviderSettings() {
 
             {settings.unified ? (
               <p className="settings-unified-hint">
-                ✓ 已开启：典籍检索将复用上方的供应商与密钥（需该供应商支持 embedding，如 OpenAI / 智谱 / 通义）。
+                ✓ 嵌入复用上方供应商。多数供应商（OpenAI/智谱/通义/MiniMax/硅基流动/Ollama）同时支持聊天与嵌入；少数（DeepSeek/Kimi/Anthropic）仅聊天，嵌入将自动回退本地 mock，不影响对谈。
               </p>
             ) : (
               <ConfigSection

@@ -25,6 +25,10 @@ export type ProviderPreset = {
   supportsModelList: boolean;
   /** 预填的常用模型名（用户可改 / 覆盖） */
   defaultModel?: string;
+  /** 该供应商配套的 embedding 模型名（unified 模式下嵌入自动用这个）。空=不支持嵌入 */
+  embeddingModel?: string;
+  /** embedding 的 Base URL（与聊天不同时填，如 MiniMax 聊天走 /anthropic、嵌入走 /v1） */
+  embeddingBaseUrl?: string;
 };
 
 /**
@@ -40,6 +44,8 @@ export const CHAT_PRESETS: ProviderPreset[] = [
     authStyle: "anthropic",
     supportsModelList: false,
     defaultModel: "MiniMax-M3",
+    embeddingModel: "embo-01",
+    embeddingBaseUrl: "https://api.minimaxi.com/v1",
   },
   {
     id: "anthropic",
@@ -49,6 +55,7 @@ export const CHAT_PRESETS: ProviderPreset[] = [
     authStyle: "anthropic",
     supportsModelList: true,
     defaultModel: "claude-3-5-sonnet-20241022",
+    // Anthropic 不提供 embedding 接口
   },
   {
     id: "deepseek",
@@ -58,6 +65,7 @@ export const CHAT_PRESETS: ProviderPreset[] = [
     authStyle: "openai",
     supportsModelList: true,
     defaultModel: "deepseek-chat",
+    // DeepSeek 暂未开放 embedding 接口
   },
   {
     id: "openai-chat",
@@ -67,6 +75,7 @@ export const CHAT_PRESETS: ProviderPreset[] = [
     authStyle: "openai",
     supportsModelList: true,
     defaultModel: "gpt-4o",
+    embeddingModel: "text-embedding-3-small",
   },
   {
     id: "dashscope-chat",
@@ -76,6 +85,7 @@ export const CHAT_PRESETS: ProviderPreset[] = [
     authStyle: "openai",
     supportsModelList: true,
     defaultModel: "qwen-plus",
+    embeddingModel: "text-embedding-v3",
   },
   {
     id: "zhipu-chat",
@@ -85,6 +95,7 @@ export const CHAT_PRESETS: ProviderPreset[] = [
     authStyle: "openai",
     supportsModelList: false,
     defaultModel: "glm-4-plus",
+    embeddingModel: "embedding-3",
   },
   {
     id: "moonshot",
@@ -94,6 +105,7 @@ export const CHAT_PRESETS: ProviderPreset[] = [
     authStyle: "openai",
     supportsModelList: true,
     defaultModel: "moonshot-v1-8k",
+    // Moonshot 暂未开放 embedding 接口
   },
   {
     id: "siliconflow",
@@ -103,6 +115,7 @@ export const CHAT_PRESETS: ProviderPreset[] = [
     authStyle: "openai",
     supportsModelList: true,
     defaultModel: "Qwen/Qwen2.5-7B-Instruct",
+    embeddingModel: "BAAI/bge-m3",
   },
   {
     id: "ollama",
@@ -112,6 +125,7 @@ export const CHAT_PRESETS: ProviderPreset[] = [
     authStyle: "openai",
     supportsModelList: true,
     defaultModel: "llama3.1",
+    embeddingModel: "nomic-embed-text",
   },
   {
     id: "custom-chat",
@@ -160,6 +174,24 @@ export const EMBEDDING_PRESETS: ProviderPreset[] = [
     authStyle: "openai",
     supportsModelList: true,
     defaultModel: "text-embedding-v3",
+  },
+  {
+    id: "siliconflow-embed",
+    label: "硅基流动",
+    kind: "embedding",
+    baseUrl: "https://api.siliconflow.cn/v1",
+    authStyle: "openai",
+    supportsModelList: true,
+    defaultModel: "BAAI/bge-m3",
+  },
+  {
+    id: "ollama-embed",
+    label: "本地 Ollama",
+    kind: "embedding",
+    baseUrl: "http://localhost:11434/v1",
+    authStyle: "openai",
+    supportsModelList: true,
+    defaultModel: "nomic-embed-text",
   },
   {
     id: "custom-embed",
