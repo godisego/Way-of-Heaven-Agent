@@ -92,7 +92,7 @@ export const MINGLI_LESSONS: Lesson[] = [
         popover: {
           title: "释义卡：词条 + 在你盘中",
           description:
-            "每张卡两段：这个概念本身是什么（71 词条知识库），以及它在你盘中扮演什么角色（确定性规则现算）。\n卡内蓝下划线词条可继续点击，交叉跳转。",
+            "每张卡两段：这个概念本身是什么（命理知识库词条），以及它在你盘中扮演什么角色（确定性规则现算）。\n卡内蓝下划线词条可继续点击，交叉跳转。",
           side: "left",
         },
       },
@@ -264,7 +264,7 @@ export const MINGLI_LESSONS: Lesson[] = [
         popover: {
           title: "毕业练习",
           description:
-            "用 150 字说明自己的盘：日主与月令、一处根气证据、两个透干十神及柱位、当前岁运背景，再补一句算法局限。\n深读：docs/bazi-reading-workflow.md；忘词就去学习馆的 71 词条交叉速查。",
+            "用 150 字说明自己的盘：日主与月令、一处根气证据、两个透干十神及柱位、当前岁运背景，再补一句算法局限。\n深读：docs/bazi-reading-workflow.md；忘词就去学习馆的命理交叉速查。",
         },
       },
     ],

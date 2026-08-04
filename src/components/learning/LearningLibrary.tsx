@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { GLOSSARY } from "@/data/concepts";
-import { getTrackDocs, type LearnDoc, type LearnTrack } from "@/data/learnDocs";
+import { getTrackDocs, LEARN_DOCS, type LearnDoc, type LearnTrack } from "@/data/learnDocs";
 import { MingliQuickReference } from "@/components/learning/MingliQuickReference";
+import { kbSize } from "@/core/mingli/mingliKb";
 import { startLesson } from "@/components/learning/tourController";
 
 type LearnView = "agent" | "mingli" | "quick";
@@ -203,9 +204,9 @@ export function LearningLibrary() {
           <p>两条完整学径，一套随时可查的命理词典。选定方向后，沿课程顺序往下读。</p>
         </div>
         <dl className="learn-overview-stats" aria-label="学习馆内容统计">
-          <div><dt>课程讲义</dt><dd>18</dd></div>
-          <div><dt>学习阶段</dt><dd>10</dd></div>
-          <div><dt>速查词条</dt><dd>71</dd></div>
+          <div><dt>课程讲义</dt><dd>{LEARN_DOCS.length}</dd></div>
+          <div><dt>学习阶段</dt><dd>{new Set(LEARN_DOCS.map((d) => d.stage)).size}</dd></div>
+          <div><dt>速查词条</dt><dd>{kbSize()}</dd></div>
         </dl>
       </header>
 
@@ -221,7 +222,7 @@ export function LearningLibrary() {
             onClick={() => activate("agent")}
           >
             <span>Agent 学径</span>
-            <small>11 篇 · 工程实践</small>
+            <small>{getTrackDocs("agent").length} 篇 · 工程实践</small>
           </button>
           <button
             type="button"
@@ -233,7 +234,7 @@ export function LearningLibrary() {
             onClick={() => activate("mingli")}
           >
             <span>命理学径</span>
-            <small>7 篇 · 系统读盘</small>
+            <small>{getTrackDocs("mingli").length} 篇 · 系统读盘</small>
           </button>
           <button
             type="button"
@@ -245,7 +246,7 @@ export function LearningLibrary() {
             onClick={() => activate("quick")}
           >
             <span>命理速查</span>
-            <small>71 词 · 交叉索引</small>
+            <small>{kbSize()} 词 · 交叉索引</small>
           </button>
         </nav>
 

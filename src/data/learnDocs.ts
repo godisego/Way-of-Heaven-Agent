@@ -13,7 +13,7 @@ export type LearnDoc = {
   /** 课程阶段，如「一 · 认地图」。 */
   stage: string;
   level: "入门" | "进阶" | "工程" | "附录";
-  /** 命理文档可直达 71 词条交叉速查。 */
+  /** 命理文档可直达命理知识库词条交叉速查。 */
   quickRefs?: Array<{ id: string; label: string }>;
 };
 

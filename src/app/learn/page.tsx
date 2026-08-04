@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "从 Agent 原理、源码与评测，到八字盘面、十神、岁运和交叉速查的双学径课程",
 };
 
-/** 学习馆：两条系统课程 + Agent 术语 + 命理 71 词条交叉速查。 */
+/** 学习馆：两条系统课程 + Agent 术语 + 命理知识库交叉速查。 */
 export default function LearnPage() {
   return (
     <main className={`learn-shell learn-home ${styles.home}`}>
