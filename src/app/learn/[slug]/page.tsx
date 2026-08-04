@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LEARN_DOCS, getAdjacentDocs, getLearnDoc, getTrackDocs } from "@/data/learnDocs";
 import { renderMarkdownToHtml } from "@/core/utils/miniMarkdown";
+import { WuxingDiagram } from "@/components/learning/WuxingDiagram";
 import styles from "@/components/learning/LearningLibrary.module.css";
 
 export function generateStaticParams() {
@@ -61,6 +62,8 @@ export default async function LearnDocPage({ params }: { params: Promise<{ slug:
           ))}
         </nav>
       ) : null}
+      {/* 命理径文档：在正文前展示五行生克可视化图（子平理论基础） */}
+      {doc.track === "mingli" ? <WuxingDiagram /> : null}
       {/* 内容来自本仓库 docs/ 白名单，渲染前已逐行 HTML 转义 */}
       <article className="learn-article" dangerouslySetInnerHTML={{ __html: html }} />
       <nav className="learn-doc-next" aria-label="学径内上一篇和下一篇">
