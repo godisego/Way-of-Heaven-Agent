@@ -112,10 +112,78 @@
 
 .settings-unified-hint {
   font-size: 11px;
-  color: var(--celadon, #5f7a74);
   line-height: 1.6;
   margin: 0 0 8px;
   padding: 6px 0 0;
+}
+
+.settings-unified-hint.is-ok {
+  color: var(--celadon, #5f7a74);
+}
+
+.settings-unified-hint.is-warn {
+  color: var(--cinnabar, #a8473c);
+}
+
+/* 引导说明区 */
+.settings-guide {
+  background: rgba(37, 42, 48, 0.03);
+  border: 1px solid var(--line-faint, rgba(37, 42, 48, 0.08));
+  border-radius: var(--radius-sm, 2px);
+  padding: 10px 12px;
+  margin: 0 0 14px;
+}
+
+.settings-guide p {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--ink-soft, #3b4046);
+}
+
+.settings-guide p:last-child {
+  margin-bottom: 0;
+}
+
+.settings-guide strong {
+  color: var(--ink, #252a30);
+  font-weight: 600;
+}
+
+.settings-guide-note {
+  color: var(--muted-faint, #8b9095) !important;
+  font-size: 10.5px !important;
+}
+
+/* 分隔线 */
+.settings-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 8px;
+  color: var(--muted, #5f656b);
+  font-size: 10px;
+  font-family: var(--font-serif);
+  letter-spacing: 0.2em;
+}
+
+.settings-divider::before,
+.settings-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line-faint, rgba(37, 42, 48, 0.08));
+}
+
+/* 行内链接按钮 */
+.settings-link {
+  background: none;
+  border: none;
+  color: var(--celadon, #5f7a74);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
 }
 
 .settings-section {

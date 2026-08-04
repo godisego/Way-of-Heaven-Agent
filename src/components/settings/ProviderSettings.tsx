@@ -18,7 +18,11 @@ import {
 /**
  * 供应商配置面板（浮动 dock + overlay 卡片，复刻 LearningToggle 模式）。
  *
- * 用户在此选供应商、填 Key、拉取/选择模型，配完即用（随请求体传服务端）。
+ * 设计原则：自解释。让用户一眼看懂——
+ * - 聊天必填（三贤对谈核心），每个供应商标注是否同时支持典籍检索
+ * - 典籍检索可选：默认"本地 Mock（无需配置）"，想提升检索质量时再配真实嵌入
+ * - 不让用户在"聊天/嵌入用什么协议"上困惑——选供应商即自动配好
+ *
  * 密钥只存 localStorage，刷新保留，清浏览器即清除。
  */
 export function ProviderSettings() {
@@ -41,7 +45,6 @@ export function ProviderSettings() {
             ...next.chat,
             model: preset.embeddingModel,
             baseUrl: preset.embeddingBaseUrl ?? next.chat.baseUrl,
-            // embedding 恒走 openai 协议
             protocol: "openai" as const,
           };
         }
@@ -84,6 +87,10 @@ export function ProviderSettings() {
     setSaved(false);
   }, []);
 
+  // 当前聊天供应商是否支持嵌入（用于 unified 提示）
+  const chatPreset = findPreset("chat", settings.chat.provider);
+  const chatSupportsEmbed = Boolean(chatPreset?.embeddingModel);
+
   return (
     <>
       <div className="settings-dock">
@@ -106,18 +113,28 @@ export function ProviderSettings() {
                 ✕
               </button>
             </header>
-            <p className="settings-intro">
-              填好即可对谈，无需改配置文件。密钥只存本机浏览器。留空则用环境变量默认。
-            </p>
+
+            <div className="settings-guide">
+              <p>
+                <strong>聊天模型</strong>必填——三贤对谈核心，没有它无法问答。
+              </p>
+              <p>
+                <strong>典籍检索</strong>可选——让三贤能引用你上传的典籍；不配则用本地词法检索（质量一般但能用）。
+              </p>
+              <p className="settings-guide-note">密钥只存本机浏览器，不上传。</p>
+            </div>
 
             <ConfigSection
               title="聊天模型"
-              hint="三贤对谈与取证循环使用"
               kind="chat"
               config={settings.chat}
               ready={chatReady}
               onChange={update}
             />
+
+            <div className="settings-divider">
+              <span>典籍检索（嵌入）</span>
+            </div>
 
             <label className="settings-unified-toggle">
               <input
@@ -125,17 +142,23 @@ export function ProviderSettings() {
                 checked={settings.unified}
                 onChange={toggleUnified}
               />
-              <span>嵌入与聊天使用同一供应商</span>
+              <span>与聊天同一供应商</span>
             </label>
 
             {settings.unified ? (
-              <p className="settings-unified-hint">
-                ✓ 嵌入复用上方供应商。多数供应商（OpenAI/智谱/通义/MiniMax/硅基流动/Ollama）同时支持聊天与嵌入；少数（DeepSeek/Kimi/Anthropic）仅聊天，嵌入将自动回退本地 mock，不影响对谈。
-              </p>
+              chatSupportsEmbed ? (
+                <p className="settings-unified-hint is-ok">
+                  ✓ {chatPreset?.label} 支持嵌入（模型 {chatPreset?.embeddingModel}），典籍检索将复用上方密钥。
+                </p>
+              ) : (
+                <p className="settings-unified-hint is-warn">
+                  ⚠ {chatPreset?.label} 不提供嵌入接口。典籍检索将用本地 mock（能检索，质量一般）。
+                  想要真实向量检索，<button type="button" className="settings-link" onClick={toggleUnified}>取消勾选</button>另配一个支持嵌入的供应商。
+                </p>
+              )
             ) : (
               <ConfigSection
                 title="嵌入模型"
-                hint="典籍检索与入库用。留空可继续用 mock"
                 kind="embedding"
                 config={settings.embedding}
                 ready={embedReady}
@@ -145,7 +168,7 @@ export function ProviderSettings() {
 
             <footer className="settings-actions">
               <span className="settings-status">
-                {saved ? "✓ 已保存" : chatReady || embedReady ? "未保存的改动" : ""}
+                {saved ? "✓ 已保存" : chatReady || embedReady ? "有未保存改动" : ""}
               </span>
               <button type="button" className="settings-clear" onClick={onClear}>
                 清除
@@ -164,14 +187,12 @@ export function ProviderSettings() {
 /** 单个供应商配置区（聊天或嵌入） */
 function ConfigSection({
   title,
-  hint,
   kind,
   config,
   ready,
   onChange,
 }: {
   title: string;
-  hint: string;
   kind: ProviderKind;
   config: ProviderConfig;
   ready: boolean;
@@ -186,9 +207,7 @@ function ConfigSection({
     onChange(kind, {
       provider: p.id,
       baseUrl: p.baseUrl,
-      // 切供应商时保留已填的 key，预填默认模型（用户可覆盖）
       model: p.defaultModel ?? config.model,
-      // authStyle 即聊天协议（仅聊天栏用；嵌入恒为 openai）
       protocol: p.authStyle,
     });
   };
@@ -199,13 +218,13 @@ function ConfigSection({
         {title}
         {ready ? <span className="settings-dot" aria-hidden /> : null}
       </legend>
-      <p className="settings-hint">{hint}</p>
       <label className="settings-field">
         <span>供应商</span>
         <select value={config.provider} onChange={(e) => onPresetChange(e.target.value)}>
           {presets.map((p) => (
             <option key={p.id} value={p.id}>
               {p.label}
+              {kind === "chat" ? (p.embeddingModel ? "（支持检索✓）" : "（仅聊天）") : ""}
             </option>
           ))}
         </select>
@@ -251,7 +270,6 @@ function ModelPicker({
   const [loading, setLoading] = useState(false);
   const [models, setModels] = useState<string[]>([]);
   const [useManual, setUseManual] = useState(false);
-  // 测试结果反馈：null=未测，{ok,count}=成功，{ok:false,msg}=失败
   const [result, setResult] = useState<{ ok: true; count: number } | { ok: false; msg: string } | null>(null);
 
   const onTest = useCallback(async () => {
@@ -277,7 +295,6 @@ function ModelPicker({
         setModels(data.models);
         setUseManual(false);
         setResult({ ok: true, count: data.models.length });
-        // 若用户还没选模型，自动选第一个
         if (!config.model && data.models[0]) onChange(kind, { model: data.models[0] });
       } else {
         setUseManual(true);
@@ -306,7 +323,6 @@ function ModelPicker({
         </button>
       </div>
 
-      {/* 测试结果横幅：成功绿色 / 失败红色 */}
       {result ? (
         <p className={`settings-banner${result.ok ? " is-ok" : " is-err"}`}>
           {result.ok ? `✓ 获取到 ${result.count} 个模型` : `✕ ${result.msg}`}
