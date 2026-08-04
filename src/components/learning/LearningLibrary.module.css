@@ -1020,27 +1020,33 @@
 }
 
 .docPage :global(.learn-article h2) {
-  margin: 48px 0 18px;
-  padding: 0 0 10px;
-  border-bottom: 2px solid var(--ink);
+  margin: 52px 0 20px;
+  padding: 12px 18px;
   font-family: var(--font-serif);
-  font-size: 23px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
   line-height: 1.4;
-  letter-spacing: 0.03em;
-  color: var(--ink);
+  letter-spacing: 0.06em;
+  color: #fdfdfb;
+  background: var(--ink);
+  border-left: none;
+  border-bottom: none;
+  border-radius: 4px;
 }
 
 .docPage :global(.learn-article h3) {
-  margin: 32px 0 12px;
-  padding-left: 11px;
-  border-left: 3px solid var(--cinnabar);
+  display: inline-block;
+  margin: 36px 0 14px;
+  padding: 7px 14px;
   font-family: var(--font-serif);
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   line-height: 1.4;
-  letter-spacing: 0.03em;
-  color: var(--ink);
+  letter-spacing: 0.04em;
+  color: #fdfdfb;
+  background: var(--cinnabar);
+  border-left: none;
+  border-radius: 3px;
 }
 
 .docPage :global(.learn-article h4) {
@@ -1413,7 +1419,7 @@
 
   .docPage :global(.learn-article h2) {
     margin-top: 38px;
-    font-size: 21px;
+    font-size: 24px;
   }
 
   .docPage :global(.learn-article h3) {
