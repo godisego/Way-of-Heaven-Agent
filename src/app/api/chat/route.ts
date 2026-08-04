@@ -50,6 +50,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ ...answer, sessionId: activeSession.id });
   } catch (error) {
+    console.error("[/api/chat] 问答失败:", error);
     return NextResponse.json({ error: error instanceof Error ? error.message : "问答失败" }, { status: 500 });
   }
 }

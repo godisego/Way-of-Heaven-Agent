@@ -56,9 +56,15 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
     });
     if (!response.ok) throw new Error(`Embedding 接口失败：${response.status} ${await response.text()}`);
     const data = await response.json();
+    const embeddings = extractEmbeddings(data);
+    if (!embeddings.length) {
+      throw new Error(
+        `Embedding 接口返回格式无法识别（期望 {data:[{embedding}]} 或 {embeddings:[...]}）。原始响应前 200 字：${JSON.stringify(data).slice(0, 200)}`,
+      );
+    }
     return {
       model: this.cfg.embeddingModel,
-      embeddings: data.data.map((item: { embedding: number[] }) => item.embedding),
+      embeddings,
     };
   }
 
@@ -77,4 +83,34 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
 
 export function getDefaultProvider(override?: ConfigOverride | null) {
   return new OpenAICompatibleProvider(override ?? null);
+}
+
+/**
+ * 兼容多种 embedding 响应格式：
+ * - OpenAI 标准：{data: [{embedding: [...]}]}
+ * - 智谱/部分国产：{data: {embedding: [...]}} 或 {embeddings: [[...]]}
+ * - 单条简写：{embedding: [...]}
+ * 无法识别时返回空数组（调用方据此报错）。
+ */
+function extractEmbeddings(data: unknown): number[][] {
+  if (!data || typeof data !== "object") return [];
+  const obj = data as Record<string, unknown>;
+
+  // OpenAI 标准：data 是数组，每项有 embedding
+  if (Array.isArray(obj.data)) {
+    return obj.data
+      .map((item: unknown) => (item as { embedding?: number[] })?.embedding)
+      .filter((e): e is number[] => Array.isArray(e));
+  }
+  // data 是对象，含 embedding（单条）
+  if (obj.data && typeof obj.data === "object" && Array.isArray((obj.data as { embedding?: unknown }).embedding)) {
+    return [(obj.data as { embedding: number[] }).embedding];
+  }
+  // 顶层 embeddings 数组（智谱等）
+  if (Array.isArray(obj.embeddings)) {
+    return obj.embeddings.filter((e): e is number[] => Array.isArray(e));
+  }
+  // 顶层 embedding（单条简写）
+  if (Array.isArray(obj.embedding)) return [obj.embedding];
+  return [];
 }
