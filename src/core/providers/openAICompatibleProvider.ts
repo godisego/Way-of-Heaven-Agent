@@ -66,7 +66,7 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
       return this.mockEmbedding.embedTexts(input);
     }
     // 401/403（无权限，如 MiniMax Coding Plan 不含嵌入）→ 回退 mock，不阻塞聊天
-    if (response.status === 401 || response.status === 403) {
+    if ([401, 403, 404, 500].includes(response.status)) {
       console.warn(`[embedding] 鉴权失败（${response.status}），回退 mock。可能是套餐不含嵌入权限。`);
       return this.mockEmbedding.embedTexts(input);
     }
