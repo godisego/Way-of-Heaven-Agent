@@ -390,6 +390,16 @@ export const LEARN_DOCS: LearnDoc[] = [
     stage: "五 · 核对口径",
     level: "工程",
   },
+  {
+    slug: "metaphysics-overview",
+    file: "docs/metaphysics-overview.md",
+    title: "命术大盘：八字之外的术数体系",
+    blurb: "紫微斗数、易经占卜、风水、择日、三式的大局观速览——各门派定位、与八字的关系、能做什么不能做什么",
+    track: "mingli",
+    stage: "五 · 核对口径",
+    order: 80,
+    level: "进阶",
+  },
 ];
 
 export function getLearnDoc(slug: string): LearnDoc | null {

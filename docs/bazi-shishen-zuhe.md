@@ -7,7 +7,7 @@ description: 十神组合断法：从单十神到组合判断，十种典型组�
 
 单看一个十神只是"零件"——"正官"代表约束、责任、规则——但组合起来才能成"句子"："财生官"是有资源支撑的责任，"伤官见官"是才华与规则的冲突。命理的真正断盘能力，是把十神组合读成有逻辑的人事语言。
 
-速查入口：[十神](/learn#mingli-shishen) · [日主](/learn#mingli-riyuan) · [身强身弱](/learn#mingli-qiangruo) · [格局用神](/learn#mingli-)。
+速查入口：[十神](/learn#mingli-shishen) · [日主](/learn#mingli-riyuan) · [身强身弱](/learn#mingli-qiangruo) · [格局用神](/learn#mingli-gege)。
 
 ## 一 · 为什么单看十神会误读
 
