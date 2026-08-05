@@ -61,5 +61,7 @@ export function hasLexicalEvidenceForCitationQuestion(
   if (!isCitationQuestion(question)) return true;
   if (requestedBookTitles(question).length) return citationEvidenceCoverage(question, results) === 1;
   if (!coreTerms(question).length) return true;
-  return citationEvidenceCoverage(question, results) >= 0.4;
+  // 门槛从 0.4 降到 0.15：mock embedding 词面匹配覆盖率天然偏低，
+  // 0.4 会误杀大量有效结果导致"资料不足"。0.15 仍能拦住完全无关的碰撞。
+  return citationEvidenceCoverage(question, results) >= 0.15;
 }
