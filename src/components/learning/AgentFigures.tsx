@@ -47,7 +47,7 @@ export function VectorSearchFigure() {
         <p className="mfig-desc-default">
           <span style={{ color: "#5f7a74" }}>●</span> 绿色圈是相关的典籍段落（向量近，被检索到）；
           <span style={{ color: "#9a9a9f" }}> ●</span> 灰色圈是不相关的（向量远，被忽略）。
-          系统只把<strong>最近的几段</strong>交给三贤参考——这就是"检索"。
+          系统只把<strong>最近的几段</strong>交给三贤参考——这就是&quot;检索&quot;。
         </p>
       </div>
     </div>
@@ -83,9 +83,9 @@ export function AgentLoopFigure() {
       </div>
       <div className="mfig-desc">
         <p className="mfig-desc-default">
-          如果"证据不够"，模型会<strong>回到第 2 步继续检索</strong>（换关键词再搜）——
-          这就是"循环"。直到证据充分，才交给三贤生成最终回答。
-          下方的<strong>执行轨迹面板</strong>记录了每一步（这就是"循迹"开关看的东西）。
+          如果&quot;证据不够&quot;，模型会<strong>回到第 2 步继续检索</strong>（换关键词再搜）——
+          这就是&quot;循环&quot;。直到证据充分，才交给三贤生成最终回答。
+          下方的<strong>执行轨迹面板</strong>记录了每一步（这就是&quot;循迹&quot;开关看的东西）。
         </p>
       </div>
     </div>

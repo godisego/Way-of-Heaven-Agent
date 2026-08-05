@@ -134,7 +134,7 @@ function PillarDetail({ idx }: { idx: number }) {
       </p>
       <p className="exchart-info-text">
         藏干：{cang.map((c) => `${c}（${GAN_WX[c]}）`).join("、")}。
-        藏干是地支内部"藏着"的天干，决定地支的实质力量与暗藏十神。
+        藏干是地支内部&quot;藏着&quot;的天干，决定地支的实质力量与暗藏十神。
       </p>
     </div>
   );
@@ -189,15 +189,15 @@ export function GanZhiCangFigure() {
 
       <div className="mfig-desc">
         <p className="mfig-desc-default">
-          <strong>怎么看这张图</strong>：横着看是"年·月·日·时"四柱（和盘面一致）；
-          竖着看，每一柱从上到下是"天干→地支→藏干"三层。
+          <strong>怎么看这张图</strong>：横着看是&quot;年·月·日·时&quot;四柱（和盘面一致）；
+          竖着看，每一柱从上到下是&quot;天干→地支→藏干&quot;三层。
           <strong>天干</strong>露在外面（你第一眼看到的字），
           <strong>地支</strong>承载节令（每个柱的根基），
           <strong>藏干</strong>藏在地支里（本气/中气/余气，是实质力量来源）。
         </p>
         <p className="mfig-desc-default" style={{ marginTop: 6 }}>
           <strong>通根</strong>：若天干的五行在地支藏干中出现（如日柱戊土在年支丑中找到己土的根），
-          说明这个力量"有根"、站得住。没根的天干像浮在表面的功能，遇到压力容易垮。
+          说明这个力量&quot;有根&quot;、站得住。没根的天干像浮在表面的功能，遇到压力容易垮。
         </p>
       </div>
     </div>
