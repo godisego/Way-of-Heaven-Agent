@@ -730,6 +730,126 @@ const CONCEPTS: MingliEntry[] = [
       "财破印是财星克印星，资源干扰学识，多见于因利忘本或学业受阻。印为用最忌此组合（印为庇护被破）；财为用则不忌。是正印格的忌见组合之一。",
     links: ["shishen", "ge-zhengyin", "ge-pianyin", "ge-zhengcai", "ge-piancai"],
   },
+  // === 盲派核心概念 ===
+  {
+    id: "mangpai-xiangfa",
+    term: "象法",
+    category: "concept",
+    brief: "盲派核心方法——不看格局看象。",
+    detail:
+      "象法是盲派的核心算法。子平看'这是什么格、用神在哪'，盲派看'这盘在做什么功、功给谁'。取象先于取格——看到一个十神组合，先想'这是什么象'。象落在宫位（年柱主长辈，月柱主父母上司，日柱主自身配偶，时柱主子女下属）。象被引动才应事——原局有象是潜在，岁运来引动是显化。",
+    links: ["shishen", "gege", "mangpai-binshi", "mangpai-zuogong"],
+  },
+  {
+    id: "mangpai-binshi",
+    term: "宾主",
+    category: "concept",
+    brief: "盲派位置关系——年月为宾、日时为主。",
+    detail:
+      "宾主是盲派核心位置概念。年柱为宾（外人、祖上、长辈、远），月柱为宾（父母、上司、同辈、近），日柱为主（自己、配偶），时柱为主或宾（子女、下属、晚年）。宾生主则外来力量帮我；主生宾则我的力量外流；宾克主则外来压力制我；主克宾则我制外人。宾主关系决定'谁主动谁被动'，是盲派做功判断的基础。",
+    links: ["mangpai-xiangfa", "mangpai-tiyong", "mangpai-zuogong", "gong-year"],
+  },
+  {
+    id: "mangpai-tiyong",
+    term: "体用",
+    category: "concept",
+    brief: "盲派资源与输出——印比为体、食伤财官为用。",
+    detail:
+      "体用是盲派对十神的资源/输出分类。体=自身根基资源（印星、比劫），用=输出获取对象（食伤、财星、官杀）。体旺用弱=有资源但难发挥；体弱用旺=难承载输出；体用平衡最顺。体用与子平的'身强身弱'类似但视角不同——子平看日主强弱，盲派看体用是否匹配。",
+    links: ["mangpai-xiangfa", "mangpai-binshi", "mangpai-zuogong", "qiangruo"],
+  },
+  {
+    id: "mangpai-zuogong",
+    term: "做功",
+    category: "concept",
+    brief: "盲派最独特概念——盘在做什么功。",
+    detail:
+      "做功是盲派最独特概念——不问'什么格'，问'这盘在做什么功'。基本模式：食伤制杀、劫财夺财、官杀制比劫、印化官杀生身、财破印。做功成立条件：双方力量够、位置对（宾方做功给主方最显）、不被破坏。",
+    links: ["mangpai-xiangfa", "mangpai-binshi", "mangpai-tiyong", "mangpai-koujue"],
+  },
+  {
+    id: "mangpai-koujue",
+    term: "口诀",
+    category: "concept",
+    brief: "盲派经验总结——直给断语的口诀。",
+    detail:
+      "盲派重口诀传承，是盲师江湖积累的经验总结。如'官星受冲主走他乡'、'羊刃冲合岁君怒而兴灾'等。口诀使用原则：必须看具体盘是否成立，不能直断；一条口诀不单独成断，多条交叉印证才增信度。老胡使用口诀时禁恐吓式直断。",
+    links: ["mangpai-xiangfa", "mangpai-zuogong"],
+  },
+  // === 命书经典 ===
+  {
+    id: "classic-yuanhai",
+    term: "渊海子平",
+    category: "concept",
+    brief: "子平命理奠基作——徐子平（宋）。",
+    detail:
+      "《渊海子平》是子平命理的奠基作，定四柱与十神体系。重点看'十神'与'格局'两章。已学完系统讲义者可跳过此书直接进阶。推荐跳着读，不必从头到尾。",
+    links: ["gege", "shishen", "school-ziping"],
+  },
+  {
+    id: "classic-zhenyue",
+    term: "子平真诠",
+    category: "concept",
+    brief: "格局取用最系统著作——沈孝瞻（明）。",
+    detail:
+      "《子平真诠》是子平格局派的最系统著作，讲透八格成败与用神取法。从'论用神成败'开始读。配合本项目格局取用讲义一起读——讲义是入门，原典是深水。推荐徐伟武注评本。",
+    links: ["gege", "yongshen-fuyi", "school-ziping"],
+  },
+  {
+    id: "classic-dtiansui",
+    term: "滴天髓",
+    category: "concept",
+    brief: "论气最通透著作——京图（明）/任铁樵注。",
+    detail:
+      "《滴天髓》是子平气数派的最通透著作，论气的旺衰、流通、清浊。任铁樵的注比正文还重要。此书最难，建议放在子平真诠和穷通宝鉴之后再读。",
+    links: ["qiangruo", "school-ziping"],
+  },
+  {
+    id: "classic-qiongjian",
+    term: "穷通宝鉴",
+    category: "concept",
+    brief: "调候用神专书——余春台（清）。",
+    detail:
+      "《穷通宝鉴》是调候派的最权威著作，提供日干逐月调候表。当工具书查，不必通读。配合本项目调候用神讲义一起读——讲义是简化版，原典有更细配置。推荐徐伟武注评本。",
+    links: ["yongshen-tiaohou", "school-ziping"],
+  },
+  {
+    id: "classic-sanming",
+    term: "三命通会",
+    category: "concept",
+    brief: "命理百科全书——万民英（明）。",
+    detail:
+      "《三命通会》是命理百科全书，资料最全但不系统。含神煞、纳音、各种断诀。当百科查，遇到术语不懂就翻。不必通读。推荐中州古籍出版社点校本。",
+    links: ["gege", "shishen"],
+  },
+  // === 流派 ===
+  {
+    id: "school-ziping",
+    term: "子平派",
+    category: "concept",
+    brief: "书本传承——格局取用、用神有力无力。",
+    detail:
+      "子平派是命理主流派，书本传承。核心方法：格局取用、用神有力无力。代表经典：子平真诠、滴天髓、穷通宝鉴。本项目学习馆讲义按子平口径。",
+    links: ["gege", "yongshen-fuyi", "classic-zhenyue", "classic-dtiansui", "classic-qiongjian"],
+  },
+  {
+    id: "school-mangpai",
+    term: "盲派",
+    category: "concept",
+    brief: "口耳相传——象法、宾主、做功、口诀。",
+    detail:
+      "盲派是命理实战派，口耳相传，盲师江湖积累。核心方法：象法、宾主、体用、做功、口诀。本项目老胡人设按盲派口径。详见盲派入门讲义。",
+    links: ["mangpai-xiangfa", "mangpai-binshi", "mangpai-zuogong", "mangpai-koujue"],
+  },
+  {
+    id: "school-xinpai",
+    term: "新派",
+    category: "concept",
+    brief: "近代发展——简化格局、强化十神组合。",
+    detail:
+      "新派是命理近代发展派，代表李涵辰《八字预测真踪》等。核心方法：弱化调候与通关，强调'用神就是使日主中和的五行'。优点：简化入门快；缺点：省略了关键边界。适合快速入门但不建议作为主力口径。",
+    links: ["yongshen-fuyi", "qiangruo"],
+  },
 ];
 
 function ganEntries(): MingliEntry[] {
