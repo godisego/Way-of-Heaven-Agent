@@ -71,9 +71,23 @@ export async function startOnboardingChain(): Promise<void> {
   });
   await delay(400);
 
-  // 第三段：提示去学习馆
+  // 第三段：提示配置供应商（让用户知道齿轮面板）
+  const goSettings = await askNext(
+    "功能都认识了！",
+    "右下角齿轮可以配置你的模型供应商——选供应商、填密钥、测试连接，配好就能与三贤真实对谈（不配也能用示例回复浏览）。要现在配置吗？",
+    "去配置",
+  );
+  if (goSettings) {
+    // 打开供应商面板（通过点击齿轮按钮）
+    const gearBtn = document.querySelector(".settings-dock-btn") as HTMLButtonElement | null;
+    if (gearBtn) gearBtn.click();
+    return; // 用户在面板里操作，引导链到此暂停
+  }
+  await delay(300);
+
+  // 第四段：提示去学习馆
   const goLibrary = await askNext(
-    "排盘也会看了！",
+    "随时欢迎回来！",
     "学习馆有 28 篇系统讲义（Agent 原理 + 命理系统课）和 137 项命理速查，随时回来深读。",
     "去学习馆",
   );
