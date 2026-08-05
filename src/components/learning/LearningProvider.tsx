@@ -9,7 +9,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { hasSeenOnboarding, markOnboardingSeen } from "./onboarding";
+import { hasSeenOnboarding } from "./onboarding";
+import { startOnboardingChain } from "./onboardingTour";
 
 type LearningContextValue = {
   enabled: boolean;
@@ -63,12 +64,10 @@ export function LearningProvider({ children }: { children: ReactNode }) {
     if (window.location.pathname !== "/") return;
     const timer = setTimeout(() => {
       try {
-        import("./tourController").then(({ startLesson }) => {
-          startLesson("agent-1");
-          markOnboardingSeen();
+        import("./onboardingTour").then(({ startOnboardingChain }) => {
+          startOnboardingChain();
         });
       } catch {
-        markOnboardingSeen();
       }
     }, 1500);
     return () => clearTimeout(timer);

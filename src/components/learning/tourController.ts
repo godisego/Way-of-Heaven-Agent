@@ -36,7 +36,7 @@ function resolveSteps(steps: DriveStep[]): DriveStep[] {
 }
 
 /** 启动一课。走到最后一步后退出才记为完成（中途 ESC 不算）。 */
-export function startLesson(id: LessonId): void {
+export function startLesson(id: LessonId, onComplete?: () => void): void {
   if (typeof window === "undefined") return;
   const lesson = getLesson(id);
   if (!lesson) return;
