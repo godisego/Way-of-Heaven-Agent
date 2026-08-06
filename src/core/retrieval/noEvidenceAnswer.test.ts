@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseMentorDialogue } from "@/data/mentors";
 import { needsCitation } from "./citationPolicy";
-import { buildNoEvidenceAnswer } from "./noEvidenceAnswer";
+import { buildNoEvidenceAnswer, wrapAsMentorDialogue } from "./noEvidenceAnswer";
 import { calculateBazi } from "@/core/user/baziCalculator";
 import type { UserProfile } from "@/data/userProfile";
 
@@ -40,5 +40,27 @@ describe("buildNoEvidenceAnswer", () => {
     expect(segments[0].body).toContain("日主");
     expect(segments[0].body).toContain("大运");
     expect(segments[1].body).not.toMatch(/[甲乙丙丁戊己庚辛壬癸]|大运|流年|日主/);
+  });
+});
+
+describe("wrapAsMentorDialogue", () => {
+  it("裸文本（无三贤标题）被包装成三段，可被 parseMentorDialogue 拆分", () => {
+    const raw = "这是一段模型输出的裸文本。\n\n第二段内容。\n\n第三段内容。";
+    const wrapped = wrapAsMentorDialogue(raw);
+    const segments = parseMentorDialogue(wrapped);
+    expect(segments.map((s) => s.mentorId)).toEqual(["hu", "li", "xuan"]);
+    expect(wrapped).toContain("【盲派算师·老胡】");
+    expect(wrapped).toContain("【存在主义导师·李】");
+    expect(wrapped).toContain("【主事·玄】");
+  });
+
+  it("已有三贤标题的文本不重复包装", () => {
+    const already = "【盲派算师·老胡】\n老夫瞧着……\n\n【存在主义导师·李】\n先写下……\n\n【主事·玄】\n且去。";
+    expect(wrapAsMentorDialogue(already)).toBe(already);
+  });
+
+  it("空文本回退到 buildNoEvidenceAnswer", () => {
+    const wrapped = wrapAsMentorDialogue("");
+    expect(wrapped).toContain("【盲派算师·老胡】");
   });
 });

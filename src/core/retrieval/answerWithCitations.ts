@@ -10,6 +10,7 @@ import {
 } from "./citationPolicy";
 import { checkVoice, violationRetryText, type VoiceViolation } from "./voicePolicy";
 import { hasLexicalEvidenceForCitationQuestion } from "./evidenceRelevance";
+import { wrapAsMentorDialogue } from "./noEvidenceAnswer";
 import type { UserProfile } from "@/data/userProfile";
 
 export type RagPipelineNotes = {
@@ -83,12 +84,14 @@ export async function answerQuestion(
   let answer = (await provider.generateAnswer({ question, context, userProfile, conversationContext })).text.trim();
 
   if (noEvidence) {
-    // 无证据路径：不做引用校验（本就无引用），直接返回模型生成的内容
+    // 无证据路径：不做引用校验（本就无引用），直接返回模型生成的内容。
+    // 但若模型完全没按三贤格式输出，用模板包装让 UI 能拆气泡。
+    const formatted = wrapAsMentorDialogue(answer);
     return {
-      answerMarkdown: answer,
+      answerMarkdown: formatted,
       citations: [],
       usedContext: [],
-      pipeline: { mode: "rag", retrieved, retried: false, citationsValid: true, voiceValid: true },
+      pipeline: { mode: "rag", retrieved, retried: false, citationsValid: true, voiceValid: formatted === answer },
     };
   }
 
@@ -129,7 +132,12 @@ export async function answerQuestion(
       : "";
     answer = `${answer}\n\n⚠️ 这段回应中引用的出处未能通过校验${detail}，请打开下方检索到的典籍原文自行核对。`;
   }
-  if (voiceViolations.length) {
+  // 格式兜底：如果重试后模型仍然完全没按三贤格式输出（三位全缺席），
+  // 用模板包装让 UI 能拆气泡，而不是把裸文本 + ⚠️ 丢给用户。
+  const allMissingRole = voiceViolations.length > 0 && voiceViolations.every((v) => v.kind === "missing-role");
+  if (allMissingRole) {
+    answer = wrapAsMentorDialogue(answer);
+  } else if (voiceViolations.length) {
     answer = `${answer}\n\n⚠️ 本轮未完全通过角色声口校验：${voiceViolations.map((v) => v.detail).join("；")}。`;
   }
 

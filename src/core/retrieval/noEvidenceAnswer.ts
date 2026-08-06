@@ -1,4 +1,29 @@
 /**
+ * 当模型完全没按三贤格式输出（没有 【…】 标题）时的格式兜底。
+ *
+ * 不丢弃模型生成的内容（可能是有价值的分析），而是把它包装进三贤模板，
+ * 让 UI 能正确拆分成三个气泡。每位角色领一段，末尾如实标注"以上为整编"。
+ */
+export function wrapAsMentorDialogue(rawContent: string): string {
+  const content = rawContent.trim();
+  if (!content) return buildNoEvidenceAnswer();
+  // 如果已经有三贤标题，不需要包装
+  if (/【盲派算师|【存在主义导师|【主事/.test(content)) return content;
+  // 把模型内容切成大致三等份（按段落分）
+  const paragraphs = content.split(/\n\n+/).filter((p) => p.trim());
+  const third = Math.max(1, Math.ceil(paragraphs.length / 3));
+  const huPart = paragraphs.slice(0, third).join("\n\n") || content;
+  const liPart = paragraphs.slice(third, third * 2).join("\n\n") || "（承接上文）";
+  const xuanPart = paragraphs.slice(third * 2).join("\n\n") || "（收束）";
+  return (
+    `【盲派算师·老胡】\n${huPart}\n\n` +
+    `【存在主义导师·李】\n${liPart}\n\n` +
+    `【主事·玄】\n${xuanPart}\n\n` +
+    `_⚠️ 以上为系统整编（模型本轮未严格按三贤格式输出，已自动分段包装）。_`
+  );
+}
+
+/**
  * 无典籍证据时仍维持产品的三贤对谈契约。
  *
  * 这段文字刻意不引用任何思想或典籍；每位只说明证据边界并给一个

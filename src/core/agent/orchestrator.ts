@@ -19,7 +19,7 @@ import { parseMentorDialogue } from "@/data/mentors";
 import { buildContext } from "@/core/retrieval/retrieveContext";
 import { needsCitation, validateCitations, type Citation } from "@/core/retrieval/citationPolicy";
 import { checkVoice, violationRetryText, type VoiceViolation } from "@/core/retrieval/voicePolicy";
-import { buildNoEvidenceAnswer } from "@/core/retrieval/noEvidenceAnswer";
+import { buildNoEvidenceAnswer, wrapAsMentorDialogue } from "@/core/retrieval/noEvidenceAnswer";
 import { EvidenceLedger } from "./evidenceLedger";
 import { ToolRegistry, type ToolHooks } from "./toolRegistry";
 import { defaultTools } from "./tools";
@@ -308,7 +308,13 @@ export async function runAgentLoop(
     if (needsCitation(answer) && citations.length === 0) {
       answer = `${answer}\n\n⚠️ 这段回应中引用的出处未能通过校验，请打开下方检索到的典籍原文自行核对。`;
     }
-    if (voiceViolations.length) {
+    // 格式兜底：模型完全没按三贤格式输出（三位全缺席）时，用模板包装让 UI 能拆气泡。
+    // 流式模式下，final 帧会覆盖前端已显示的裸文本。
+    const allMissingRole =
+      voiceViolations.length > 0 && voiceViolations.every((v) => v.kind === "missing-role");
+    if (allMissingRole) {
+      answer = wrapAsMentorDialogue(answer);
+    } else if (voiceViolations.length) {
       answer = `${answer}\n\n⚠️ 本轮未完全通过角色声口校验：${voiceViolations.map((v) => v.detail).join("；")}。`;
     }
 
