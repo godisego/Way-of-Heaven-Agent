@@ -44,14 +44,19 @@ describe("buildNoEvidenceAnswer", () => {
 });
 
 describe("wrapAsMentorDialogue", () => {
-  it("裸文本（无三贤标题）被包装成三段，可被 parseMentorDialogue 拆分", () => {
-    const raw = "这是一段模型输出的裸文本。\n\n第二段内容。\n\n第三段内容。";
+  it("充实的裸文本（≥3段、每段≥40字）被包装成三段，可被 parseMentorDialogue 拆分", () => {
+    const raw = [
+      "这是一段足够长的模型输出内容，超过了四十字的质量门槛，可以被包装为老胡的发言段落。",
+      "第二段内容同样足够长，超过四十字门槛，作为李的发言，讲处境与选择的具体建议。",
+      "第三段内容也足够长，超过四十字门槛，作为玄的收束，给方向与节奏的建议。",
+    ].join("\n\n");
     const wrapped = wrapAsMentorDialogue(raw);
     const segments = parseMentorDialogue(wrapped);
     expect(segments.map((s) => s.mentorId)).toEqual(["hu", "li", "xuan"]);
     expect(wrapped).toContain("【盲派算师·老胡】");
     expect(wrapped).toContain("【存在主义导师·李】");
     expect(wrapped).toContain("【主事·玄】");
+    expect(wrapped).toContain("系统整编");
   });
 
   it("已有三贤标题的文本不重复包装", () => {
@@ -62,5 +67,21 @@ describe("wrapAsMentorDialogue", () => {
   it("空文本回退到 buildNoEvidenceAnswer", () => {
     const wrapped = wrapAsMentorDialogue("");
     expect(wrapped).toContain("【盲派算师·老胡】");
+    expect(wrapped).not.toContain("系统整编");
+  });
+
+  it("空洞短文本（段落不足40字）回退到 buildNoEvidenceAnswer，不包装垃圾", () => {
+    const raw = "短。\n\n也短。\n\n还是短。";
+    const wrapped = wrapAsMentorDialogue(raw);
+    expect(wrapped).toContain("【盲派算师·老胡】");
+    expect(wrapped).not.toContain("系统整编");
+    expect(wrapped).not.toContain("短。");
+  });
+
+  it("段落数不足3段回退到 buildNoEvidenceAnswer", () => {
+    const raw = "只有一段很长的内容但没法分成三段所以会被判定为不适合包装而走兜底逻辑处理。";
+    const wrapped = wrapAsMentorDialogue(raw);
+    expect(wrapped).toContain("【盲派算师·老胡】");
+    expect(wrapped).not.toContain("系统整编");
   });
 });

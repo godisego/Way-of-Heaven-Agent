@@ -1,16 +1,25 @@
 /**
  * 当模型完全没按三贤格式输出（没有 【…】 标题）时的格式兜底。
  *
- * 不丢弃模型生成的内容（可能是有价值的分析），而是把它包装进三贤模板，
- * 让 UI 能正确拆分成三个气泡。每位角色领一段，末尾如实标注"以上为整编"。
+ * 两种策略：
+ * - 模型内容足够充实（≥3段、每段≥40字）→ 按段落三等分包装进三贤模板
+ * - 模型内容空洞/太短 → 用 buildNoEvidenceAnswer 的三贤模板兜底，
+ *   不把胡言乱语包装成三贤发言（避免"玄说书法字形标准"这种荒谬输出）
  */
 export function wrapAsMentorDialogue(rawContent: string): string {
   const content = rawContent.trim();
   if (!content) return buildNoEvidenceAnswer();
   // 如果已经有三贤标题，不需要包装
   if (/【盲派算师|【存在主义导师|【主事/.test(content)) return content;
-  // 把模型内容切成大致三等份（按段落分）
+
   const paragraphs = content.split(/\n\n+/).filter((p) => p.trim());
+
+  // 质量门槛：至少3段、每段至少30字，才值得包装。
+  // 否则模型多半是输出了一堆空洞套话，包装了也是垃圾。
+  if (paragraphs.length < 3 || paragraphs.some((p) => p.trim().length < 30)) {
+    return buildNoEvidenceAnswer();
+  }
+
   const third = Math.max(1, Math.ceil(paragraphs.length / 3));
   const huPart = paragraphs.slice(0, third).join("\n\n") || content;
   const liPart = paragraphs.slice(third, third * 2).join("\n\n") || "（承接上文）";
