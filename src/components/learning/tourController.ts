@@ -61,7 +61,10 @@ export function startLesson(id: LessonId, onComplete?: () => void): void {
       if (typeof i === "number" && i > reached) reached = i;
     },
     onDestroyed: () => {
-      if (reached >= steps.length - 1) markLessonDone(id);
+      if (reached >= steps.length - 1) {
+        markLessonDone(id);
+        onComplete?.();
+      }
     },
   });
   active = instance;
