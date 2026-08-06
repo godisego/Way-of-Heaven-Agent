@@ -18,6 +18,7 @@ import { isProfileComplete, type UserProfile } from "@/data/userProfile";
 import { TracePanel } from "./TracePanel";
 import { useLearning } from "./learning/LearningProvider";
 import { readSseStream } from "./streamSse";
+import { safeFetchJson, FetchNotJsonError } from "@/lib/safeFetch";
 import type { AgentTrace, TraceStep } from "@/core/agent/types";
 import type { RagPipelineNotes } from "@/core/retrieval/answerWithCitations";
 
@@ -87,9 +88,10 @@ export function ChatPanel() {
   const loadSession = useCallback(async (id: string) => {
     setSessionBusy(true);
     try {
-      const response = await fetch(`/api/sessions/${encodeURIComponent(id)}`);
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "读取会话失败");
+      const { ok, data } = await safeFetchJson<{ session: { id: string }; messages?: StoredMessage[]; error?: string }>(
+        `/api/sessions/${encodeURIComponent(id)}`,
+      );
+      if (!ok) throw new Error(data.error ?? "读取会话失败");
       setSessionId(data.session.id);
       setMessages(toMessages(data.messages ?? []));
     } finally {
@@ -98,9 +100,8 @@ export function ChatPanel() {
   }, []);
 
   const refreshSessions = useCallback(async () => {
-    const response = await fetch("/api/sessions");
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error ?? "读取会话列表失败");
+    const { ok, data } = await safeFetchJson<{ sessions?: SessionSummary[]; error?: string }>("/api/sessions");
+    if (!ok) throw new Error(data.error ?? "读取会话列表失败");
     const next = (data.sessions ?? []) as SessionSummary[];
     setSessions(next);
     return next;
@@ -109,9 +110,12 @@ export function ChatPanel() {
   const createSession = useCallback(async () => {
     setSessionBusy(true);
     try {
-      const response = await fetch("/api/sessions", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "创建会话失败");
+      const { ok, data } = await safeFetchJson<{ session: { id: string }; error?: string }>("/api/sessions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      });
+      if (!ok) throw new Error(data.error ?? "创建会话失败");
       setSessionId(data.session.id);
       setMessages([]);
       setRenamingSessionId(null);
@@ -136,17 +140,15 @@ export function ChatPanel() {
     if (!title) return;
     setSessionBusy(true);
     try {
-      const response = await fetch(`/api/sessions/${encodeURIComponent(id)}`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ title }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "重命名失败");
+      const { ok, data } = await safeFetchJson<{ error?: string }>(
+        `/api/sessions/${encodeURIComponent(id)}`,
+        { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ title }) },
+      );
+      if (!ok) throw new Error(data.error ?? "重命名失败");
       await refreshSessions();
       cancelRename();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "重命名失败");
+      setError(err instanceof FetchNotJsonError ? err.message : err instanceof Error ? err.message : "重命名失败");
     } finally {
       setSessionBusy(false);
     }
@@ -156,16 +158,18 @@ export function ChatPanel() {
     if (!window.confirm(`确定删除“${session.title}”吗？\n其中的对话和引用也会一并删除。`)) return;
     setSessionBusy(true);
     try {
-      const response = await fetch(`/api/sessions/${encodeURIComponent(session.id)}`, { method: "DELETE" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "删除失败");
+      const { ok, data } = await safeFetchJson<{ error?: string }>(
+        `/api/sessions/${encodeURIComponent(session.id)}`,
+        { method: "DELETE" },
+      );
+      if (!ok) throw new Error(data.error ?? "删除失败");
       const next = await refreshSessions();
       if (session.id === sessionId) {
         if (next[0]) await loadSession(next[0].id);
         else await createSession();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "删除失败");
+      setError(err instanceof FetchNotJsonError ? err.message : err instanceof Error ? err.message : "删除失败");
     } finally {
       setSessionBusy(false);
     }
@@ -266,14 +270,19 @@ export function ChatPanel() {
         await streamAgentReply(question, userProfile, sessionId, settings, controller.signal);
       } else {
         // RAG 模式：一次性 JSON（保持原行为，作为固定对照）
-        const response = await fetch("/api/chat", {
+        const { ok, data } = await safeFetchJson<{
+          answerMarkdown?: string;
+          citations?: Citation[];
+          pipeline?: unknown;
+          sessionId?: string;
+          error?: string;
+        }>("/api/chat", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ question, userProfile, sessionId, mode: "rag", settings }),
           signal: controller.signal,
         });
-        const data = await response.json();
-        if (!response.ok) {
+        if (!ok) {
           setError(data.error ?? "未能得答");
           return;
         }
@@ -283,7 +292,7 @@ export function ChatPanel() {
             role: "assistant",
             content: data.answerMarkdown ?? "",
             citations: data.citations ?? [],
-            pipeline: data.pipeline,
+            pipeline: data.pipeline as Message["pipeline"],
           },
         ]);
         if (typeof data.sessionId === "string") setSessionId(data.sessionId);
