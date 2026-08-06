@@ -13,6 +13,7 @@
     "reindex:embeddings": "tsx scripts/reindex-embeddings.ts",
     "sync:supabase": "tsx scripts/sync-to-supabase.ts",
     "seed:sample": "tsx scripts/seed-sample-library.ts",
+    "seed:docs": "tsx scripts/seed-docs-library.ts",
     "probe:tools": "tsx scripts/probe-tool-support.ts",
     "acceptance": "tsx scripts/acceptance.ts"
   },

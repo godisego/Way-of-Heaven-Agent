@@ -72,14 +72,17 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
     }
     if (!response.ok) throw new Error(`Embedding 接口失败：${response.status} ${await response.text()}`);
     const data = await response.json();
-    // 供应商返回错误（如 MiniMax 的 {base_resp:{status_msg}}）也要识别
+    // 供应商返回错误（如 MiniMax 的 {base_resp:{status_msg}} 或 智谱 code:2013 invalid params）也要识别
+    // 这些"200 但 body 是错误"的情况同样回退 mock，不阻塞聊天
     const errMsg = extractEmbeddingError(data);
-    if (errMsg) throw new Error(`Embedding 供应商返回错误：${errMsg}`);
+    if (errMsg) {
+      console.warn(`[embedding] 供应商返回错误（${errMsg}），回退 mock。`);
+      return this.mockEmbedding.embedTexts(input);
+    }
     const embeddings = extractEmbeddings(data);
     if (!embeddings.length) {
-      throw new Error(
-        `Embedding 接口返回格式无法识别。原始响应前 200 字：${JSON.stringify(data).slice(0, 200)}`,
-      );
+      console.warn("[embedding] 返回格式无法识别，回退 mock。");
+      return this.mockEmbedding.embedTexts(input);
     }
     return {
       model: this.cfg.embeddingModel,
