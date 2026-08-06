@@ -7,6 +7,7 @@ import { getTrackDocs, LEARN_DOCS, type LearnDoc, type LearnTrack } from "@/data
 import { MingliQuickReference } from "@/components/learning/MingliQuickReference";
 import { kbSize } from "@/core/mingli/mingliKb";
 import { startLesson } from "@/components/learning/tourController";
+import { showFinalOnboardingHint } from "@/components/learning/onboardingTour";
 
 type LearnView = "agent" | "mingli" | "quick";
 
@@ -168,6 +169,22 @@ export function LearningLibrary() {
     syncFromHash();
     window.addEventListener("hashchange", syncFromHash);
     return () => window.removeEventListener("hashchange", syncFromHash);
+  }, []);
+
+  // 首次引导链：从 onboardingTour 跳转过来时，sessionStorage 里带 pendingTour=library-tour
+  // 页面加载后自动启动学习馆导览，结束后弹"三贤+配置"最终提示
+  useEffect(() => {
+    const pending = sessionStorage.getItem("pendingTour");
+    if (!pending) return;
+    sessionStorage.removeItem("pendingTour");
+    // 等页面完全渲染后再启动 tour（driver.js 需要目标元素已挂载）
+    const timer = window.setTimeout(() => {
+      startLesson(pending as "library-tour", () => {
+        // 学习馆导览结束后，弹最后一个"三贤+配置"提示
+        showFinalOnboardingHint();
+      });
+    }, 600);
+    return () => window.clearTimeout(timer);
   }, []);
 
   function activate(view: LearnView) {
