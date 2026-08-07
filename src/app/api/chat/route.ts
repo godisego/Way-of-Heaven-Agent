@@ -6,6 +6,7 @@ import { runAgentLoop } from "@/core/agent/orchestrator";
 import { buildConversationContext, sessionApi } from "@/data/sessionStore";
 import { prepareUserProfileForAgent, type UserProfile } from "@/data/userProfile";
 import { parseSettingsOverride } from "@/core/config/settingsMapping";
+import { readLocalVectorRecords } from "@/core/vector/localJsonVectorStore";
 
 export async function POST(request: Request) {
   try {
@@ -24,6 +25,24 @@ export async function POST(request: Request) {
     const conversationContext = buildConversationContext(previousMessages);
     sessionApi.appendMessage(activeSession.id, { role: "user", content: question, citations: [] });
     const configOverride = parseSettingsOverride(body.settings);
+
+    // 早期检测：索引为空时直接返回明确提示，不让模型说"材料不足"
+    const vectorCount = readLocalVectorRecords().length;
+    if (vectorCount === 0) {
+      const hint =
+        "典籍库尚未入库——请先在终端运行 `npm run seed:all`，将自带的 27 卷示例藏书与命理教材导入向量索引。入库后再回来提问，三贤才能从典籍中取证据回答。";
+      sessionApi.appendMessage(activeSession.id, {
+        role: "assistant",
+        content: hint,
+        citations: [],
+      });
+      return NextResponse.json({
+        answerMarkdown: hint,
+        citations: [],
+        pipeline: { mode: "rag", retrieved: { hu: 0, li: 0, xuan: 0, merged: 0 }, retried: false, citationsValid: true, voiceValid: true },
+        sessionId: activeSession.id,
+      });
+    }
 
     // M5 已完成人工验收：默认走受控工具循环；显式 mode="rag" 时保留固定链路。
     if (body.mode !== "rag") {

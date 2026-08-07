@@ -53,9 +53,12 @@
 npm ci
 cp .env.example .env.local   # 按下表填写
 npm run doctor                # 只读检查 Key 与当前索引状态
-npm run seed:sample          # 收入三贤示例藏书（每人 3 卷）
-npm run dev                  # http://localhost:3000
+npm run seed:all              # 一键入库：9 卷哲学藏书 + 18 篇命理教材（共 27 卷）
+npm run dev                   # http://localhost:3000
 ```
+
+> **必须跑 `npm run seed:all`** —— 不入库典籍，三贤对谈会一直返回"材料不足"。
+> `seed:all` = `seed:sample`（哲学藏书）+ `seed:docs`（命理教材），可分开跑。
 
 不配任何 API Key 也能跑通大半：排盘、命理释义、学习模式全可用；点「看示例回复」看对谈效果；配 `USE_MOCK_EMBEDDING=1` 还能验证上传与检索链路。
 
@@ -196,6 +199,9 @@ npm run typecheck   # 类型检查
 npm run lint        # 代码规范
 npm test            # vitest 全量测试
 npm run doctor      # 只读检查聊天/Embedding/Supabase 配置与本地索引
+npm run seed:all     # 一键入库全部典籍（哲学 9 卷 + 命理 18 篇 = 27 卷，266 chunks）
+npm run seed:sample  # 只入哲学藏书（9 卷）
+npm run seed:docs    # 只入命理教材（18 篇）
 npm run probe:tools # 探测聊天模型是否支持原生 tool use
 npm run acceptance  # M5 验收：五场景打真实服务，硬判确定性不变量
 npm run reindex:embeddings  # 切换真实 Embedding 模型后重建本地索引
