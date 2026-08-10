@@ -10,6 +10,12 @@ export type VectorRecord = {
   tradition: string | null;
   text: string;
   embedding: number[];
+  /**
+   * 本条向量由哪个 embedding 模型生成（盖戳于 seed / reindex / 上传入库）。
+   * 检索时据此与查询模型比对，防止「同维度·异模型」的向量空间错位——
+   * 这种错位 cosine 不会返回 0，而是给出伪相似度，比维度不一致更隐蔽。
+   */
+  embeddingModel?: string | null;
 };
 
 export type VectorSearchResult = VectorRecord & {
@@ -26,6 +32,12 @@ export interface VectorStore {
     embedding: number[],
     topK: number,
     filter?: (record: VectorRecord) => boolean,
+    /**
+     * 查询向量的来源模型名（来自 provider.embedTexts 返回的 model）。
+     * 若提供且与索引记录盖戳的 embeddingModel 不一致，search 直接抛错——
+     * 这是「同维异模型」错位的唯一防线（维度不一致另有维度守卫拦截）。
+     */
+    expectedModel?: string,
   ): Promise<VectorSearchResult[]>;
 }
 

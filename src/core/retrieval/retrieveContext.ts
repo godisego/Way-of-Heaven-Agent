@@ -13,7 +13,7 @@ export async function searchChunks(query: string, topK = 8, configOverride?: Con
   const provider = getDefaultProvider(configOverride);
   const embedding = await provider.embedTexts({ texts: [query] });
   const [queryEmbedding] = embedding.embeddings;
-  return getVectorStore().search(queryEmbedding, topK);
+  return getVectorStore().search(queryEmbedding, topK, undefined, embedding.model);
 }
 
 export type ScopedRetrieval = {
@@ -42,7 +42,7 @@ export async function searchChunksForMentors(
 
   const citationQuestion = isCitationQuestion(query);
   const candidateLimit = citationQuestion ? Math.max(topKPerMentor * 6, 120) : topKPerMentor * 6;
-  const candidates = await getVectorStore().search(queryEmbedding, candidateLimit);
+  const candidates = await getVectorStore().search(queryEmbedding, candidateLimit, undefined, embedding.model);
 
   function rankCandidates(a: VectorSearchResult, b: VectorSearchResult): number {
     if (citationQuestion) {

@@ -55,12 +55,13 @@ export const searchLibraryTool: ToolDefinition<SearchLibraryArgs> = {
   maxCallsPerRun: 4,
   async execute(args, ctx): Promise<ToolResult> {
     const provider = getDefaultProvider(ctx.configOverride);
-    const { embeddings } = await provider.embedTexts({ texts: [args.query] });
+    const { embeddings, model } = await provider.embedTexts({ texts: [args.query] });
     const topK = args.topK ?? 5;
     const candidateHits = await getVectorStore().search(
       embeddings[0],
       topK,
       args.tradition ? (r) => r.tradition === args.tradition : undefined,
+      model,
     );
     // Agent 不能把“向量有一点相似”当成“库里有据”。尤其是库外且要求出处的问题，
     // 用原始问句做一次词面门槛；模型后续改写查询也不能绕过这道安全边界。

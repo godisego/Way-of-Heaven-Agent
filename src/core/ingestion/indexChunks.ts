@@ -32,6 +32,7 @@ export async function indexChunks(chunks: ChunkRow[], configOverride?: ConfigOve
         tradition: document.tradition,
         text: chunk.text,
         embedding: embeddingResult.embeddings[index],
+        embeddingModel: embeddingResult.model,
       };
     });
     await vectorStore.upsert(records);

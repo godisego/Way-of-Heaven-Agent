@@ -120,6 +120,8 @@ export async function runAgentLoop(
   let modelCalls = 0;
   let stopReason: StopReason = "max_steps";
   let insufficientMissing: string | undefined;
+  /** 检索工具报错（如向量空间错位）的根因——证据不足时透传给用户，避免误导成"材料不足" */
+  let retrievalError: string | null = null;
   const seenCalls = new Set<string>();
   const turns: TransportTurn[] = transport.appendUserTurn(
     [],
@@ -229,6 +231,11 @@ export async function runAgentLoop(
         error: result.isError ? result.observationSummary.slice(0, 120) : undefined,
       });
 
+      // 检索工具报错（如向量空间错位）记下：证据不足时透传给用户，避免误导成"材料不足"
+      if (result.isError && decision.name === "search_library") {
+        retrievalError = result.observationSummary.slice(0, 160);
+      }
+
       // 各协议的 assistant / tool_result turn 形状不同，交由 transport 构造
       let nextTurns = transport.appendAssistantTurn(turns, decision.assistantContent);
       nextTurns = transport.appendToolResult(nextTurns, decision.toolUseId, result.observationForModel);
@@ -259,6 +266,10 @@ export async function runAgentLoop(
   } else if (stopReason === "insufficient" || ledger.count() === 0) {
     finalState = "insufficient";
     answer = buildNoEvidenceAnswer(insufficientMissing, userProfile);
+    // 检索工具报错（向量空间错位等）时，把根因透传给用户，而非只让三贤说"材料不足"
+    if (retrievalError) {
+      answer = `${answer}\n\n⚠️ 检索未成功：${retrievalError}。这通常是 embedding 配置与索引不匹配——可在齿轮面板点「测试全部」诊断，或「用当前配置重建索引」。`;
+    }
   } else {
     const provider: DraftProvider = opts.draftProvider ?? getDefaultProvider(opts.configOverride);
     const context = buildContext(ledger.records());

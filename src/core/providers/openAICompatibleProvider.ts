@@ -4,8 +4,9 @@ import { AnthropicProvider } from "./anthropicProvider";
 import { OpenAIChatProvider } from "./openAIChatProvider";
 import { MockEmbeddingProvider } from "./mockEmbeddingProvider";
 
-// 组合 provider：embedding 默认走 OpenAI 兼容接口，但当 .env 里设置了 USE_MOCK_EMBEDDING=1 时
-// 切到本地 mockEmbeddingProvider（完全不打外网）。聊天按 chatProtocol 委托给 Anthropic 或 OpenAI。
+// 组合 provider：embedding 默认走 OpenAI 兼容接口，无 Key 或显式 mock 时回退本地 mock。
+// 前端面板(override)配了完整 embedding 时优先用真模型——不被 .env 的 USE_MOCK_EMBEDDING 架空。
+// 聊天按 chatProtocol 委托给 Anthropic 或 OpenAI。
 export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider {
   private override: ConfigOverride | null;
   private anthropic: AnthropicProvider;
@@ -37,12 +38,20 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
     };
   }
 
-  /** 是否用本地 mock embedding：显式开 USE_MOCK_EMBEDDING=1，或没配真实 key 时自动回退。
-   *  这样不配嵌入也能对谈（用 mock 检索），符合「不配 Key 也能跑大半」的承诺。 */
+  /** 是否用本地 mock embedding：
+   *  - 前端面板(override)提供了完整 embedding 配置 → 用真模型（用户明确意图，无视 env flag）
+   *  - 否则：显式 USE_MOCK_EMBEDDING=1，或既无 env key 也无 override → 回退 mock
+   *  这样 CLI 脚本（无 override）仍尊重 env flag；API 请求（前端带配置）不再被 env flag 架空。
+   *  修复前只看 process.env，导致前端配的真 embedding key 被 .env 的 flag 无视（P1 陷阱根因）。 */
   private useMockEmbedding(): boolean {
+    const cfg = this.cfg;
+    // override（前端齿轮面板）提供了完整 embedding → 明确要用真模型，env flag 不再拦截
+    if (this.override?.openAICompatApiKey && cfg.openAICompatBaseUrl && cfg.embeddingModel) {
+      return false;
+    }
     if (process.env.USE_MOCK_EMBEDDING === "1") return true;
     // 既无 env key、前端也没传嵌入配置 → 回退 mock，避免检索直接崩
-    return !this.cfg.openAICompatApiKey;
+    return !cfg.openAICompatApiKey;
   }
 
   async embedTexts(input: EmbedTextsInput): Promise<EmbedTextsResult> {
@@ -62,32 +71,41 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
       });
     } catch (e) {
       // 网络层失败（DNS/连接拒绝）→ 回退 mock，不阻塞聊天
-      console.warn("[embedding] 网络失败，回退 mock：", e instanceof Error ? e.message : e);
-      return this.mockEmbedding.embedTexts(input);
+      return this.fallbackToMock(input, `网络失败（${e instanceof Error ? e.message : e}）`);
     }
-    // 401/403（无权限，如 MiniMax Coding Plan 不含嵌入）→ 回退 mock，不阻塞聊天
-    if ([401, 403, 404, 500].includes(response.status)) {
-      console.warn(`[embedding] 鉴权失败（${response.status}），回退 mock。可能是套餐不含嵌入权限。`);
-      return this.mockEmbedding.embedTexts(input);
+    // 任何 HTTP 错误统一回退 mock：401/403 鉴权（如套餐不含嵌入）、404 端点、
+    // 429 限流/欠费、5xx 网关。设计意图是 embedding 掉链子时不阻塞聊天，
+    // 但通过 fellBackToMock 标记把回退暴露给 trace/doctor，避免静默错位。
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      const detail = body ? `：${body.slice(0, 200)}` : "";
+      return this.fallbackToMock(input, `HTTP ${response.status}${detail}`);
     }
-    if (!response.ok) throw new Error(`Embedding 接口失败：${response.status} ${await response.text()}`);
     const data = await response.json();
     // 供应商返回错误（如 MiniMax 的 {base_resp:{status_msg}} 或 智谱 code:2013 invalid params）也要识别
     // 这些"200 但 body 是错误"的情况同样回退 mock，不阻塞聊天
     const errMsg = extractEmbeddingError(data);
     if (errMsg) {
-      console.warn(`[embedding] 供应商返回错误（${errMsg}），回退 mock。`);
-      return this.mockEmbedding.embedTexts(input);
+      return this.fallbackToMock(input, `供应商返回错误（${errMsg}）`);
     }
     const embeddings = extractEmbeddings(data);
     if (!embeddings.length) {
-      console.warn("[embedding] 返回格式无法识别，回退 mock。");
-      return this.mockEmbedding.embedTexts(input);
+      return this.fallbackToMock(input, "返回格式无法识别");
     }
     return {
       model: this.cfg.embeddingModel,
       embeddings,
     };
+  }
+
+  /**
+   * 统一封装回退 mock：带 fellBackToMock 标记，让 trace 面板 / doctor / health 可见，
+   * 而不是无声地把查询切成 256 维 hash 向量（与真实索引维度错位后会全员 0 分）。
+   */
+  private async fallbackToMock(input: EmbedTextsInput, reason: string): Promise<EmbedTextsResult> {
+    console.warn(`[embedding] ${reason}，回退 mock（fellBackToMock=true）。`);
+    const mockResult = await this.mockEmbedding.embedTexts(input);
+    return { ...mockResult, fellBackToMock: true };
   }
 
   async generateAnswer(input: GenerateAnswerInput): Promise<GenerateAnswerResult> {

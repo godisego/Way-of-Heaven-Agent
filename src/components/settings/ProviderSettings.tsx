@@ -26,6 +26,15 @@ import {
  *
  * 密钥只存 localStorage，刷新保留，清浏览器即清除。
  */
+/** /api/probe 返回的全检结果：聊天 / 嵌入 / 索引匹配三方面 */
+type ProbeReport = {
+  chat?: { ok: boolean; models?: string[]; error?: string };
+  embedding?: { ok: boolean; model: string | null; dim: number; viaMock: boolean; fellBackToMock: boolean; error?: string };
+  index?: { count: number; dim: number; model: string | null; empty: boolean; unstamped: number };
+  match?: { dimensionOk: boolean; modelOk: boolean; needReindex: boolean; reason: string | null };
+  error?: string;
+};
+
 export function ProviderSettings() {
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState<ProviderSettings>(EMPTY_SETTINGS);
@@ -82,6 +91,49 @@ export function ProviderSettings() {
     setSettings({ ...EMPTY_SETTINGS });
     setSaved(false);
   }, []);
+
+  const [probe, setProbe] = useState<ProbeReport | null>(null);
+  const [probeLoading, setProbeLoading] = useState(false);
+  // 全检：用当前面板配置（含未保存改动）调 /api/probe，立即验证 chat/embedding/索引匹配
+  const onProbe = useCallback(async () => {
+    setProbeLoading(true);
+    setProbe(null);
+    try {
+      const response = await fetch("/api/probe", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ settings: effectiveSettings }),
+      });
+      setProbe((await response.json()) as ProbeReport);
+    } catch (e) {
+      setProbe({ error: e instanceof Error ? e.message : "探活失败" });
+    } finally {
+      setProbeLoading(false);
+    }
+  }, [effectiveSettings]);
+
+  const [reindexing, setReindexing] = useState(false);
+  // 用当前面板配置重建索引（调 /api/reindex，key 只在内存用、不落盘）；成功后刷新探活
+  const onReindex = useCallback(async () => {
+    setReindexing(true);
+    try {
+      const response = await fetch("/api/reindex", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ settings: effectiveSettings }),
+      });
+      const data = (await response.json()) as { ok?: boolean; error?: string };
+      if (data.ok) {
+        await onProbe();
+      } else {
+        setProbe({ error: `重建失败：${data.error ?? "未知原因"}` });
+      }
+    } catch (e) {
+      setProbe({ error: e instanceof Error ? e.message : "重建索引失败" });
+    } finally {
+      setReindexing(false);
+    }
+  }, [effectiveSettings, onProbe]);
 
   const toggleUnified = useCallback(() => {
     setSettings((prev) => ({ ...prev, unified: !prev.unified }));
@@ -167,6 +219,10 @@ export function ProviderSettings() {
               />
             )}
 
+            {probe || probeLoading ? (
+              <ProbeReportView report={probe} loading={probeLoading} reindexing={reindexing} onReindex={onReindex} />
+            ) : null}
+
             <footer className="settings-actions">
               <span className="settings-status">
                 {saved ? "✓ 已保存" : chatReady || embedReady ? "有未保存改动" : ""}
@@ -174,6 +230,9 @@ export function ProviderSettings() {
               <button type="button" className="settings-clear" onClick={() => { resetOnboarding(); window.location.href = "/"; }}>重看引导</button>
               <button type="button" className="settings-clear" onClick={onClear}>
                 清除
+              </button>
+              <button type="button" className="settings-action" onClick={onProbe} disabled={probeLoading} title="用当前配置实测聊天/嵌入/索引匹配">
+                {probeLoading ? "测试中…" : "测试全部"}
               </button>
               <button type="button" className="settings-save" onClick={onSave} disabled={saved}>
                 保存
@@ -183,6 +242,53 @@ export function ProviderSettings() {
         ) : null}
       </div>
     </>
+  );
+}
+
+/** 全检结果三盏灯：聊天 / 嵌入 / 索引匹配。点「测试全部」后展示，让用户填完 key 立刻知道效果。 */
+function ProbeReportView({
+  report,
+  loading,
+  reindexing,
+  onReindex,
+}: {
+  report: ProbeReport | null;
+  loading: boolean;
+  reindexing: boolean;
+  onReindex: () => void;
+}) {
+  if (loading) return <div className="probe-report">正在实测聊天 / 嵌入 / 索引匹配…</div>;
+  if (!report) return null;
+  if (report.error) return <div className="probe-report is-error">⚠ 探活失败：{report.error}</div>;
+  const { chat, embedding, index, match } = report;
+  const embedState = embedding?.ok ? "ok" : embedding?.viaMock ? "warn" : "fail";
+  return (
+    <div className="probe-report">
+      <div className={`probe-row is-${chat?.ok ? "ok" : "fail"}`}>
+        {chat?.ok ? `✓ 聊天连通（${chat.models?.length ?? 0} 个可用模型）` : `✗ 聊天：${chat?.error ?? "未配置"}`}
+      </div>
+      <div className={`probe-row is-${embedState}`}>
+        {embedding?.ok
+          ? `✓ 嵌入连通（${embedding.model}，${embedding.dim} 维）`
+          : embedding?.viaMock
+            ? `⚠ 嵌入回退 mock（${embedding.model}）——供应商可能不含嵌入，或 Key/余额/网络有问题`
+            : `✗ 嵌入：${embedding?.error ?? "失败"}`}
+      </div>
+      {index?.empty ? (
+        <div className="probe-row is-warn">⚠ 索引为空——请先入库典籍（npm run seed:all 或上传文档）</div>
+      ) : match?.needReindex ? (
+        <div className="probe-row is-fail">
+          ✗ 索引不匹配：{match?.reason}——
+          <button type="button" className="settings-link" onClick={onReindex} disabled={reindexing}>
+            {reindexing ? "重建中…" : "用当前配置重建索引"}
+          </button>
+        </div>
+      ) : (
+        <div className="probe-row is-ok">
+          ✓ 索引匹配（{index?.dim} 维 / {index?.model ?? "未盖戳"}，{index?.count} 条）
+        </div>
+      )}
+    </div>
   );
 }
 

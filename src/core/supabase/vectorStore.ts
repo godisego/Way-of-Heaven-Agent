@@ -35,6 +35,9 @@ export class SupabaseVectorStore implements VectorStore {
     embedding: number[],
     topK: number,
     filter?: (record: VectorRecord) => boolean,
+    // expectedModel 预留给模型守卫：云端维度由 vector(N) schema 天然校验，
+    // 模型级比对待补（chunks.embedding_model 列已就绪，可后续在 RPC 内做）。
+    _expectedModel?: string,
   ): Promise<VectorSearchResult[]> {
     const client = getSupabaseAdmin();
     // RPC 暂只支持单 tradition 参数，谓词过滤在召回后做：带过滤时多召回一些再筛

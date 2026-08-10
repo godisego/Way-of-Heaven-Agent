@@ -411,3 +411,57 @@
     width: calc(100vw - 40px);
   }
 }
+
+.settings-action {
+  border: 1px solid var(--line-strong, rgba(37, 42, 48, 0.32));
+  background: transparent;
+  color: var(--ink-soft, #3b4046);
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm, 2px);
+  cursor: pointer;
+  font-family: var(--font-serif);
+  letter-spacing: 0.1em;
+}
+.settings-action:hover:not(:disabled) {
+  color: var(--cinnabar, #a8473c);
+  border-color: var(--cinnabar-line, rgba(168, 71, 60, 0.4));
+}
+.settings-action:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* 全检三盏灯：填 key 后点「测试全部」展示 chat / 嵌入 / 索引匹配 */
+.probe-report {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong, rgba(37, 42, 48, 0.18));
+  border-radius: var(--radius-sm, 2px);
+  background: var(--paper-bright, #fdfdfb);
+  font-size: 12px;
+  line-height: 1.7;
+  font-family: var(--font-sans);
+}
+.probe-row {
+  padding-left: 10px;
+  border-left: 3px solid transparent;
+}
+.probe-row + .probe-row {
+  margin-top: 2px;
+}
+.probe-row.is-ok {
+  color: #3d6b3a;
+  border-left-color: #3d6b3a;
+}
+.probe-row.is-warn {
+  color: var(--cinnabar, #a8473c);
+  border-left-color: var(--cinnabar, #a8473c);
+}
+.probe-row.is-fail {
+  color: #8a2a2a;
+  border-left-color: #8a2a2a;
+}
+.probe-report.is-error {
+  color: #8a2a2a;
+}

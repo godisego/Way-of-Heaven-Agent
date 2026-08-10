@@ -49,8 +49,32 @@ export class LocalJsonVectorStore implements VectorStore {
     embedding: number[],
     topK: number,
     filter?: (record: VectorRecord) => boolean,
+    expectedModel?: string,
   ): Promise<VectorSearchResult[]> {
     const all = this.readAll();
+    // 守卫：索引非空时，先校验向量空间一致，避免错位后「全员 0 分」或「伪相似度」静默通过。
+    if (all.length) {
+      const indexDim = all[0].embedding?.length ?? 0;
+      // 取第一条带戳记录作为模型样本（records[0] 可能是旧的无戳残留）
+      const stamped = all.find((record) => record.embeddingModel);
+      const indexModel = stamped?.embeddingModel ?? null;
+      // 维度守卫：查询维度 ≠ 索引维度 → cosine 必然全员 0（见 vectorStore.cosineSimilarity）。
+      // 这是最常见也最隐蔽的故障（如 mock 256 维 × 真模型 3072 维），必须在打分前拦下。
+      if (indexDim && embedding.length !== indexDim) {
+        throw new Error(
+          `向量空间错位：索引为 ${indexDim} 维（模型 ${indexModel ?? "未知"}），本次查询为 ${embedding.length} 维（模型 ${expectedModel ?? "未知"}）。` +
+            `维度不一致会让检索全员 0 分，三贤将统一答「暂未入藏」。请运行 \`npm run reindex:embeddings\` 用当前 embedding 模型重建索引。`,
+        );
+      }
+      // 模型守卫：维度相同但模型不同 → cosine 返回伪相似度，比维度错位更隐蔽。
+      // 用带戳记录判断；旧索引无戳则降级跳过，靠维度守卫 + doctor 兜底。
+      if (expectedModel && indexModel && expectedModel !== indexModel) {
+        throw new Error(
+          `向量模型不一致：索引由「${indexModel}」构建，本次查询用「${expectedModel}」。` +
+            `即使维度相同，不同模型的向量空间也不兼容，检索结果会失真。请运行 \`npm run reindex:embeddings\` 重建索引。`,
+        );
+      }
+    }
     const candidates = filter ? all.filter(filter) : all;
     return candidates
       .map((record) => ({ ...record, score: cosineSimilarity(embedding, record.embedding) }))

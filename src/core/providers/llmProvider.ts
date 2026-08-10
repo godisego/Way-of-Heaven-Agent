@@ -5,6 +5,12 @@ export type EmbedTextsInput = {
 export type EmbedTextsResult = {
   model: string;
   embeddings: number[][];
+  /**
+   * 当 embedding 链路掉链子（无 Key、网络失败、鉴权失败、限流、供应商 200 报错等）
+   * 而静默回退到本地 mock 时置 true。trace 面板 / doctor / health 据此把回退暴露给用户，
+   * 避免"向量空间错位 → 全员 0 分 → 假装没证据"的静默故障。
+   */
+  fellBackToMock?: boolean;
 };
 
 export type GenerateAnswerInput = {

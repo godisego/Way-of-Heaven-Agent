@@ -22,12 +22,15 @@ export async function POST(request: Request) {
     const chatConfigured = !!(config.chatBaseUrl && config.chatApiKey && config.chatModel);
     const embeddingConfigured = !!(config.openAICompatBaseUrl && config.openAICompatApiKey && config.embeddingModel);
     const usingMockEmbedding = !embeddingConfigured;
+    const indexModel = records.find((r) => r.embeddingModel)?.embeddingModel ?? null;
+    const indexIsMock = !!indexModel && indexModel.startsWith("mock-local-");
 
     return NextResponse.json({
       vectorIndex: {
         count: vectorCount,
         documents: docIds.size,
         dimensions: records[0]?.embedding?.length ?? 0,
+        embeddingModel: indexModel,
         empty: vectorCount === 0,
       },
       providers: {
@@ -48,7 +51,11 @@ export async function POST(request: Request) {
           ? "索引为空——请运行 npm run seed:all 入库典籍"
           : !embeddingConfigured
             ? "使用 mock embedding（bigram hash）——配置 embedding provider 可大幅提升语义检索质量"
-            : "一切就绪",
+            : indexIsMock
+              ? "索引由 mock 构建，但已配置真实 embedding 模型——请运行 npm run reindex:embeddings 重建，否则检索会被向量空间守卫拦截"
+              : indexModel && indexModel !== config.embeddingModel
+                ? `索引由「${indexModel}」构建，但当前配置为「${config.embeddingModel}」——请运行 npm run reindex:embeddings 重建`
+                : "一切就绪",
     });
   } catch (error) {
     return NextResponse.json(
