@@ -40,9 +40,14 @@ export function LearnArticle({ html }: { html: string }) {
       r.render(<FigureRouter fig={fig} />);
       roots.push({ el: slot, root: r });
     });
-    // 清理：组件卸载或 html 变化时卸载注入的 roots
+    // 清理：组件卸载或 html 变化时卸载注入的 roots。
+    // cleanup 在 React commit 阶段同步执行，此时同步 unmount 另一个 createRoot 会触发
+    // “Attempted to synchronously unmount a root while React was already rendering” 警告——
+    // 推迟到微任务（当前 commit 完成后）再卸载即可消除该 race condition。
     return () => {
-      roots.forEach(({ root }) => root.unmount());
+      queueMicrotask(() => {
+        roots.forEach(({ root }) => root.unmount());
+      });
     };
   }, [html]);
 
