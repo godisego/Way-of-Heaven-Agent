@@ -249,6 +249,6 @@ data/
 
 ## 十二 · 鸣谢
 
-学AI，上L站！感谢[Linux.do](https://linux.do)社区支持。
+学AI，上L站！感谢[Linux.do](https://linux.do/latest)社区支持。
 
 <div align="center"><sub>以茶代酒 · 以问代卜</sub></div>
