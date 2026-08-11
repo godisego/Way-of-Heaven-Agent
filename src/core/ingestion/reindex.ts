@@ -3,7 +3,7 @@
  * → 原子替换索引 → 同步 chunk 元数据的 embeddingModel。供 CLI 脚本与 /api/reindex 复用。
  *
  * 只在所有批次成功后才 replaceLocalVectorRecords（先写临时文件再 rename），失败则旧索引不动。
- * configOverride 让 /api/reindex 能用前端齿轮面板的配置（key 只在内存里用，不落盘）。
+ * 常规调用从服务器统一配置读取；configOverride 只保留给内部测试或显式调用方。
  */
 import { updateChunkVectors } from "@/core/documents/documentRepository";
 import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";

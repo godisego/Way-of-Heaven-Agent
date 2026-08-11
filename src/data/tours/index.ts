@@ -11,6 +11,7 @@ import type { DriveStep } from "driver.js";
 import { MINGLI_LESSONS } from "./mingli";
 import { AGENT_LESSONS } from "./agent";
 import { LIBRARY_LESSON } from "./library";
+import { ONBOARDING_LESSONS } from "./onboarding";
 
 export type LessonId =
   | "agent-1"
@@ -19,6 +20,8 @@ export type LessonId =
   | "agent-4"
   | "agent-5"
   | "agent-6"
+  | "onboarding-home"
+  | "onboarding-provider"
   | "library-tour"
   | "mingli-1"
   | "mingli-2"
@@ -90,6 +93,8 @@ export const LESSON_TRACKS: LessonTrack[] = [
 
 export function getLesson(id: LessonId): Lesson | null {
   if (id === LIBRARY_LESSON.id) return LIBRARY_LESSON;
+  const onboarding = ONBOARDING_LESSONS.find((lesson) => lesson.id === id);
+  if (onboarding) return onboarding;
   for (const track of LESSON_TRACKS) {
     for (const l of track.lessons) {
       if (isAvailable(l) && l.id === id) return l;

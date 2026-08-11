@@ -65,7 +65,7 @@ export type RunAgentOptions = {
   onEvent?: (event: AgentEvent) => void;
   signal?: AbortSignal;
   conversationContext?: string;
-  /** 运行时配置覆盖（前端面板提供）：透传给 transport/draftProvider/search_library 工具 */
+  /** 运行时配置覆盖（内部测试或显式调用方）：透传给 transport/draftProvider/search_library 工具 */
   configOverride?: ConfigOverride;
 };
 

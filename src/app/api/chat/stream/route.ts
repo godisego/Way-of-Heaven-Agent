@@ -22,7 +22,6 @@ import { runAgentLoop } from "@/core/agent/orchestrator";
 import type { AgentEvent } from "@/core/agent/types";
 import { buildConversationContext, sessionApi } from "@/data/sessionStore";
 import { prepareUserProfileForAgent, type UserProfile } from "@/data/userProfile";
-import { parseSettingsOverride } from "@/core/config/settingsMapping";
 
 const SSE_HEADERS = {
   "content-type": "text/event-stream; charset=utf-8",
@@ -38,7 +37,6 @@ export async function POST(request: Request) {
     userProfile?: unknown;
     sessionId?: unknown;
     mode?: unknown;
-    settings?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -75,7 +73,6 @@ export async function POST(request: Request) {
   const activeSession = session ?? sessionApi.createSession();
   const previousMessages = sessionApi.getMessages(activeSession.id);
   const conversationContext = buildConversationContext(previousMessages);
-  const configOverride = parseSettingsOverride(body.settings);
   // 用户消息先落盘：即使中途断开，提问也保留（与 /api/chat 一致）。
   sessionApi.appendMessage(activeSession.id, { role: "user", content: question, citations: [] });
 
@@ -94,7 +91,6 @@ export async function POST(request: Request) {
           signal: request.signal,
           conversationContext,
           onEvent,
-          configOverride,
         });
 
         // done 已由 orchestrator 发出。落盘助手消息后，发终结帧给前端收尾。

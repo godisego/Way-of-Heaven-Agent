@@ -12,6 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { loadEnvConfig } from "@next/env";
 import { ingestDocumentBuffer } from "../src/core/ingestion/ingestionPipeline";
+import { shouldUseMockEmbedding } from "../src/core/providers/openAICompatibleProvider";
 
 type DocBook = {
   fileName: string;
@@ -42,7 +43,7 @@ const DOC_BOOKS: DocBook[] = [
 
 async function main() {
   loadEnvConfig(process.cwd());
-  const embeddingMode = process.env.USE_MOCK_EMBEDDING === "1" ? "本地 mock" : "真实 embedding";
+  const embeddingMode = shouldUseMockEmbedding() ? "本地 mock" : "真实 embedding";
   console.log(`入库向量模式：${embeddingMode}`);
   console.log(`待入库命理教材：${DOC_BOOKS.length} 篇\n`);
 

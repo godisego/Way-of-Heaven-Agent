@@ -10,7 +10,6 @@ import {
   type ReactNode,
 } from "react";
 import { hasSeenOnboarding } from "./onboarding";
-import { startOnboardingChain } from "./onboardingTour";
 
 type LearningContextValue = {
   enabled: boolean;
@@ -60,15 +59,22 @@ export function LearningProvider({ children }: { children: ReactNode }) {
   // 首次访问自动启动入门引导（只在首页，看过一次就不再弹）
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (hasSeenOnboarding()) return;
     if (window.location.pathname !== "/") return;
-    const timer = setTimeout(() => {
-      try {
-        import("./onboardingTour").then(({ startOnboardingChain }) => {
-          startOnboardingChain();
+    const pendingHome = window.sessionStorage.getItem("tiandao.onboarding.pending-home");
+    if (pendingHome === "provider") {
+      window.sessionStorage.removeItem("tiandao.onboarding.pending-home");
+      const timer = window.setTimeout(() => {
+        void import("./onboardingTour").then(({ startProviderOnboarding }) => {
+          void startProviderOnboarding();
         });
-      } catch {
-      }
+      }, 700);
+      return () => window.clearTimeout(timer);
+    }
+    if (hasSeenOnboarding()) return;
+    const timer = setTimeout(() => {
+      void import("./onboardingTour").then(({ startOnboardingChain }) => {
+        void startOnboardingChain();
+      });
     }, 1500);
     return () => clearTimeout(timer);
   }, []);

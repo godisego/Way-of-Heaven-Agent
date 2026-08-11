@@ -3,17 +3,15 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { readLocalVectorRecords } from "@/core/vector/localJsonVectorStore";
 import { getAppConfig } from "@/core/config/appConfig";
-import { parseSettingsOverride } from "@/core/config/settingsMapping";
+import { shouldUseMockEmbedding } from "@/core/providers/openAICompatibleProvider";
 
 /**
  * 只读健康检查：返回向量索引状态与 provider 配置状态。
  * 不打印任何密钥值。
  */
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const body = await request.json().catch(() => ({}));
-    const configOverride = parseSettingsOverride(body.settings);
-    const config = { ...getAppConfig(), ...configOverride };
+    const config = getAppConfig();
 
     const records = readLocalVectorRecords();
     const vectorCount = records.length;
@@ -21,7 +19,7 @@ export async function POST(request: Request) {
 
     const chatConfigured = !!(config.chatBaseUrl && config.chatApiKey && config.chatModel);
     const embeddingConfigured = !!(config.openAICompatBaseUrl && config.openAICompatApiKey && config.embeddingModel);
-    const usingMockEmbedding = !embeddingConfigured;
+    const usingMockEmbedding = shouldUseMockEmbedding();
     const indexModel = records.find((r) => r.embeddingModel)?.embeddingModel ?? null;
     const indexIsMock = !!indexModel && indexModel.startsWith("mock-local-");
 
@@ -49,7 +47,7 @@ export async function POST(request: Request) {
       hint:
         vectorCount === 0
           ? "索引为空——请运行 npm run seed:all 入库典籍"
-          : !embeddingConfigured
+          : usingMockEmbedding
             ? "使用 mock embedding（bigram hash）——配置 embedding provider 可大幅提升语义检索质量"
             : indexIsMock
               ? "索引由 mock 构建，但已配置真实 embedding 模型——请运行 npm run reindex:embeddings 重建，否则检索会被向量空间守卫拦截"

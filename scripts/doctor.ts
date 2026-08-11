@@ -2,9 +2,10 @@
  *  比对「索引构建模型」与「当前查询模型」是否一致——不一致是 RAG 链路最隐蔽的故障
  *  （全员 0 分或伪相似度）。不打印任何密钥值。
  *  探活/比对逻辑与 /api/probe 共享 src/core/diagnostics/probe.ts，避免漂移。 */
-import path from "node:path";
 import { loadEnvConfig } from "@next/env";
 import { getAppConfig } from "../src/core/config/appConfig";
+import { hasPersistedEmbeddingConfig } from "../src/core/config/providerSettingsFile";
+import { shouldUseMockEmbedding } from "../src/core/providers/openAICompatibleProvider";
 import { probeEmbedding, summarizeIndex, compareEmbeddingWithIndex } from "../src/core/diagnostics/probe";
 
 function isConfigured(value: string | undefined): boolean {
@@ -20,13 +21,14 @@ async function main() {
   loadEnvConfig(process.cwd());
   const config = getAppConfig();
   const mockFlagOn = process.env.USE_MOCK_EMBEDDING === "1";
+  const persistedEmbeddingConfigured = hasPersistedEmbeddingConfig();
   const realKeyConfigured = isConfigured(config.openAICompatApiKey);
   let failed = false;
   const warnings: string[] = [];
 
   console.log("天道智能体环境自检");
-  console.log("ℹ️ 本检查只读 .env / 环境变量；前端齿轮面板的配置存于浏览器 localStorage，不在此范围内。");
-  console.log("   若你在前端配了不同的 Key，运行时（聊天/检索/上传）以前端为准，doctor 看不到。\n");
+  console.log("ℹ️ 配置优先级：服务器 data/provider-settings.json > .env / 环境变量 > 默认值。");
+  console.log("   网页、聊天、检索、上传、重建索引和本 doctor 使用同一份服务器配置。\n");
 
   const chatReady = isConfigured(config.chatBaseUrl) && isConfigured(config.chatApiKey) && isConfigured(config.chatModel);
   status(chatReady, "聊天链路", chatReady ? `${config.chatModel}，Endpoint 已配置` : "CHAT_BASE_URL / CHAT_API_KEY / CHAT_MODEL 未完整配置");
@@ -34,20 +36,24 @@ async function main() {
 
   // P1 陷阱告警：USE_MOCK_EMBEDDING=1 会强制走 mock，是「配了 Key 却搜不准」的常见根源。
   if (mockFlagOn) {
-    if (realKeyConfigured) {
+    if (persistedEmbeddingConfigured) {
+      warnings.push(
+        "USE_MOCK_EMBEDDING=1 已开启，但服务器配置中有完整 embedding，按优先级使用服务器真实模型。清除网页配置后该开关会重新生效。",
+      );
+    } else if (realKeyConfigured) {
       warnings.push(
         "USE_MOCK_EMBEDDING=1 已开启，且配了真实 OPENAI_COMPAT_API_KEY——embedding 被强制走 mock（bigram hash），检索停在词法水平。若想用真模型，请在 .env 去掉 USE_MOCK_EMBEDDING 后运行 npm run reindex:embeddings。",
       );
     } else {
       warnings.push(
-        "USE_MOCK_EMBEDDING=1 已开启。无真 Key 时这与自动回退 mock 等价；但配真 Key 后请务必去掉此 flag，否则会强制走 mock 而非真模型（这正是 P1 陷阱）。注意：前端齿轮面板配的 embedding Key 会优先生效（绕过此 flag）。",
+        "USE_MOCK_EMBEDDING=1 已开启。无真 Key 时这与自动回退 mock 等价；通过网页保存完整 embedding 后，服务器配置会优先并启用真实模型。",
       );
     }
   }
 
   const embeddingConfigured =
     isConfigured(config.openAICompatBaseUrl) && realKeyConfigured && isConfigured(config.embeddingModel);
-  const effectivelyMock = mockFlagOn || !realKeyConfigured;
+  const effectivelyMock = shouldUseMockEmbedding();
   if (effectivelyMock) {
     status(true, "Embedding 链路", "当前为本地 Mock 模式（bigram hash），不需要 Embedding Key");
   } else {
@@ -68,7 +74,7 @@ async function main() {
     warnings.push(`索引中有 ${summary.unstamped} 条记录未盖戳 embeddingModel（旧索引残留 / 多次 seed 累积），会削弱模型级比对。建议运行 npm run reindex:embeddings 统一重建。`);
   }
 
-  // 探活：实跑一次 embedTexts（CLI 无 override → 走 .env），与索引比对。
+  // 探活：实跑一次 embedTexts（与网页使用相同配置），并与索引比对。
   if (!summary.empty) {
     const probe = await probeEmbedding(null);
     if (probe.error) {
@@ -95,7 +101,7 @@ async function main() {
         warnings.push("索引未盖戳 embeddingModel（旧索引），无法做模型级比对，维度已校验通过。建议 reindex 一次以补盖戳。");
       }
       if (probe.viaMock || probe.fellBackToMock) {
-        warnings.push(`Embedding 链路运行时回退了 mock（模型=${probe.model}）。请检查 OPENAI_COMPAT_* 配置 / 余额 / 网络；若确实打算用 mock，可在 .env 显式 USE_MOCK_EMBEDDING=1 确认。`);
+        warnings.push(`Embedding 链路运行时回退了 mock（模型=${probe.model}）。请检查服务器供应商配置 / OPENAI_COMPAT_* / 余额 / 网络；若确实打算用 mock，可在 .env 显式 USE_MOCK_EMBEDDING=1 确认。`);
       }
     }
   }

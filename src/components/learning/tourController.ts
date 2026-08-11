@@ -20,18 +20,75 @@ function prepare(): void {
     });
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function formatText(value: string): string {
+  return escapeHtml(value).replaceAll("\n", "<br />");
+}
+
+/** 把纯文本讲解整理成可扫读的段落、小标题和要点列表。 */
+function formatDescription(description: string): string {
+  if (description.includes('class="tour-copy"')) return description;
+
+  const blocks = description.trim().split(/\n{2,}/);
+  const content = blocks.map((block, index) => {
+    const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+    if (lines.length > 0 && lines.every((line) => line.startsWith("· "))) {
+      const items = lines.map((line) => {
+        const value = line.slice(2);
+        const match = value.match(/^([^：\n，。！？；]{1,18})：\s*(.+)$/);
+        if (!match) return `<li>${formatText(value)}</li>`;
+        return `<li><strong>${formatText(match[1])}</strong><span>${formatText(match[2])}</span></li>`;
+      });
+      return `<ul class="tour-list">${items.join("")}</ul>`;
+    }
+
+    const section = block.match(/^([^：\n，。！？；]{1,18})：\s*([\s\S]+)$/);
+    if (section) {
+      return (
+        '<section class="tour-section">' +
+        `<h4>${formatText(section[1])}</h4>` +
+        `<p>${formatText(section[2])}</p>` +
+        "</section>"
+      );
+    }
+
+    const className = index === 0 ? "tour-lead" : "tour-paragraph";
+    return `<p class="${className}">${formatText(block)}</p>`;
+  });
+
+  return `<div class="tour-copy">${content.join("")}</div>`;
+}
+
 /**
  * 宿主元素兜底：selector 找不到时去掉 element，让该步降级为居中弹窗——
  * 内容不丢、位置不错（如未建档时的 bazi-card、尚未打开的释义卡）。
  */
 function resolveSteps(steps: DriveStep[]): DriveStep[] {
   return steps.map((step) => {
-    if (typeof step.element === "string" && !document.querySelector(step.element)) {
-      const fallback = { ...step };
+    const formatted = typeof step.popover?.description === "string"
+      ? {
+          ...step,
+          popover: {
+            ...step.popover,
+            description: formatDescription(step.popover.description),
+          },
+        }
+      : step;
+
+    if (typeof formatted.element === "string" && !document.querySelector(formatted.element)) {
+      const fallback = { ...formatted };
       delete fallback.element;
       return fallback;
     }
-    return step;
+    return formatted;
   });
 }
 

@@ -5,7 +5,6 @@ import { answerQuestion } from "@/core/retrieval/answerWithCitations";
 import { runAgentLoop } from "@/core/agent/orchestrator";
 import { buildConversationContext, sessionApi } from "@/data/sessionStore";
 import { prepareUserProfileForAgent, type UserProfile } from "@/data/userProfile";
-import { parseSettingsOverride } from "@/core/config/settingsMapping";
 import { readLocalVectorRecords } from "@/core/vector/localJsonVectorStore";
 
 export async function POST(request: Request) {
@@ -24,8 +23,6 @@ export async function POST(request: Request) {
     const previousMessages = sessionApi.getMessages(activeSession.id);
     const conversationContext = buildConversationContext(previousMessages);
     sessionApi.appendMessage(activeSession.id, { role: "user", content: question, citations: [] });
-    const configOverride = parseSettingsOverride(body.settings);
-
     // 早期检测：索引为空时直接返回明确提示，不让模型说"材料不足"
     const vectorCount = readLocalVectorRecords().length;
     if (vectorCount === 0) {
@@ -49,7 +46,6 @@ export async function POST(request: Request) {
       const answer = await runAgentLoop(question, safeProfile, {
         signal: request.signal,
         conversationContext,
-        configOverride,
       });
       sessionApi.appendMessage(activeSession.id, {
         role: "assistant",
@@ -60,7 +56,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ...answer, sessionId: activeSession.id });
     }
 
-    const answer = await answerQuestion(question, safeProfile, conversationContext, configOverride);
+    const answer = await answerQuestion(question, safeProfile, conversationContext);
     sessionApi.appendMessage(activeSession.id, {
       role: "assistant",
       content: answer.answerMarkdown,

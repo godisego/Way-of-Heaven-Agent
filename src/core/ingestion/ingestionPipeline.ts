@@ -29,7 +29,7 @@ export type IngestInput = {
   bookTitle?: string | null;
   author?: string | null;
   tradition?: string | null;
-  // 可选：前端面板的 embedding 配置覆盖（切真实模型时用用户配置的 embedding）
+  // 可选：内部测试或显式调用方提供的 embedding 配置覆盖
   configOverride?: ConfigOverride;
 };
 

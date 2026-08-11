@@ -1,37 +1,25 @@
 /**
  * 全检探活端点：一次调用验证 chat + embedding + 与本地索引的匹配。
  *
- * 前端齿轮面板"测试连接"升级为全检：填 key 后立即知道
+ * 前端齿轮面板保存后全检：
  *  - chat 通不通（拉模型列表验证 key）
  *  - embedding 通不通（实跑一次向量；区分"供应商不含 embedding→回退 mock"）
  *  - 当前 embedding 与索引是否同向量空间（维度/模型比对，不一致则提示重建）
  *
- * key 只在请求内存里用于本次探测，不落盘。供前端 /api/probe 调用。
+ * 供前端 /api/probe 调用；配置来自服务器统一配置文件。
  */
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { parseSettingsOverride } from "@/core/config/settingsMapping";
 import { probeChat, probeEmbedding, summarizeIndex, compareEmbeddingWithIndex } from "@/core/diagnostics/probe";
-import { findPreset, type AuthStyle } from "@/data/providerPresets";
+import { getAppConfig } from "@/core/config/appConfig";
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const body = (await request.json().catch(() => ({}))) as { settings?: unknown };
-    const settings = (body.settings ?? {}) as {
-      chat?: { baseUrl?: string; apiKey?: string; provider?: string; protocol?: string };
-    };
-    const override = parseSettingsOverride(body.settings);
+    const config = getAppConfig();
+    const chatResult = await probeChat(config.chatBaseUrl, config.chatApiKey, config.chatProtocol);
 
-    // chat 探活：authStyle 优先看 protocol，其次用该供应商 preset 的默认
-    const chat = settings.chat ?? {};
-    const chatPreset = chat.provider ? findPreset("chat", chat.provider) : undefined;
-    const authStyle: AuthStyle =
-      chat.protocol === "anthropic" ? "anthropic" : chat.protocol === "openai" ? "openai" : chatPreset?.authStyle ?? "openai";
-    const chatResult = await probeChat(chat.baseUrl ?? "", chat.apiKey ?? "", authStyle);
-
-    // embedding 探活（override 让前端 embedding 配置生效）
-    const embedding = await probeEmbedding(override);
+    const embedding = await probeEmbedding(null);
 
     // 与本地索引比对
     const index = summarizeIndex();

@@ -1,4 +1,5 @@
 import path from "node:path";
+import { getPersistedProviderConfigOverride } from "./providerSettingsFile";
 
 export type AppConfig = {
   dataDir: string;
@@ -31,7 +32,7 @@ export function getAppConfig(): AppConfig {
   const dataDir = path.resolve(process.env.DATA_DIR ?? "./data");
   const vectorBackend =
     process.env.VECTOR_BACKEND === "supabase" ? "supabase" : "local";
-  return {
+  const envConfig: AppConfig = {
     dataDir,
     documentsDir: path.join(dataDir, "documents"),
     indexesDir: path.join(dataDir, "indexes"),
@@ -51,11 +52,12 @@ export function getAppConfig(): AppConfig {
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
     supabaseDocumentsBucket: process.env.SUPABASE_DOCUMENTS_BUCKET ?? "documents",
   };
+  return { ...envConfig, ...getPersistedProviderConfigOverride() };
 }
 
 /**
- * 运行时配置覆盖（前端面板提供，随请求体传入）。
- * 仅覆盖聊天/嵌入相关字段；dataDir/supabase 等保持 env（与 CLI 脚本一致）。
+ * 运行时配置覆盖（内部测试或显式调用方提供）。
+ * 网页和 CLI 的常规调用都从服务器配置文件读取，不再随请求传密钥。
  * 空覆盖 → mergeConfig 回退到 getAppConfig()，行为与 v1 完全一致。
  */
 export type ConfigOverride = Partial<
@@ -71,7 +73,7 @@ export type ConfigOverride = Partial<
   >
 >;
 
-/** 环境配置 ⊕ 运行时覆盖（覆盖优先）。provider/transport 构造时统一走这里。 */
+/** 环境配置 ⊕ 服务器配置文件 ⊕ 显式运行时覆盖（越靠后优先）。 */
 export function mergeConfig(override?: ConfigOverride | null): AppConfig {
   const base = getAppConfig();
   if (!override) return base;

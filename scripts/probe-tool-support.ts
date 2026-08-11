@@ -5,43 +5,39 @@
  * - anthropic 协议（/v1/messages）→ 探测原生 tool_use
  * - openai 协议（/chat/completions）→ 探测 function calling
  *
- * 运行：npm run probe:tools（读取 .env.local，约 5 秒出结论）
+ * 运行：npm run probe:tools（读取服务器统一配置，缺失时回退 .env.local）
  */
 
-import fs from "node:fs";
-import path from "node:path";
+import { loadEnvConfig } from "@next/env";
+import { getAppConfig } from "../src/core/config/appConfig";
 
-// 手动加载 .env.local（tsx 不会自动加载）
-const envPath = path.join(process.cwd(), ".env.local");
-if (fs.existsSync(envPath)) {
-  for (const line of fs.readFileSync(envPath, "utf8").split("\n")) {
-    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
-    if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2];
-  }
-}
-
-const baseUrl = (process.env.CHAT_BASE_URL ?? "").replace(/\/$/, "");
-const apiKey = process.env.CHAT_API_KEY ?? "";
-const model = process.env.CHAT_MODEL ?? "";
-// 协议：env 显式指定优先，否则按 baseUrl 含 /anthropic 推断
-const protocol =
-  (process.env.CHAT_PROTOCOL ?? "").toLowerCase() === "anthropic" ||
-  baseUrl.includes("/anthropic")
-    ? "anthropic"
-    : "openai";
+type ProbeConfig = {
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+};
 
 async function main() {
+  loadEnvConfig(process.cwd());
+  const appConfig = getAppConfig();
+  const config: ProbeConfig = {
+    baseUrl: appConfig.chatBaseUrl.replace(/\/$/, ""),
+    apiKey: appConfig.chatApiKey,
+    model: appConfig.chatModel,
+  };
+  const protocol = appConfig.chatProtocol;
+  const { baseUrl, apiKey, model } = config;
   if (!baseUrl || !apiKey || !model) {
-    console.error("缺少 CHAT_BASE_URL / CHAT_API_KEY / CHAT_MODEL（检查 .env.local）");
+    console.error("缺少聊天供应商配置（请检查网页供应商设置或 .env.local）");
     process.exit(2);
   }
   console.log(`端点：${baseUrl}  模型：${model}  协议：${protocol}`);
-  if (protocol === "anthropic") return probeAnthropic();
-  return probeOpenAI();
+  if (protocol === "anthropic") return probeAnthropic(config);
+  return probeOpenAI(config);
 }
 
 /** 探测 Anthropic 原生 tool use（/v1/messages） */
-async function probeAnthropic() {
+async function probeAnthropic({ baseUrl, apiKey, model }: ProbeConfig) {
   const response = await fetch(`${baseUrl}/v1/messages`, {
     method: "POST",
     headers: {
@@ -88,7 +84,7 @@ async function probeAnthropic() {
 }
 
 /** 探测 OpenAI function calling（/chat/completions） */
-async function probeOpenAI() {
+async function probeOpenAI({ baseUrl, apiKey, model }: ProbeConfig) {
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: {

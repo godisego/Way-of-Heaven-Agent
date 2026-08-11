@@ -2,7 +2,6 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { ingestDocumentBuffer } from "@/core/ingestion/ingestionPipeline";
-import { parseSettingsOverride } from "@/core/config/settingsMapping";
 
 const ALLOWED_EXT = [".md", ".markdown", ".txt", ".text", ".pdf"];
 
@@ -22,12 +21,6 @@ export async function POST(request: Request) {
     const bookTitle = form.get("bookTitle");
     const author = form.get("author");
     const tradition = form.get("tradition");
-    // 可选的前端面板设置（JSON 字符串）：切真实 embedding 模型时用
-    const settingsRaw = form.get("settings");
-    const configOverride = parseSettingsOverride(
-      typeof settingsRaw === "string" ? safeJsonParse(settingsRaw) : undefined,
-    );
-
     const buffer = Buffer.from(await file.arrayBuffer());
     const document = await ingestDocumentBuffer({
       buffer,
@@ -35,18 +28,9 @@ export async function POST(request: Request) {
       bookTitle: typeof bookTitle === "string" && bookTitle.trim() ? bookTitle.trim() : null,
       author: typeof author === "string" && author.trim() ? author.trim() : null,
       tradition: typeof tradition === "string" && tradition.trim() ? tradition.trim() : null,
-      configOverride,
     });
     return NextResponse.json({ document });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "入库失败" }, { status: 500 });
-  }
-}
-
-function safeJsonParse(s: string): unknown {
-  try {
-    return JSON.parse(s);
-  } catch {
-    return undefined;
   }
 }

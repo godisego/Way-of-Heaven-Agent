@@ -50,7 +50,7 @@ export function LearningToggle() {
         <div className="learning-center" role="dialog" aria-label="学习中心面板">
           <div className="learning-center-head">
             <strong>学习中心</strong>
-            <span className="learning-center-sub">双学径 · 短课配系统讲义</span>
+            <span className="learning-center-sub">双学径 · 本地内容无需 Key</span>
           </div>
 
           {LESSON_TRACKS.map((track) => (
@@ -99,6 +99,7 @@ export function LearningToggle() {
       <button
         type="button"
         className="learning-dock-btn"
+        data-tour-id="learning-entry"
         onClick={onMainClick}
         aria-pressed={enabled}
         aria-expanded={open}

@@ -1,51 +1,93 @@
 /**
- * 供应商设置 localStorage 实现（复刻 userProfileStore 的模式）。
+ * 供应商设置客户端：通过同源 API 读写服务器配置文件。
  *
- * 密钥只存本机 localStorage，随请求体传给本机服务端，不落盘 data/、不上云。
- * 留了切云端的钩子：将来要接 Supabase 加密存储，换掉 defaultApi 导出即可。
+ * 首次升级时，如果服务器尚无配置而浏览器有旧版 localStorage 配置，
+ * 会自动迁移一次并删除旧副本，避免密钥继续散落在浏览器存储中。
  */
-
 import type { ProviderSettings } from "@/data/providerSettings";
 import { EMPTY_SETTINGS } from "@/data/providerSettings";
 
-const STORAGE_KEY = "way-of-heaven-agent:provider-settings:v1";
+const LEGACY_STORAGE_KEY = "way-of-heaven-agent:provider-settings:v1";
+
+type SettingsResponse = {
+  settings?: ProviderSettings;
+  exists?: boolean;
+  error?: string;
+};
 
 export interface ProviderSettingsApi {
   load(): Promise<ProviderSettings>;
-  save(settings: ProviderSettings): Promise<void>;
+  save(settings: ProviderSettings): Promise<ProviderSettings>;
   clear(): Promise<void>;
 }
 
-class LocalStorageProviderSettingsApi implements ProviderSettingsApi {
+class ServerProviderSettingsApi implements ProviderSettingsApi {
   async load(): Promise<ProviderSettings> {
-    if (typeof window === "undefined") return { ...EMPTY_SETTINGS };
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { ...EMPTY_SETTINGS };
-      const parsed = JSON.parse(raw) as Partial<ProviderSettings>;
-      if (!parsed || typeof parsed !== "object") return { ...EMPTY_SETTINGS };
-      // 防御：补齐可能缺失的 chat/embedding 子对象与 protocol 字段（旧数据兼容）
-      const chat = { ...EMPTY_SETTINGS.chat, ...parsed.chat };
-      const embedding = { ...EMPTY_SETTINGS.embedding, ...parsed.embedding };
-      if (!chat.protocol) chat.protocol = chat.baseUrl.includes("/anthropic") ? "anthropic" : "openai";
-      if (!embedding.protocol) embedding.protocol = "openai";
-      return { chat, embedding, unified: parsed.unified !== false, updatedAt: parsed.updatedAt ?? "" };
-    } catch {
-      return { ...EMPTY_SETTINGS };
-    }
+    const response = await fetch("/api/settings", { method: "GET", cache: "no-store" });
+    const data = (await response.json()) as SettingsResponse;
+    if (!response.ok) throw new Error(data.error ?? "读取供应商配置失败");
+
+    const serverSettings = normalize(data.settings);
+    if (data.exists || typeof window === "undefined") return serverSettings;
+
+    const legacy = readLegacySettings();
+    if (!legacy) return serverSettings;
+    const migrated = await this.save(legacy);
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    return migrated;
   }
 
-  async save(settings: ProviderSettings): Promise<void> {
-    if (typeof window === "undefined") return;
-    const stamped: ProviderSettings = { ...settings, updatedAt: new Date().toISOString() };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stamped));
+  async save(settings: ProviderSettings): Promise<ProviderSettings> {
+    const response = await fetch("/api/settings", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ settings }),
+    });
+    const data = (await response.json()) as SettingsResponse;
+    if (!response.ok) throw new Error(data.error ?? "保存供应商配置失败");
+    if (typeof window !== "undefined") window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    return normalize(data.settings);
   }
 
   async clear(): Promise<void> {
-    if (typeof window === "undefined") return;
-    window.localStorage.removeItem(STORAGE_KEY);
+    const response = await fetch("/api/settings", { method: "DELETE" });
+    const data = (await response.json()) as SettingsResponse;
+    if (!response.ok) throw new Error(data.error ?? "清除供应商配置失败");
+    if (typeof window !== "undefined") window.localStorage.removeItem(LEGACY_STORAGE_KEY);
   }
 }
 
-/** 当前默认 API（localStorage）。将来上云时换掉这一行即可。 */
-export const providerSettingsApi: ProviderSettingsApi = new LocalStorageProviderSettingsApi();
+function readLegacySettings(): ProviderSettings | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!raw) return null;
+    return normalize(JSON.parse(raw) as Partial<ProviderSettings>);
+  } catch {
+    return null;
+  }
+}
+
+function normalize(raw?: Partial<ProviderSettings>): ProviderSettings {
+  if (!raw || typeof raw !== "object") return cloneEmptySettings();
+  const chat = { ...EMPTY_SETTINGS.chat, ...raw.chat };
+  const embedding = { ...EMPTY_SETTINGS.embedding, ...raw.embedding };
+  if (!chat.protocol) chat.protocol = chat.baseUrl.includes("/anthropic") ? "anthropic" : "openai";
+  if (!embedding.protocol) embedding.protocol = "openai";
+  return {
+    chat,
+    embedding,
+    unified: raw.unified !== false,
+    updatedAt: raw.updatedAt ?? "",
+  };
+}
+
+function cloneEmptySettings(): ProviderSettings {
+  return {
+    ...EMPTY_SETTINGS,
+    chat: { ...EMPTY_SETTINGS.chat },
+    embedding: { ...EMPTY_SETTINGS.embedding },
+  };
+}
+
+export const providerSettingsApi: ProviderSettingsApi = new ServerProviderSettingsApi();

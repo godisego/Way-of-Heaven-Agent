@@ -1,6 +1,21 @@
+import os from "node:os";
+import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mergeConfig } from "./appConfig";
 import { parseSettingsOverride } from "./settingsMapping";
+
+const originalSettingsPath = process.env.PROVIDER_SETTINGS_PATH;
+const missingSettingsPath = path.join(os.tmpdir(), `missing-provider-settings-${randomUUID()}.json`);
+
+beforeEach(() => {
+  process.env.PROVIDER_SETTINGS_PATH = missingSettingsPath;
+});
+
+afterEach(() => {
+  if (originalSettingsPath === undefined) delete process.env.PROVIDER_SETTINGS_PATH;
+  else process.env.PROVIDER_SETTINGS_PATH = originalSettingsPath;
+});
 
 describe("mergeConfig", () => {
   it("无 override 时完全等于 env 配置", () => {

@@ -21,7 +21,7 @@ export type ToolContext = {
   seenDocumentIds: Set<string>;
   /** 当前步序（登记证据用） */
   stepIndex: number;
-  /** 运行时配置覆盖（前端面板提供）：search_library 据此用用户配置的 embedding */
+  /** 运行时配置覆盖（内部测试或显式调用方）：search_library 据此选择 embedding */
   configOverride?: ConfigOverride;
 };
 

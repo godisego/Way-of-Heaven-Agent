@@ -24,7 +24,7 @@ import {
  * - 典籍检索可选：默认"本地 Mock（无需配置）"，想提升检索质量时再配真实嵌入
  * - 不让用户在"聊天/嵌入用什么协议"上困惑——选供应商即自动配好
  *
- * 密钥只存 localStorage，刷新保留，清浏览器即清除。
+ * 配置由本机 Node 服务持久化，网页与 CLI 共用；密钥读取时只返回“已保存”标记。
  */
 /** /api/probe 返回的全检结果：聊天 / 嵌入 / 索引匹配三方面 */
 type ProbeReport = {
@@ -39,14 +39,19 @@ export function ProviderSettings() {
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState<ProviderSettings>(EMPTY_SETTINGS);
   const [saved, setSaved] = useState(false);
+  const [settingsError, setSettingsError] = useState("");
 
   useEffect(() => {
-    void providerSettingsApi.load().then(setSettings);
+    void providerSettingsApi.load().then(setSettings).catch((error) => {
+      setSettingsError(error instanceof Error ? error.message : "读取供应商配置失败");
+    });
   }, []);
 
   const update = useCallback((kind: ProviderKind, patch: Partial<ProviderConfig>) => {
     setSettings((prev) => {
-      const next = { ...prev, [kind]: { ...prev[kind], ...patch } };
+      const providerChanged = Boolean(patch.provider && patch.provider !== prev[kind].provider);
+      const safePatch = providerChanged ? { ...patch, apiKey: "", hasApiKey: false } : patch;
+      const next = { ...prev, [kind]: { ...prev[kind], ...safePatch } };
       // unified 模式下改聊天供应商：若有配套 embeddingModel，自动更新嵌入的 model 与 baseUrl
       if (next.unified && kind === "chat" && patch.provider) {
         const preset = findPreset("chat", patch.provider);
@@ -81,28 +86,44 @@ export function ProviderSettings() {
     : settings;
 
   const onSave = useCallback(async () => {
-    await providerSettingsApi.save(effectiveSettings);
-    setSaved(true);
+    try {
+      const stored = await providerSettingsApi.save(effectiveSettings);
+      setSettings(stored);
+      setSettingsError("");
+      setSaved(true);
+    } catch (error) {
+      setSettingsError(error instanceof Error ? error.message : "保存供应商配置失败");
+      setSaved(false);
+    }
   }, [effectiveSettings]);
 
   const onClear = useCallback(async () => {
     if (!window.confirm("确定清除所有供应商配置？清除后聊天与嵌入将回退到环境变量默认（或 mock）。")) return;
-    await providerSettingsApi.clear();
-    setSettings({ ...EMPTY_SETTINGS });
-    setSaved(false);
+    try {
+      await providerSettingsApi.clear();
+      setSettings({ ...EMPTY_SETTINGS, chat: { ...EMPTY_SETTINGS.chat }, embedding: { ...EMPTY_SETTINGS.embedding } });
+      setSettingsError("");
+      setSaved(false);
+    } catch (error) {
+      setSettingsError(error instanceof Error ? error.message : "清除供应商配置失败");
+    }
   }, []);
 
   const [probe, setProbe] = useState<ProbeReport | null>(null);
   const [probeLoading, setProbeLoading] = useState(false);
-  // 全检：用当前面板配置（含未保存改动）调 /api/probe，立即验证 chat/embedding/索引匹配
+  // 全检前先保存当前表单，保证网页、服务端与 CLI 测的是同一份配置。
   const onProbe = useCallback(async () => {
     setProbeLoading(true);
     setProbe(null);
     try {
+      const stored = await providerSettingsApi.save(effectiveSettings);
+      setSettings(stored);
+      setSaved(true);
+      setSettingsError("");
       const response = await fetch("/api/probe", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ settings: effectiveSettings }),
+        body: JSON.stringify({}),
       });
       setProbe((await response.json()) as ProbeReport);
     } catch (e) {
@@ -113,14 +134,18 @@ export function ProviderSettings() {
   }, [effectiveSettings]);
 
   const [reindexing, setReindexing] = useState(false);
-  // 用当前面板配置重建索引（调 /api/reindex，key 只在内存用、不落盘）；成功后刷新探活
+  // 先持久化当前配置，再由服务端用同一配置重建索引。
   const onReindex = useCallback(async () => {
     setReindexing(true);
     try {
+      const stored = await providerSettingsApi.save(effectiveSettings);
+      setSettings(stored);
+      setSaved(true);
+      setSettingsError("");
       const response = await fetch("/api/reindex", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ settings: effectiveSettings }),
+        body: JSON.stringify({}),
       });
       const data = (await response.json()) as { ok?: boolean; error?: string };
       if (data.ok) {
@@ -150,6 +175,7 @@ export function ProviderSettings() {
         <button
           type="button"
           className="settings-dock-btn"
+          data-tour-id="provider-settings-button"
           aria-pressed={open}
           aria-expanded={open}
           aria-label="供应商配置"
@@ -159,7 +185,7 @@ export function ProviderSettings() {
           <GearIcon />
         </button>
         {open ? (
-          <div className="settings-panel" role="dialog" aria-label="供应商配置">
+          <div className="settings-panel" data-tour-id="provider-settings-panel" role="dialog" aria-label="供应商配置">
             <header className="settings-head">
               <h3>供应商配置</h3>
               <button type="button" className="settings-close" aria-label="关闭" onClick={() => setOpen(false)}>
@@ -174,7 +200,7 @@ export function ProviderSettings() {
               <p>
                 <strong>典籍检索</strong>可选——让三贤能引用你上传的典籍；不配则用本地词法检索（质量一般但能用）。
               </p>
-              <p className="settings-guide-note">密钥只存本机浏览器，不上传。</p>
+              <p className="settings-guide-note">配置保存在本机服务器，网页与 CLI 共用；密钥不会回传到页面。</p>
             </div>
 
             <ConfigSection
@@ -223,7 +249,9 @@ export function ProviderSettings() {
               <ProbeReportView report={probe} loading={probeLoading} reindexing={reindexing} onReindex={onReindex} />
             ) : null}
 
-            <footer className="settings-actions">
+            {settingsError ? <p className="settings-banner is-err">{settingsError}</p> : null}
+
+            <footer className="settings-actions" data-tour-id="provider-settings-actions">
               <span className="settings-status">
                 {saved ? "✓ 已保存" : chatReady || embedReady ? "有未保存改动" : ""}
               </span>
@@ -352,9 +380,9 @@ function ConfigSection({
         <input
           type="password"
           value={config.apiKey}
-          placeholder="sk-…"
+          placeholder={config.hasApiKey ? "已保存在本机服务器；留空即保留" : "sk-…"}
           autoComplete="off"
-          onChange={(e) => onChange(kind, { apiKey: e.target.value })}
+          onChange={(e) => onChange(kind, { apiKey: e.target.value, hasApiKey: false })}
         />
       </label>
       <ModelPicker kind={kind} config={config} preset={preset} onChange={onChange} />
@@ -382,7 +410,7 @@ function ModelPicker({
   const [result, setResult] = useState<{ ok: true; count: number } | { ok: false; msg: string } | null>(null);
 
   const onTest = useCallback(async () => {
-    if (!config.baseUrl.trim() || !config.apiKey.trim()) {
+    if (!config.baseUrl.trim() || (!config.apiKey.trim() && !config.hasApiKey)) {
       setResult({ ok: false, msg: "请先填写 Base URL 和 API Key" });
       return;
     }
@@ -415,7 +443,7 @@ function ModelPicker({
     } finally {
       setLoading(false);
     }
-  }, [kind, config.baseUrl, config.apiKey, config.model, preset.authStyle, onChange]);
+  }, [kind, config.baseUrl, config.apiKey, config.hasApiKey, config.model, preset.authStyle, onChange]);
 
   return (
     <div className="settings-field">

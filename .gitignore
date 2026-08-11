@@ -24,6 +24,8 @@ data/indexes/*
 !data/indexes/.gitkeep
 data/app.json
 data/app.json.*
+data/provider-settings.json
+data/provider-settings.json.*
 
 # ── 备份 / 临时文件 ──────────────────────────────
 *.bak

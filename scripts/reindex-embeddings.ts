@@ -1,6 +1,6 @@
 /** 全量重建本地 Embedding 索引；只有所有批次成功后才替换旧索引。
  *  核心逻辑见 src/core/ingestion/reindex.ts，与 /api/reindex 共享。
- *  CLI 无 configOverride → 走 .env（与 npm run doctor 一致）。 */
+ *  CLI 与网页共用 data/provider-settings.json；没有服务器配置时回退 .env。 */
 import { loadEnvConfig } from "@next/env";
 import { rebuildEmbeddingIndex } from "../src/core/ingestion/reindex";
 

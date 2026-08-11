@@ -1,11 +1,13 @@
 import { mergeConfig, type ConfigOverride } from "@/core/config/appConfig";
+import { hasPersistedEmbeddingConfig } from "@/core/config/providerSettingsFile";
 import type { EmbedTextsInput, EmbedTextsResult, EmbeddingProvider, GenerateAnswerInput, GenerateAnswerResult, LlmProvider, OnAnswerToken } from "./llmProvider";
 import { AnthropicProvider } from "./anthropicProvider";
 import { OpenAIChatProvider } from "./openAIChatProvider";
 import { MockEmbeddingProvider } from "./mockEmbeddingProvider";
 
 // 组合 provider：embedding 默认走 OpenAI 兼容接口，无 Key 或显式 mock 时回退本地 mock。
-// 前端面板(override)配了完整 embedding 时优先用真模型——不被 .env 的 USE_MOCK_EMBEDDING 架空。
+// 服务器配置文件或显式 override 配了完整 embedding 时优先用真模型，
+// 不被旧 .env 的 USE_MOCK_EMBEDDING 架空。
 // 聊天按 chatProtocol 委托给 Anthropic 或 OpenAI。
 export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider {
   private override: ConfigOverride | null;
@@ -38,20 +40,9 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
     };
   }
 
-  /** 是否用本地 mock embedding：
-   *  - 前端面板(override)提供了完整 embedding 配置 → 用真模型（用户明确意图，无视 env flag）
-   *  - 否则：显式 USE_MOCK_EMBEDDING=1，或既无 env key 也无 override → 回退 mock
-   *  这样 CLI 脚本（无 override）仍尊重 env flag；API 请求（前端带配置）不再被 env flag 架空。
-   *  修复前只看 process.env，导致前端配的真 embedding key 被 .env 的 flag 无视（P1 陷阱根因）。 */
+  /** 服务器配置 > env mock 开关；纯 env 场景仍可用 USE_MOCK_EMBEDDING=1 强制 mock。 */
   private useMockEmbedding(): boolean {
-    const cfg = this.cfg;
-    // override（前端齿轮面板）提供了完整 embedding → 明确要用真模型，env flag 不再拦截
-    if (this.override?.openAICompatApiKey && cfg.openAICompatBaseUrl && cfg.embeddingModel) {
-      return false;
-    }
-    if (process.env.USE_MOCK_EMBEDDING === "1") return true;
-    // 既无 env key、前端也没传嵌入配置 → 回退 mock，避免检索直接崩
-    return !cfg.openAICompatApiKey;
+    return shouldUseMockEmbedding(this.override);
   }
 
   async embedTexts(input: EmbedTextsInput): Promise<EmbedTextsResult> {
@@ -123,6 +114,18 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
 
 export function getDefaultProvider(override?: ConfigOverride | null) {
   return new OpenAICompatibleProvider(override ?? null);
+}
+
+export function shouldUseMockEmbedding(override: ConfigOverride | null = null): boolean {
+  const cfg = mergeConfig(override);
+  const explicitConfig = Boolean(
+    override?.openAICompatBaseUrl &&
+      override.openAICompatApiKey &&
+      override.embeddingModel,
+  );
+  if (explicitConfig || hasPersistedEmbeddingConfig()) return false;
+  if (process.env.USE_MOCK_EMBEDDING === "1") return true;
+  return !cfg.openAICompatApiKey;
 }
 
 /**

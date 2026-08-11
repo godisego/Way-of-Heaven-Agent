@@ -32,6 +32,8 @@ export function resetOnboarding(): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(ONBOARDING_KEY);
+    window.sessionStorage.removeItem("tiandao.onboarding.pending-library");
+    window.sessionStorage.removeItem("tiandao.onboarding.pending-home");
   } catch {
     /* 静默 */
   }

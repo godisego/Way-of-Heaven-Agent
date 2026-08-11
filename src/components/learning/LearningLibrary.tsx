@@ -7,7 +7,10 @@ import { getTrackDocs, LEARN_DOCS, type LearnDoc, type LearnTrack } from "@/data
 import { MingliQuickReference } from "@/components/learning/MingliQuickReference";
 import { kbSize } from "@/core/mingli/mingliKb";
 import { startLesson } from "@/components/learning/tourController";
-import { showFinalOnboardingHint } from "@/components/learning/onboardingTour";
+import {
+  PENDING_LIBRARY_TOUR_KEY,
+  showFinalOnboardingHint,
+} from "@/components/learning/onboardingTour";
 
 type LearnView = "agent" | "mingli" | "quick";
 
@@ -171,16 +174,14 @@ export function LearningLibrary() {
     return () => window.removeEventListener("hashchange", syncFromHash);
   }, []);
 
-  // 首次引导链：从 onboardingTour 跳转过来时，sessionStorage 里带 pendingTour=library-tour
-  // 页面加载后自动启动学习馆导览，结束后弹"三贤+配置"最终提示
+  // 首次引导链：从首页跳转过来时自动启动学习馆导览，完成后回首页配置供应商。
   useEffect(() => {
-    const pending = sessionStorage.getItem("pendingTour");
+    const pending = sessionStorage.getItem(PENDING_LIBRARY_TOUR_KEY);
     if (!pending) return;
-    sessionStorage.removeItem("pendingTour");
+    sessionStorage.removeItem(PENDING_LIBRARY_TOUR_KEY);
     // 等页面完全渲染后再启动 tour（driver.js 需要目标元素已挂载）
     const timer = window.setTimeout(() => {
       startLesson(pending as "library-tour", () => {
-        // 学习馆导览结束后，弹最后一个"三贤+配置"提示
         showFinalOnboardingHint();
       });
     }, 600);
@@ -218,7 +219,7 @@ export function LearningLibrary() {
         <div className="learn-home-copy">
           <span className="learn-kicker">系统课程库</span>
           <h1>学习馆</h1>
-          <p>两条完整学径，一套随时可查的命理词典。选定方向后，沿课程顺序往下读。</p>
+          <p>两条完整学径，一套随时可查的命理词典。内容与互动图都在本地，无需 Key。</p>
         </div>
         <dl className="learn-overview-stats" aria-label="学习馆内容统计">
           <div><dt>课程讲义</dt><dd>{LEARN_DOCS.length}</dd></div>

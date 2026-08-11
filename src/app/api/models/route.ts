@@ -9,6 +9,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { probeChat } from "@/core/diagnostics/probe";
+import { getAppConfig } from "@/core/config/appConfig";
 import type { AuthStyle } from "@/data/providerPresets";
 
 export async function POST(request: Request) {
@@ -20,7 +21,9 @@ export async function POST(request: Request) {
   }
 
   const baseUrl = String(body.baseUrl ?? "").trim();
-  const apiKey = String(body.apiKey ?? "").trim();
+  const config = getAppConfig();
+  const storedApiKey = body.kind === "embedding" ? config.openAICompatApiKey : config.chatApiKey;
+  const apiKey = String(body.apiKey ?? "").trim() || storedApiKey;
   const authStyle: AuthStyle = body.authStyle === "openai" ? "openai" : "anthropic";
 
   const result = await probeChat(baseUrl, apiKey, authStyle);

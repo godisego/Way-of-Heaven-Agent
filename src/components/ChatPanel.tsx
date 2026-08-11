@@ -12,8 +12,6 @@ import {
 } from "@/data/mentors";
 import { TAVERN_DEMO_HINTS } from "@/data/tavernDemoReplies";
 import { userProfileApi } from "@/data/userProfileStore";
-import { providerSettingsApi } from "@/data/providerSettingsStore";
-import type { ProviderSettings } from "@/data/providerSettings";
 import { isProfileComplete, type UserProfile } from "@/data/userProfile";
 import { TracePanel } from "./TracePanel";
 import { useLearning } from "./learning/LearningProvider";
@@ -263,11 +261,8 @@ export function ChatPanel() {
     try {
       const saved = await userProfileApi.load();
       const userProfile = isProfileComplete(saved) ? saved : null;
-      // 每次发问读取最新供应商设置（面板可能刚改过），随请求传服务端覆盖 env
-      const settings = await providerSettingsApi.load();
-
       if (usingStream) {
-        await streamAgentReply(question, userProfile, sessionId, settings, controller.signal);
+        await streamAgentReply(question, userProfile, sessionId, controller.signal);
       } else {
         // RAG 模式：一次性 JSON（保持原行为，作为固定对照）
         const { ok, data } = await safeFetchJson<{
@@ -279,7 +274,7 @@ export function ChatPanel() {
         }>("/api/chat", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ question, userProfile, sessionId, mode: "rag", settings }),
+          body: JSON.stringify({ question, userProfile, sessionId, mode: "rag" }),
           signal: controller.signal,
         });
         if (!ok) {
@@ -320,13 +315,12 @@ export function ChatPanel() {
     question: string,
     userProfile: UserProfile | null,
     currentSessionId: string,
-    settings: ProviderSettings,
     signal: AbortSignal,
   ) {
     const response = await fetch("/api/chat/stream", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ question, userProfile, sessionId: currentSessionId, mode: "agent", settings }),
+      body: JSON.stringify({ question, userProfile, sessionId: currentSessionId, mode: "agent" }),
       signal,
     });
 
@@ -510,6 +504,7 @@ export function ChatPanel() {
           <button
             type="button"
             className="secondary-button room-demo-btn"
+            data-tour-id="demo-reply"
             onClick={showDemo}
             disabled={busy}
             title="不调模型，直接看一轮三贤示例对答（多次点击轮换示例）"

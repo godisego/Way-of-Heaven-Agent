@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { loadEnvConfig } from "@next/env";
 import { ingestDocumentBuffer } from "../src/core/ingestion/ingestionPipeline";
+import { shouldUseMockEmbedding } from "../src/core/providers/openAICompatibleProvider";
 
 type SampleBook = {
   fileName: string;
@@ -72,7 +73,7 @@ async function main() {
   // 独立 tsx 脚本不会像 `next dev` 那样自动读取 .env.local。
   // 必须先载入，再让 provider 判断走 mock 还是真实 embedding。
   loadEnvConfig(process.cwd());
-  const embeddingMode = process.env.USE_MOCK_EMBEDDING === "1" ? "本地 mock" : "真实 embedding";
+  const embeddingMode = shouldUseMockEmbedding() ? "本地 mock" : "真实 embedding";
   console.log(`入库向量模式：${embeddingMode}`);
 
   for (const book of SAMPLE_BOOKS) {

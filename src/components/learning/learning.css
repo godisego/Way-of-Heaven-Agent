@@ -277,30 +277,140 @@ body[data-learning="true"] .concept-tip:hover {
 }
 
 .driver-popover {
+  width: min(400px, calc(100vw - 24px)) !important;
+  max-width: 400px !important;
+  padding: 0 !important;
   font-family: var(--font-sans, inherit) !important;
-  border-radius: 4px !important;
+  border-radius: 6px !important;
   border: 1px solid rgba(31, 29, 26, 0.2) !important;
   background: #ffffff !important;
-  box-shadow: 0 18px 48px rgba(31, 29, 26, 0.12) !important;
+  box-shadow: 0 22px 60px rgba(31, 29, 26, 0.16) !important;
 }
 
 .driver-popover-title {
+  margin: 0 !important;
+  padding: 20px 46px 14px 22px !important;
+  border-bottom: 1px solid rgba(31, 29, 26, 0.1) !important;
   font-family: var(--font-serif, serif) !important;
-  font-size: 16px !important;
+  font-size: 17px !important;
   font-weight: 600 !important;
-  letter-spacing: 0.08em !important;
+  line-height: 1.45 !important;
+  letter-spacing: 0 !important;
   color: #2a231c !important;
 }
 
 .driver-popover-description {
-  font-size: 14px !important;
-  line-height: 1.7 !important;
-  color: #7a6d5d !important;
-  white-space: pre-line;
+  max-height: min(55vh, 470px) !important;
+  margin: 0 !important;
+  padding: 16px 22px 4px !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+  color: #554d44 !important;
+  white-space: normal;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(31, 29, 26, 0.22) transparent;
 }
 
 .driver-popover-footer {
   margin-top: 12px !important;
+  padding: 12px 22px 18px !important;
+  border-top: 1px solid rgba(31, 29, 26, 0.08) !important;
+}
+
+.driver-popover-progress-text {
+  color: #82776a !important;
+  font-size: 11px !important;
+  letter-spacing: 0 !important;
+}
+
+.driver-popover-close-btn {
+  top: 12px !important;
+  right: 13px !important;
+  width: 30px !important;
+  height: 30px !important;
+  color: #70665b !important;
+  font-size: 22px !important;
+  line-height: 30px !important;
+  border-radius: 50% !important;
+}
+
+.driver-popover-close-btn:hover {
+  background: rgba(31, 29, 26, 0.06) !important;
+  color: #2a231c !important;
+}
+
+.tour-copy {
+  display: grid;
+  gap: 13px;
+}
+
+.tour-copy p,
+.tour-copy h4,
+.tour-copy ul {
+  margin: 0;
+}
+
+.tour-lead {
+  color: #3d3731;
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.tour-paragraph {
+  color: #696057;
+}
+
+.tour-section {
+  padding-left: 11px;
+  border-left: 2px solid #a8473c;
+}
+
+.tour-section h4 {
+  margin-bottom: 3px;
+  color: #302a25;
+  font-family: var(--font-serif, serif);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+.tour-section p {
+  color: #665d54;
+}
+
+.tour-list {
+  display: grid;
+  gap: 9px;
+  padding: 0;
+  list-style: none;
+}
+
+.tour-list li {
+  display: grid;
+  grid-template-columns: minmax(72px, auto) 1fr;
+  gap: 9px;
+  align-items: baseline;
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(31, 29, 26, 0.08);
+}
+
+.tour-list li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.tour-list strong {
+  color: #302a25;
+  font-family: var(--font-serif, serif);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tour-list span {
+  color: #665d54;
 }
 
 .driver-popover-next-btn,
@@ -313,7 +423,7 @@ body[data-learning="true"] .concept-tip:hover {
   font-size: 13px !important;
   font-weight: 500 !important;
   font-family: var(--font-serif, serif) !important;
-  letter-spacing: 0.1em !important;
+  letter-spacing: 0 !important;
   text-shadow: none !important;
 }
 
@@ -326,6 +436,126 @@ body[data-learning="true"] .concept-tip:hover {
   font-size: 13px !important;
   font-weight: 500 !important;
   font-family: var(--font-serif, serif) !important;
+  letter-spacing: 0 !important;
+}
+
+/* 首次引导跨页过渡卡 */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(37, 42, 48, 0.5);
+  animation: learning-fade-in 0.18s var(--ease, ease-out);
+}
+
+.onboarding-dialog {
+  width: min(100%, 480px);
+  padding: 26px 28px 24px;
+  border: 1px solid rgba(37, 42, 48, 0.2);
+  border-radius: 4px;
+  background: var(--paper-bright, #fdfdfb);
+  box-shadow: 0 18px 48px rgba(31, 29, 26, 0.16);
+}
+
+.onboarding-kicker {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--cinnabar, #a8473c);
+  font-family: var(--font-serif, serif);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+
+.onboarding-dialog h2 {
+  margin: 0 0 12px;
+  color: var(--ink, #252a30);
+  font-family: var(--font-serif, serif);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.onboarding-copy {
+  display: grid;
+  gap: 10px;
+  color: var(--ink-soft, #3b4046);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.onboarding-copy p {
+  margin: 0;
+}
+
+.onboarding-copy p + p {
+  padding-top: 10px;
+  border-top: 1px solid rgba(37, 42, 48, 0.1);
+}
+
+.onboarding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.onboarding-actions button {
+  min-height: 38px;
+  padding: 7px 16px;
+  border-radius: 2px;
+  font-size: 13px;
+}
+
+.onboarding-secondary {
+  border: 1px solid var(--line-strong, rgba(37, 42, 48, 0.32));
+  background: transparent;
+  color: var(--muted, #5f656b);
+}
+
+.onboarding-primary {
+  border: 1px solid var(--ink, #252a30);
+  background: var(--ink, #252a30);
+  color: var(--paper-bright, #fdfdfb);
+}
+
+@media (max-width: 520px) {
+  .onboarding-overlay {
+    align-items: end;
+    padding: 12px;
+  }
+
+  .onboarding-dialog {
+    max-height: calc(100vh - 24px);
+    overflow: auto;
+    padding: 22px 20px 20px;
+  }
+
+  .driver-popover-title {
+    padding: 17px 43px 12px 18px !important;
+    font-size: 16px !important;
+  }
+
+  .driver-popover-description {
+    max-height: 52vh !important;
+    padding: 14px 18px 2px !important;
+  }
+
+  .driver-popover-footer {
+    padding: 11px 18px 16px !important;
+  }
+
+  .tour-list li {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .onboarding-actions button {
+    flex: 1 1 150px;
+  }
 }
 
 /* ── 五行生克关系图（命理可视化） ── */

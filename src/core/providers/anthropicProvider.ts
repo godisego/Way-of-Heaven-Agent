@@ -11,7 +11,7 @@ import type {
 // 人设与对谈规则统一来自 src/data/mentors.ts，避免与 UI 漂移。
 export class AnthropicProvider implements LlmProvider {
   /**
-   * 运行时覆盖：前端面板的设置经路由传入，覆盖 env 配置（聊天/嵌入字段）。
+   * 运行时覆盖：供内部测试或显式调用方覆盖服务器/env 配置。
    * getter cfg 每次读时合并，因此 env 改动也会反映（尽管实际 env 在进程启动时固定）。
    */
   constructor(private override: ConfigOverride | null = null) {}
