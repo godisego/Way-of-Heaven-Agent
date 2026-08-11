@@ -20,7 +20,9 @@ export const runtime = "nodejs";
 
 import { runAgentLoop } from "@/core/agent/orchestrator";
 import type { AgentEvent } from "@/core/agent/types";
-import { buildConversationContext, sessionApi } from "@/data/sessionStore";
+import { sessionApi } from "@/data/sessionStore";
+import { buildContextWithSummary } from "@/core/conversation/contextBuilder";
+import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";
 import { prepareUserProfileForAgent, type UserProfile } from "@/data/userProfile";
 import { MentorSelectionError, parseMentorSelection } from "@/data/mentorSelection";
 import type { MentorId } from "@/data/mentors";
@@ -103,7 +105,12 @@ export async function POST(request: Request) {
   }
   const activeSession = session ?? sessionApi.createSession();
   const previousMessages = sessionApi.getMessages(activeSession.id);
-  const conversationContext = buildConversationContext(previousMessages);
+  // 构建上下文：长对话超窗口时用 LLM 摘要压缩更早的消息（rolling，持久化在 session）。
+  const { context: conversationContext, summarized, summary, summaryUpTo } =
+    await buildContextWithSummary(previousMessages, activeSession, getDefaultProvider());
+  if (summarized && summary && summaryUpTo) {
+    sessionApi.updateSessionSummary(activeSession.id, summary, summaryUpTo);
+  }
   // 用户消息先落盘：即使中途断开，提问也保留（与 /api/chat 一致）。
   sessionApi.appendMessage(activeSession.id, { role: "user", content: question, citations: [] });
 

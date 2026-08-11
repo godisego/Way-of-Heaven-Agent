@@ -20,6 +20,14 @@ export type SessionRow = {
   title: string;
   createdAt: string;
   updatedAt: string;
+  /**
+   * 此前对谈的 LLM 压缩摘要（rolling summary）：覆盖窗口（最近 N 条）之外的更早消息。
+   * 长对话超窗口时由 contextBuilder 生成并回写，避免第 9 轮起丢失第 1 轮关键信息。
+   * 短对话或未触发摘要时为 undefined。
+   */
+  summary?: string;
+  /** 摘要覆盖到的最后一条消息 createdAt（ISO）。rolling 增量用：只摘要这之后的窗口外消息。 */
+  summaryUpTo?: string;
 };
 
 export type SessionMessage = {
@@ -62,6 +70,8 @@ export interface SessionApi {
   deleteSession(sessionId: string): void;
   renameSession(sessionId: string, title: string): void;
   getSession(sessionId: string): SessionRow | null;
+  /** 回写 rolling summary：摘要文本 + 覆盖到的最后一条消息 createdAt。 */
+  updateSessionSummary(sessionId: string, summary: string, summaryUpTo: string): void;
 }
 
 function newId(prefix: string): string {
@@ -155,6 +165,14 @@ class JsonDbSessionApi implements SessionApi {
 
   getSession(sessionId: string): SessionRow | null {
     return getDb().find<SessionRow>("chat_sessions", (s) => s.id === sessionId);
+  }
+
+  updateSessionSummary(sessionId: string, summary: string, summaryUpTo: string): void {
+    getDb().update<SessionRow>(
+      "chat_sessions",
+      (s) => s.id === sessionId,
+      (s) => ({ ...s, summary, summaryUpTo, updatedAt: new Date().toISOString() }),
+    );
   }
 }
 

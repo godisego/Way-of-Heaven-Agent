@@ -5,6 +5,8 @@ import type {
   GenerateAnswerResult,
   LlmProvider,
   OnAnswerToken,
+  SummarizeInput,
+  SummarizeResult,
 } from "./llmProvider";
 
 // Anthropic /messages 格式的 provider。
@@ -98,6 +100,36 @@ export class AnthropicProvider implements LlmProvider {
       throw new Error(`Anthropic Chat 流式接口失败：${response.status} ${await response.text()}`);
     }
     const text = await consumeAnthropicSse(response.body, onToken);
+    return { text };
+  }
+
+  /**
+   * 通用文本生成（非三贤）：用于对话摘要等内部任务。
+   * 与 generateAnswer 同端点同鉴权，但 system/messages 用传入文本，不绑人设。
+   * max_tokens 默认 512（摘要输出短）；失败抛错，由调用方回退规则压缩。
+   */
+  async summarize(input: SummarizeInput): Promise<SummarizeResult> {
+    const url = `${this.cfg.chatBaseUrl.replace(/\/$/, "")}/v1/messages`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({
+        model: this.cfg.chatModel,
+        max_tokens: input.maxTokens ?? 512,
+        stream: false,
+        system: input.systemPrompt,
+        messages: [{ role: "user", content: input.userPrompt }],
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(`Anthropic 摘要接口失败：${response.status} ${await response.text()}`);
+    }
+    const data = await response.json();
+    const blocks: Array<{ type?: string; text?: string }> = Array.isArray(data.content) ? data.content : [];
+    const text = blocks
+      .filter((block) => block.type === "text" && typeof block.text === "string")
+      .map((block) => block.text)
+      .join("\n");
     return { text };
   }
 }

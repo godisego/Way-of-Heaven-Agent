@@ -29,6 +29,22 @@ export type GenerateAnswerResult = {
 };
 
 /**
+ * 通用文本生成输入（非三贤）：用于对话摘要等内部任务。
+ * 与 GenerateAnswerInput 区别：不绑人设/典籍/问者档，只传 system + user 两段文本。
+ * 复用与 generateAnswer 同一套 chat 配置（baseUrl/key/model），但走最朴素的单轮补全。
+ */
+export type SummarizeInput = {
+  systemPrompt: string;
+  userPrompt: string;
+  /** 生成上限，默认较小（摘要无需长输出）。 */
+  maxTokens?: number;
+};
+
+export type SummarizeResult = {
+  text: string;
+};
+
+/**
  * 流式生成的输入：与 GenerateAnswerInput 同构。
  * 沿用既有 input 形状，避免流式与非流式两套字段漂移。
  */
@@ -51,4 +67,10 @@ export interface LlmProvider {
    * 设为可选——mock / 测试 provider 不必实现，调用方按能力探测后回退到 generateAnswer。
    */
   streamAnswer?(input: StreamAnswerInput, onToken: OnAnswerToken): Promise<GenerateAnswerResult>;
+
+  /**
+   * 通用文本生成（非三贤）：用于对话摘要等内部任务。
+   * 设为可选——provider 未实现时调用方应回退到规则压缩。
+   */
+  summarize?(input: SummarizeInput): Promise<SummarizeResult>;
 }

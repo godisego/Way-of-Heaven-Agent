@@ -5,6 +5,8 @@ import type {
   GenerateAnswerResult,
   LlmProvider,
   OnAnswerToken,
+  SummarizeInput,
+  SummarizeResult,
 } from "./llmProvider";
 
 /**
@@ -86,6 +88,36 @@ export class OpenAIChatProvider implements LlmProvider {
       throw new Error(`OpenAI Chat 流式接口失败：${response.status} ${await response.text()}`);
     }
     const text = await consumeOpenAiSse(response.body, onToken);
+    return { text };
+  }
+
+  /**
+   * 通用文本生成（非三贤）：用于对话摘要等内部任务。
+   * 与 generateAnswer 同端点同鉴权，但 messages 用传入的 system/user，不绑人设。
+   * max_tokens 默认 512（摘要输出短）；失败抛错，由调用方回退规则压缩。
+   */
+  async summarize(input: SummarizeInput): Promise<SummarizeResult> {
+    const url = `${this.cfg.chatBaseUrl.replace(/\/$/, "")}/chat/completions`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({
+        model: this.cfg.chatModel,
+        max_tokens: input.maxTokens ?? 512,
+        stream: false,
+        messages: [
+          { role: "system", content: input.systemPrompt },
+          { role: "user", content: input.userPrompt },
+        ],
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(`OpenAI Chat 摘要接口失败：${response.status} ${await response.text()}`);
+    }
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const text = data.choices?.[0]?.message?.content ?? "";
     return { text };
   }
 }

@@ -3,7 +3,9 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { answerQuestion } from "@/core/retrieval/answerWithCitations";
 import { runAgentLoop } from "@/core/agent/orchestrator";
-import { buildConversationContext, sessionApi } from "@/data/sessionStore";
+import { buildContextWithSummary } from "@/core/conversation/contextBuilder";
+import { sessionApi } from "@/data/sessionStore";
+import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";
 import { prepareUserProfileForAgent, type UserProfile } from "@/data/userProfile";
 import { readLocalVectorRecords } from "@/core/vector/localJsonVectorStore";
 import { MentorSelectionError, parseMentorSelection } from "@/data/mentorSelection";
@@ -35,7 +37,12 @@ export async function POST(request: Request) {
     }
     const activeSession = session ?? sessionApi.createSession();
     const previousMessages = sessionApi.getMessages(activeSession.id);
-    const conversationContext = buildConversationContext(previousMessages);
+    // 构建上下文：长对话超窗口时用 LLM 摘要压缩更早的消息（rolling，持久化在 session）。
+    const { context: conversationContext, summarized, summary, summaryUpTo } =
+      await buildContextWithSummary(previousMessages, activeSession, getDefaultProvider());
+    if (summarized && summary && summaryUpTo) {
+      sessionApi.updateSessionSummary(activeSession.id, summary, summaryUpTo);
+    }
     sessionApi.appendMessage(activeSession.id, { role: "user", content: question, citations: [] });
     // 早期检测：索引为空时直接返回明确提示，不让模型说"材料不足"
     const vectorCount = readLocalVectorRecords().length;
