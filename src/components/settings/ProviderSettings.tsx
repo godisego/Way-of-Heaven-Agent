@@ -86,6 +86,11 @@ export function ProviderSettings() {
     : settings;
 
   const onSave = useCallback(async () => {
+    if (!chatReady) {
+      setSettingsError("请先补全聊天模型的 Base URL、API Key 和模型名");
+      setSaved(false);
+      return;
+    }
     try {
       const stored = await providerSettingsApi.save(effectiveSettings);
       setSettings(stored);
@@ -95,7 +100,7 @@ export function ProviderSettings() {
       setSettingsError(error instanceof Error ? error.message : "保存供应商配置失败");
       setSaved(false);
     }
-  }, [effectiveSettings]);
+  }, [chatReady, effectiveSettings]);
 
   const onClear = useCallback(async () => {
     if (!window.confirm("确定清除所有供应商配置？清除后聊天与嵌入将回退到环境变量默认（或 mock）。")) return;
@@ -113,6 +118,11 @@ export function ProviderSettings() {
   const [probeLoading, setProbeLoading] = useState(false);
   // 全检前先保存当前表单，保证网页、服务端与 CLI 测的是同一份配置。
   const onProbe = useCallback(async () => {
+    if (!chatReady) {
+      setSettingsError("请先补全聊天模型的 Base URL、API Key 和模型名，再测试全部");
+      setSaved(false);
+      return;
+    }
     setProbeLoading(true);
     setProbe(null);
     try {
@@ -131,11 +141,15 @@ export function ProviderSettings() {
     } finally {
       setProbeLoading(false);
     }
-  }, [effectiveSettings]);
+  }, [chatReady, effectiveSettings]);
 
   const [reindexing, setReindexing] = useState(false);
   // 先持久化当前配置，再由服务端用同一配置重建索引。
   const onReindex = useCallback(async () => {
+    if (!chatReady) {
+      setSettingsError("请先补全并保存聊天模型配置，再重建索引");
+      return;
+    }
     setReindexing(true);
     try {
       const stored = await providerSettingsApi.save(effectiveSettings);
@@ -158,7 +172,7 @@ export function ProviderSettings() {
     } finally {
       setReindexing(false);
     }
-  }, [effectiveSettings, onProbe]);
+  }, [chatReady, effectiveSettings, onProbe]);
 
   const toggleUnified = useCallback(() => {
     setSettings((prev) => ({ ...prev, unified: !prev.unified }));
@@ -259,10 +273,10 @@ export function ProviderSettings() {
               <button type="button" className="settings-clear" onClick={onClear}>
                 清除
               </button>
-              <button type="button" className="settings-action" onClick={onProbe} disabled={probeLoading} title="用当前配置实测聊天/嵌入/索引匹配">
+              <button type="button" className="settings-action" onClick={onProbe} disabled={probeLoading || !chatReady} title="用当前配置实测聊天/嵌入/索引匹配">
                 {probeLoading ? "测试中…" : "测试全部"}
               </button>
-              <button type="button" className="settings-save" onClick={onSave} disabled={saved}>
+              <button type="button" className="settings-save" onClick={onSave} disabled={saved || !chatReady}>
                 保存
               </button>
             </footer>

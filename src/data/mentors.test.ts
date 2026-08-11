@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { BaziResult, BaziPillar } from "@/core/user/baziCalculator";
 import type { UserProfile } from "./userProfile";
-import { buildMentorSystemPrompt, MENTORS } from "./mentors";
+import {
+  buildMentorSystemPrompt,
+  buildMentorUserPrompt,
+  MENTORS,
+  parseMentorDialogue,
+} from "./mentors";
 
 function pillar(gan: string, zhi: string, hideGan: string[], shiShenGan: string, zhiShiShen: string[]): BaziPillar {
   const ganWx: Record<string, "金" | "木" | "水" | "火" | "土"> = {
@@ -111,5 +116,29 @@ describe("buildMentorSystemPrompt（分角色注入与铁律）", () => {
     const p = buildMentorSystemPrompt(profile);
     expect(p).toContain("李全程禁用命理语汇");
     expect(p).toContain("AI 自指");
+  });
+
+  it("三位全选仍严格走原始默认 prompt", () => {
+    expect(buildMentorSystemPrompt(profile, ["hu", "li", "xuan"]))
+      .toBe(buildMentorSystemPrompt(profile));
+    expect(buildMentorUserPrompt("问", "来源", profile, "上文", ["hu", "li", "xuan"]))
+      .toBe(buildMentorUserPrompt("问", "来源", profile, "上文"));
+  });
+
+  it("只选老胡时 prompt 只包含老胡角色与命理材料", () => {
+    const system = buildMentorSystemPrompt(profile, ["hu"]);
+    const user = buildMentorUserPrompt("问八字", "命理来源", profile, undefined, ["hu"]);
+
+    expect(system).toContain("【在席角色一：盲派算师·老胡】");
+    expect(system).toContain("【命理简报 · 排盘系统既定结果】");
+    expect(system).not.toContain("存在主义导师·李");
+    expect(system).not.toContain("主事·玄");
+    expect(user).toContain("本轮只请 盲派算师·老胡 回答");
+    expect(user).not.toContain("存在主义导师·李");
+  });
+
+  it("单角色标题也能拆成对应气泡", () => {
+    expect(parseMentorDialogue("【盲派算师·老胡】\n老夫瞧着，先看月令。"))
+      .toEqual([{ mentorId: "hu", heading: "盲派算师·老胡", body: "老夫瞧着，先看月令。" }]);
   });
 });

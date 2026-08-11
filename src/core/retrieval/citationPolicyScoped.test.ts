@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { VectorSearchResult } from "../vector/vectorStore";
-import type { ScopedRetrieval } from "./retrieveContext";
+import { buildScopedContext, type ScopedRetrieval } from "./retrieveContext";
 import { validateCitationsByMentor } from "./citationPolicy";
 
 function chunk(
@@ -92,5 +92,13 @@ describe("validateCitationsByMentor（按发言人 × 专库）", () => {
     const r = validateCitationsByMentor(answer, scoped);
     expect(r.violations).toEqual([]);
     expect(r.citations).toHaveLength(1);
+  });
+
+  it("角色子集的 Sources 只暴露在席角色专库", () => {
+    const context = buildScopedContext({ ...scoped, activeMentors: ["hu"] });
+    expect(context).toContain("老胡");
+    expect(context).not.toContain("存在主义导师");
+    expect(context).not.toContain("主事·玄");
+    expect(context).not.toContain("存在主义笔记");
   });
 });

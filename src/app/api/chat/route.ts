@@ -6,12 +6,14 @@ import { runAgentLoop } from "@/core/agent/orchestrator";
 import { buildConversationContext, sessionApi } from "@/data/sessionStore";
 import { prepareUserProfileForAgent, type UserProfile } from "@/data/userProfile";
 import { readLocalVectorRecords } from "@/core/vector/localJsonVectorStore";
+import { MentorSelectionError, parseMentorSelection } from "@/data/mentorSelection";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const question = String(body.question ?? "").trim();
     if (!question) return NextResponse.json({ error: "question 不能为空" }, { status: 400 });
+    const mentorIds = parseMentorSelection(body.mentors);
     const userProfile = (body.userProfile ?? null) as UserProfile | null;
     const safeProfile = prepareUserProfileForAgent(userProfile);
     const requestedSessionId = typeof body.sessionId === "string" ? body.sessionId : "";
@@ -46,6 +48,7 @@ export async function POST(request: Request) {
       const answer = await runAgentLoop(question, safeProfile, {
         signal: request.signal,
         conversationContext,
+        mentorIds,
       });
       sessionApi.appendMessage(activeSession.id, {
         role: "assistant",
@@ -56,7 +59,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ...answer, sessionId: activeSession.id });
     }
 
-    const answer = await answerQuestion(question, safeProfile, conversationContext);
+    const answer = await answerQuestion(question, safeProfile, conversationContext, undefined, mentorIds);
     sessionApi.appendMessage(activeSession.id, {
       role: "assistant",
       content: answer.answerMarkdown,
@@ -65,6 +68,9 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ ...answer, sessionId: activeSession.id });
   } catch (error) {
+    if (error instanceof MentorSelectionError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     console.error("[/api/chat] 问答失败:", error);
     return NextResponse.json({ error: error instanceof Error ? error.message : "问答失败" }, { status: 500 });
   }

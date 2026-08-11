@@ -22,6 +22,8 @@ import { runAgentLoop } from "@/core/agent/orchestrator";
 import type { AgentEvent } from "@/core/agent/types";
 import { buildConversationContext, sessionApi } from "@/data/sessionStore";
 import { prepareUserProfileForAgent, type UserProfile } from "@/data/userProfile";
+import { MentorSelectionError, parseMentorSelection } from "@/data/mentorSelection";
+import type { MentorId } from "@/data/mentors";
 
 const SSE_HEADERS = {
   "content-type": "text/event-stream; charset=utf-8",
@@ -37,6 +39,7 @@ export async function POST(request: Request) {
     userProfile?: unknown;
     sessionId?: unknown;
     mode?: unknown;
+    mentors?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -47,6 +50,16 @@ export async function POST(request: Request) {
   const question = String(body.question ?? "").trim();
   if (!question) {
     return new Response(JSON.stringify({ error: "question 不能为空" }), {
+      status: 400,
+      headers: { "content-type": "application/json" },
+    });
+  }
+  let mentorIds: MentorId[] | undefined;
+  try {
+    mentorIds = parseMentorSelection(body.mentors);
+  } catch (error) {
+    const message = error instanceof MentorSelectionError ? error.message : "mentors 参数无效";
+    return new Response(JSON.stringify({ error: message }), {
       status: 400,
       headers: { "content-type": "application/json" },
     });
@@ -91,6 +104,7 @@ export async function POST(request: Request) {
           signal: request.signal,
           conversationContext,
           onEvent,
+          mentorIds,
         });
 
         // done 已由 orchestrator 发出。落盘助手消息后，发终结帧给前端收尾。

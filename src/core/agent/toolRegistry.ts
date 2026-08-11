@@ -11,6 +11,7 @@ import type { ZodType } from "zod";
 import type { ConfigOverride } from "@/core/config/appConfig";
 import type { EvidenceItem } from "./types";
 import type { EvidenceLedger } from "./evidenceLedger";
+import type { MentorId } from "@/data/mentors";
 
 export type ToolContext = {
   /** 证据台账（工具登记证据、生成 ev_N 观察文本用） */
@@ -23,6 +24,8 @@ export type ToolContext = {
   stepIndex: number;
   /** 运行时配置覆盖（内部测试或显式调用方）：search_library 据此选择 embedding */
   configOverride?: ConfigOverride;
+  /** 子集对谈时，检索结果只允许落入这些角色的专库。 */
+  activeMentors?: MentorId[];
 };
 
 export type ToolResult = {

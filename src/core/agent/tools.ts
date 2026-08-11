@@ -9,8 +9,10 @@
 import { z } from "zod";
 import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";
 import { getVectorStore } from "@/core/vector/localJsonVectorStore";
+import type { VectorRecord } from "@/core/vector/vectorStore";
 import { getDocument, getPageByDocumentAndNumber } from "@/core/documents/documentRepository";
 import { hasLexicalEvidenceForCitationQuestion } from "@/core/retrieval/evidenceRelevance";
+import { isSourceAllowedFor } from "@/data/mentors";
 import type { EvidenceItem } from "./types";
 import type { ToolDefinition, ToolResult, ToolContext } from "./toolRegistry";
 
@@ -57,10 +59,15 @@ export const searchLibraryTool: ToolDefinition<SearchLibraryArgs> = {
     const provider = getDefaultProvider(ctx.configOverride);
     const { embeddings, model } = await provider.embedTexts({ texts: [args.query] });
     const topK = args.topK ?? 5;
+    const filter = (result: VectorRecord) => {
+      if (args.tradition && result.tradition !== args.tradition) return false;
+      if (!ctx.activeMentors?.length) return true;
+      return ctx.activeMentors.some((mentorId) => isSourceAllowedFor(mentorId, result.tradition));
+    };
     const candidateHits = await getVectorStore().search(
       embeddings[0],
       topK,
-      args.tradition ? (r) => r.tradition === args.tradition : undefined,
+      args.tradition || ctx.activeMentors?.length ? filter : undefined,
       model,
     );
     // Agent 不能把“向量有一点相似”当成“库里有据”。尤其是库外且要求出处的问题，

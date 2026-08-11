@@ -1,6 +1,6 @@
 import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";
 import type { ConfigOverride } from "@/core/config/appConfig";
-import { getMentor, parseMentorDialogue } from "@/data/mentors";
+import { getMentor, parseMentorDialogue, type MentorId } from "@/data/mentors";
 import { buildScopedContext, searchChunksForMentors } from "./retrieveContext";
 import {
   needsCitation,
@@ -49,10 +49,14 @@ function describeCitationViolation(v: ScopedCitationViolation): string {
  * 无典籍证据时的 context：明确告诉模型"暂未入藏"，约束它不杜撰引用，
  * 但仍可基于问者背景给出个性化回应（而非固定模板）。
  */
-function buildEmptyContext(_userProfile?: UserProfile | null): string {
+function buildEmptyContext(
+  _userProfile?: UserProfile | null,
+  mentorIds?: readonly MentorId[],
+): string {
+  const audience = mentorIds ? "本轮在席角色" : "三位";
   return [
     "[本轮检索结果]",
-    "典籍暂未入藏——三位均无可引用的典籍出处。",
+    `典籍暂未入藏——${audience}均无可引用的典籍出处。`,
     "",
     "约束：不得使用 [《书名》, 章节] 引用格式（无据可引）；可基于问者的困惑与背景给出各自的回应，但需如实说明这是基于一般理解而非典籍依据。",
   ].join("\n");
@@ -63,8 +67,12 @@ export async function answerQuestion(
   userProfile?: import("@/data/userProfile").UserProfile | null,
   conversationContext?: string,
   configOverride?: ConfigOverride,
+  mentorIds?: readonly MentorId[],
 ): Promise<RagAnswer> {
-  const scoped = await searchChunksForMentors(question, 4, configOverride);
+  const retryFormat = mentorIds
+    ? `保持 ${mentorIds.length} 段在席角色格式、各自声口、各引各库`
+    : "保持三段格式、各自声口、各引各库";
+  const scoped = await searchChunksForMentors(question, 4, configOverride, mentorIds);
   const retrieved = {
     hu: scoped.byMentor.hu.length,
     li: scoped.byMentor.li.length,
@@ -80,13 +88,15 @@ export async function answerQuestion(
   // 即使检索无命中，也调用聊天模型让三贤基于"无典籍证据"的边界给出个性化回应，
   // 而非短路返回固定模板——这样 RAG 模式（关闭循迹）也能正常对谈。
   // context 为空时提示词会明确告诉模型"暂未入藏"，约束它不杜撰引用。
-  const context = noEvidence ? buildEmptyContext(userProfile) : buildScopedContext(scoped);
-  let answer = (await provider.generateAnswer({ question, context, userProfile, conversationContext })).text.trim();
+  const context = noEvidence ? buildEmptyContext(userProfile, mentorIds) : buildScopedContext(scoped);
+  let answer = (
+    await provider.generateAnswer({ question, context, userProfile, conversationContext, mentorIds: mentorIds ? [...mentorIds] : undefined })
+  ).text.trim();
 
   if (noEvidence) {
     // 无证据路径：不做引用校验（本就无引用），直接返回模型生成的内容。
     // 但若模型完全没按三贤格式输出，用模板包装让 UI 能拆气泡。
-    const formatted = wrapAsMentorDialogue(answer);
+    const formatted = wrapAsMentorDialogue(answer, mentorIds);
     return {
       answerMarkdown: formatted,
       citations: [],
@@ -96,7 +106,7 @@ export async function answerQuestion(
   }
 
   let outcome = validateCitationsByMentor(answer, scoped);
-  let voiceViolations: VoiceViolation[] = checkVoice(parseMentorDialogue(answer));
+  let voiceViolations: VoiceViolation[] = checkVoice(parseMentorDialogue(answer), mentorIds);
 
   // 引用问题（越库/杜撰/全无引用）与声口违规合并为一次定向重试
   const problems: string[] = [];
@@ -116,14 +126,15 @@ export async function answerQuestion(
   if (problems.length) {
     answer = (
       await provider.generateAnswer({
-        question: `${question}\n\n上一次回应存在以下问题，请整组重写并逐条修正（保持三段格式、各自声口、各引各库）：\n${problems.join("\n")}`,
+        question: `${question}\n\n上一次回应存在以下问题，请整组重写并逐条修正（${retryFormat}）：\n${problems.join("\n")}`,
         context,
         userProfile,
         conversationContext,
+        mentorIds: mentorIds ? [...mentorIds] : undefined,
       })
     ).text.trim();
     outcome = validateCitationsByMentor(answer, scoped);
-    voiceViolations = checkVoice(parseMentorDialogue(answer));
+    voiceViolations = checkVoice(parseMentorDialogue(answer), mentorIds);
   }
 
   if (needsCitation(answer) && outcome.citations.length === 0) {
@@ -136,7 +147,7 @@ export async function answerQuestion(
   // 用模板包装让 UI 能拆气泡，而不是把裸文本 + ⚠️ 丢给用户。
   const allMissingRole = voiceViolations.length > 0 && voiceViolations.every((v) => v.kind === "missing-role");
   if (allMissingRole) {
-    answer = wrapAsMentorDialogue(answer);
+    answer = wrapAsMentorDialogue(answer, mentorIds);
   } else if (voiceViolations.length) {
     answer = `${answer}\n\n⚠️ 本轮未完全通过角色声口校验：${voiceViolations.map((v) => v.detail).join("；")}。`;
   }

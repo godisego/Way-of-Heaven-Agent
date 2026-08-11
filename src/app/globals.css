@@ -621,16 +621,60 @@ button {
 }
 
 .cast-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
   padding: 2px;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  appearance: none;
   border-radius: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: opacity 0.15s ease, filter 0.15s ease, transform 0.15s ease;
 }
 
 .cast-item:hover {
   background: transparent;
+  transform: translateY(-1px);
+}
+
+.cast-item.is-away {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+.cast-item.is-away:hover {
+  opacity: 0.58;
+}
+
+.cast-item.is-active::after {
+  content: "";
+  position: absolute;
+  right: 1px;
+  bottom: 0;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--paper-bright, #ffffff);
+  border-radius: 50%;
+  background: var(--cinnabar, #a8473c);
+}
+
+.cast-item:focus-visible {
+  outline: 2px solid var(--cinnabar, #a8473c);
+  outline-offset: 3px;
+}
+
+.cast-item:disabled {
+  cursor: default;
+}
+
+.cast-item:disabled:hover {
+  transform: none;
 }
 
 .cast-name {

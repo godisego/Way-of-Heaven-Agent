@@ -3,6 +3,7 @@ import type { ConfigOverride } from "@/core/config/appConfig";
 import { getVectorStore } from "@/core/vector/localJsonVectorStore";
 import type { VectorSearchResult } from "@/core/vector/vectorStore";
 import { DIALOGUE_MENTORS, isSourceAllowedFor, type MentorId } from "@/data/mentors";
+import { resolveMentorIds } from "@/data/mentorSelection";
 import { citationEvidenceCoverage, isCitationQuestion } from "./evidenceRelevance";
 
 /** 每条 Source 送入 prompt 的文本上限（成本与串扰保护） */
@@ -21,6 +22,8 @@ export type ScopedRetrieval = {
   byMentor: Record<MentorId, VectorSearchResult[]>;
   /** 去重后的总表（usedContext 与出典使用） */
   merged: VectorSearchResult[];
+  /** 本轮实际在席角色；旧调用缺省时视为三贤全到。 */
+  activeMentors?: MentorId[];
 };
 
 /**
@@ -35,6 +38,7 @@ export async function searchChunksForMentors(
   query: string,
   topKPerMentor = 4,
   configOverride?: ConfigOverride,
+  mentorIds?: readonly MentorId[],
 ): Promise<ScopedRetrieval> {
   const provider = getDefaultProvider(configOverride);
   const embedding = await provider.embedTexts({ texts: [query] });
@@ -54,7 +58,8 @@ export async function searchChunksForMentors(
   }
 
   const byMentor = { hu: [], li: [], xuan: [] } as Record<MentorId, VectorSearchResult[]>;
-  for (const mentor of DIALOGUE_MENTORS) {
+  const activeMentors = resolveMentorIds(mentorIds);
+  for (const mentor of DIALOGUE_MENTORS.filter((item) => activeMentors.includes(item.id))) {
     byMentor[mentor.id] = candidates
       .filter((r) => isSourceAllowedFor(mentor.id, r.tradition))
       .sort(rankCandidates)
@@ -63,7 +68,8 @@ export async function searchChunksForMentors(
 
   const seen = new Set<string>();
   const merged: VectorSearchResult[] = [];
-  for (const list of [byMentor.hu, byMentor.li, byMentor.xuan]) {
+  for (const mentorId of activeMentors) {
+    const list = byMentor[mentorId];
     for (const r of list) {
       if (seen.has(r.chunkId)) continue;
       seen.add(r.chunkId);
@@ -72,7 +78,7 @@ export async function searchChunksForMentors(
   }
   merged.sort((a, b) => b.score - a.score);
 
-  return { byMentor, merged };
+  return { byMentor, merged, activeMentors };
 }
 
 function truncate(text: string): string {
@@ -104,7 +110,10 @@ const MENTOR_PREFIX: Record<MentorId, string> = { hu: "H", li: "L", xuan: "X" };
 
 /** 分区 Sources：每位只可引用自己分区（越库由 validateCitationsByMentor 硬性拦截） */
 export function buildScopedContext(scoped: ScopedRetrieval): string {
-  const sections = DIALOGUE_MENTORS.map((mentor) => {
+  const activeMentors = resolveMentorIds(scoped.activeMentors);
+  const sections = DIALOGUE_MENTORS
+    .filter((mentor) => activeMentors.includes(mentor.id))
+    .map((mentor) => {
     const list = scoped.byMentor[mentor.id];
     const header = `[${mentor.shortName}之专库 · 以下来源仅${mentor.title}可引用]`;
     if (!list.length) {
@@ -114,6 +123,6 @@ export function buildScopedContext(scoped: ScopedRetrieval): string {
       .map((result, index) => sourceEntry(result, `${MENTOR_PREFIX[mentor.id]}${index + 1}`))
       .join("\n\n");
     return `${header}\n${body}`;
-  });
+    });
   return sections.join("\n\n");
 }

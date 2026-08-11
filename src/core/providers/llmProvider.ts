@@ -16,6 +16,8 @@ export type EmbedTextsResult = {
 export type GenerateAnswerInput = {
   question: string;
   context: string;
+  /** 本轮在席角色；缺省表示三位全到，保持原对谈契约。 */
+  mentorIds?: import("@/data/mentors").MentorId[];
   /** 问者档（来自 localStorage / 未来云端）。三贤 agent 据此带出命理 / 人生背景。 */
   userProfile?: import("@/data/userProfile").UserProfile | null;
   /** 当前会话此前的可见对谈，仅用于承接上下文，不作为典籍证据。 */

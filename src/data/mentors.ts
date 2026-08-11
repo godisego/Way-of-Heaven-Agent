@@ -10,6 +10,7 @@
 
 import { isProfileComplete, type UserProfile } from "./userProfile";
 import { briefForHu, briefForXuan, briefForLi } from "@/core/mingli/chartBrief";
+import { resolveMentorIds } from "./mentorSelection";
 
 export type MentorId = "li" | "hu" | "xuan";
 
@@ -299,8 +300,8 @@ export const TAVERN_LORE = {
     "入阁上传典籍并点选传统标签。存在主义归李，易经命理归老胡，道家归玄；「天道/格律」三人共用。专库越丰，朱批越稳，算与论也更贴你的材料。",
 };
 
-/** 供 system prompt 组装，保证与 UI 设定一致 */
-export function buildMentorSystemPrompt(userProfile?: UserProfile | null): string {
+/** 原始三贤 system prompt。默认路径必须保持原文不变。 */
+function buildFullMentorSystemPrompt(userProfile?: UserProfile | null): string {
   const hasProfile = isProfileComplete(userProfile);
   const bazi = hasProfile ? userProfile!.bazi : undefined;
 
@@ -384,7 +385,104 @@ export function buildMentorSystemPrompt(userProfile?: UserProfile | null): strin
   );
 }
 
-export function buildMentorUserPrompt(
+const SUBSET_SPEECH_SHAPE: Record<MentorId, string> = {
+  hu: "接住问者 → 依命理或时势材料给判断依据 → 讲窗口与忌口 → 给至少两条可执行的人事建议 → 留三分余地。",
+  li: "诚实接住 → 点破自欺或假装不选择 → 讲清自由与代价 → 给一到两个可执行小步 → 不用鸡汤收尾。",
+  xuan: "听清问者 → 点出局势里的关键因果 → 给一个方向与一个节奏 → 留白收尾，不替问者做决定。",
+};
+
+function subsetMaterialOf(id: MentorId, userProfile?: UserProfile | null): string {
+  const hasProfile = isProfileComplete(userProfile);
+  const bazi = hasProfile ? userProfile!.bazi : undefined;
+  if (id === "hu") {
+    return bazi
+      ? briefForHu(bazi)
+      : "【命理简报】问者未建档。你不得自行推算任何命理内容；可论事理与时势，命理处言「未见生辰，不敢妄断」。";
+  }
+  if (id === "xuan") {
+    return bazi
+      ? briefForXuan(bazi)
+      : "【气机简报】问者未建档。只以所问之事本身论气机与节奏，不涉生辰。";
+  }
+  return briefForLi({
+    currentPlace: hasProfile ? userProfile!.currentPlace : undefined,
+    education: hasProfile ? userProfile!.education : undefined,
+    work: hasProfile ? userProfile!.work : undefined,
+    relationship: hasProfile ? userProfile!.relationship : undefined,
+  });
+}
+
+function buildSubsetMentorSystemPrompt(
+  userProfile: UserProfile | null | undefined,
+  mentorIds: readonly MentorId[],
+): string {
+  const active = resolveMentorIds(mentorIds).map(getMentor);
+  const activeIds = new Set(active.map((mentor) => mentor.id));
+  const inactiveNames = DIALOGUE_MENTORS
+    .filter((mentor) => !activeIds.has(mentor.id))
+    .flatMap((mentor) => [mentor.shortName, mentor.title, ...mentor.aliases]);
+  const orderText = active.map((mentor) => mentor.shortName).join(" → ");
+  const roleBlocks = active.map((mentor, index) => {
+    const order = ["一", "二", "三"][index] ?? String(index + 1);
+    const neverSay = mentor.neverSay.filter(
+      (term) => !inactiveNames.some((name) => name && term.includes(name)),
+    );
+    return (
+      `【在席角色${order}：${mentor.title}】\n` +
+      `予问者：${mentor.gift}。\n` +
+      `性格：${mentor.personality.join("、")}。\n` +
+      `自称：${mentor.selfAddress}。称呼问者：${mentor.addressUserAs}。\n` +
+      `口头禅（自然使用，勿堆砌）：${mentor.catchphrases.join(" / ")}\n` +
+      `声口示范（模仿气质与节奏，禁止照抄原句）：「${mentor.styleSample}」\n` +
+      `绝不说（出现即违规重写）：${neverSay.join("、")}\n` +
+      `本轮发言结构：${SUBSET_SPEECH_SHAPE[mentor.id]}\n` +
+      `建议风格：${mentor.adviceStyle}\n` +
+      `优先典籍传统：${mentor.traditions.map((tradition) => tradition.label).join("、")}。\n` +
+      `边界：${mentor.boundaries}\n` +
+      `本轮专属材料（只有你可见、只许你使用）：\n${subsetMaterialOf(mentor.id, userProfile)}`
+    );
+  }).join("\n\n");
+  const responseFormat = active
+    .map((mentor) => `【${mentor.title}】\n（${mentor.shortName}的发言）`)
+    .join("\n\n");
+  const liRule = activeIds.has("li")
+    ? "4. 李全程禁用命理语汇：干支、五行、大运、流年、八字、排盘、神煞等不得出现在李的段落。\n"
+    : "";
+
+  return (
+    `你是「天道导师」茶寮本轮在席角色。只允许 ${active.map((mentor) => mentor.title).join("、")} 回应；不得输出其他角色的标题、台词或总结。\n\n` +
+    "【总纲 · 天道】\n" +
+    "无远方救世主。可点破局与势，须落到「子」（可执行建议）。思维可循：局（规则约束）→ 势（强弱与窗口）→ 道（规律/文化属性）→ 子（可走的路）。\n\n" +
+    "【铁律 · 程序会逐条校验】\n" +
+    `1. 恰好 ${active.length} 段发言，顺序固定：${orderText}。\n` +
+    "2. 只使用各自的专属材料与专库 Sources，不得替其他传统发言或越库引用。\n" +
+    "3. 禁止 AI 自指，禁止客服腔、汇报腔和空洞反问；必须先回答具体问题。\n" +
+    liRule +
+    "\n" +
+    roleBlocks +
+    "\n\n【回应格式 · 只输出下列在席角色】\n" +
+    responseFormat +
+    "\n\n【共同规则】\n" +
+    "1. 每段必须给出与角色职责匹配的可执行建议。\n" +
+    "2. 引述典籍只能基于 Sources；格式 [《书名》, 章节]。无据则说暂未入藏，不硬凑。\n" +
+    "3. 不替问者做最终决定，禁止违法缺德教唆。\n" +
+    "4. 长度适中，回答具体问题，不用套话拖延。\n\n" +
+    `【交稿前自查】是否恰好只输出 ${orderText}，顺序正确、声口鲜明、建议可执行、引用均来自各自 Sources？`
+  );
+}
+
+/** 缺省或三位全选严格走原始 prompt；只有子集才生成精简 prompt。 */
+export function buildMentorSystemPrompt(
+  userProfile?: UserProfile | null,
+  mentorIds?: readonly MentorId[],
+): string {
+  const active = resolveMentorIds(mentorIds);
+  return active.length === DIALOGUE_MENTORS.length
+    ? buildFullMentorSystemPrompt(userProfile)
+    : buildSubsetMentorSystemPrompt(userProfile, active);
+}
+
+function buildFullMentorUserPrompt(
   question: string,
   context: string,
   userProfile?: UserProfile | null,
@@ -408,6 +506,33 @@ export function buildMentorUserPrompt(
   );
 }
 
+export function buildMentorUserPrompt(
+  question: string,
+  context: string,
+  userProfile?: UserProfile | null,
+  conversationContext?: string,
+  mentorIds?: readonly MentorId[],
+): string {
+  const active = resolveMentorIds(mentorIds);
+  if (active.length === DIALOGUE_MENTORS.length) {
+    return buildFullMentorUserPrompt(question, context, userProfile, conversationContext);
+  }
+
+  const mentors = active.map(getMentor);
+  const profileNote = isProfileComplete(userProfile)
+    ? ""
+    : "（我尚未建立问者档；需要命理材料时请明确说明信息不足，不得妄断。）\n";
+  const historyNote = conversationContext?.trim()
+    ? `\n【此前对谈上下文 · 只用于理解本轮追问，不是典籍证据】\n${conversationContext.trim()}\n`
+    : "";
+  return (
+    `我的困惑：\n${question}\n${profileNote}${historyNote}\n` +
+    `可参考的典籍片段（Sources）：\n${context}\n\n` +
+    `本轮只请 ${mentors.map((mentor) => mentor.title).join("、")} 回答，按 ${mentors.map((mentor) => mentor.shortName).join(" → ")} 的顺序输出；不要补写其他角色。` +
+    "直接回答具体问题，使用各自专属材料，给出可执行建议；引用处用 [《书名》, 章节] 标注。"
+  );
+}
+
 export function getMentor(id: MentorId): MentorProfile {
   const found = MENTORS.find((m) => m.id === id);
   if (!found) throw new Error(`unknown mentor: ${id}`);
@@ -427,7 +552,7 @@ export function matchMentorByHeading(heading: string): MentorProfile | null {
 }
 
 /**
- * 把模型整段回答拆成三贤发言气泡。
+ * 把模型整段回答拆成在席角色发言气泡。
  * 识别 【…】 标题；若无法拆分则整段作为一条无角色消息。
  */
 export function parseMentorDialogue(text: string): DialogueSegment[] {
@@ -444,7 +569,7 @@ export function parseMentorDialogue(text: string): DialogueSegment[] {
     });
   }
 
-  if (hits.length < 2) {
+  if (hits.length === 0) {
     return [{ mentorId: null, heading: "对谈", body: trimmed }];
   }
 

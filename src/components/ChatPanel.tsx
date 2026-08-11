@@ -64,6 +64,14 @@ function appendStep(trace: AgentTrace | undefined, step: TraceStep): AgentTrace 
   };
 }
 
+function selectMentorReply(content: string, mentorIds: readonly MentorId[]): string {
+  const selected = parseMentorDialogue(content).filter(
+    (segment) => segment.mentorId && mentorIds.includes(segment.mentorId),
+  );
+  if (!selected.length) return content;
+  return selected.map((segment) => `【${segment.heading}】\n${segment.body}`).join("\n\n");
+}
+
 export function ChatPanel() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -71,6 +79,9 @@ export function ChatPanel() {
   const [error, setError] = useState("");
   const [demoIdx, setDemoIdx] = useState(0);
   const [agentMode, setAgentMode] = useState(true);
+  const [selectedMentorIds, setSelectedMentorIds] = useState<MentorId[]>(
+    () => DIALOGUE_MENTORS.map((mentor) => mentor.id),
+  );
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [sessionId, setSessionId] = useState("");
   const [sessionBusy, setSessionBusy] = useState(true);
@@ -82,6 +93,25 @@ export function ChatPanel() {
   const [streaming, setStreaming] = useState(false);
   /** 当前一轮的取消句柄；流式 agent 模式下用于「停止」。 */
   const abortRef = useRef<AbortController | null>(null);
+  const activeMentors = DIALOGUE_MENTORS.filter((mentor) => selectedMentorIds.includes(mentor.id));
+  const attendanceLabel = activeMentors.length === 3
+    ? "三贤在席"
+    : activeMentors.length === 2
+      ? "二贤在席"
+      : `${activeMentors[0].shortName}独席`;
+
+  function toggleMentor(id: MentorId) {
+    if (busy) return;
+    setSelectedMentorIds((current) => {
+      if (current.includes(id)) {
+        if (current.length === 1) return current;
+        return current.filter((mentorId) => mentorId !== id);
+      }
+      return DIALOGUE_MENTORS
+        .map((mentor) => mentor.id)
+        .filter((mentorId) => mentorId === id || current.includes(mentorId));
+    });
+  }
 
   const loadSession = useCallback(async (id: string) => {
     setSessionBusy(true);
@@ -202,7 +232,7 @@ export function ChatPanel() {
     setMessages((prev) => [
       ...prev,
       { role: "user", content: hint.question },
-      { role: "assistant", content: hint.reply, isDemo: true },
+      { role: "assistant", content: selectMentorReply(hint.reply, selectedMentorIds), isDemo: true },
     ]);
   }
 
@@ -237,12 +267,13 @@ export function ChatPanel() {
     setError("");
     setMessages((prev) => [...prev, { role: "user", content: question }]);
     setInput("");
+    const mentorIds = [...selectedMentorIds];
 
     // 命中 demo 模板：直接展示，不调 /api/chat
     if (demoReply) {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: demoReply, isDemo: true },
+        { role: "assistant", content: selectMentorReply(demoReply, mentorIds), isDemo: true },
       ]);
       setBusy(false);
       return;
@@ -262,7 +293,7 @@ export function ChatPanel() {
       const saved = await userProfileApi.load();
       const userProfile = isProfileComplete(saved) ? saved : null;
       if (usingStream) {
-        await streamAgentReply(question, userProfile, sessionId, controller.signal);
+        await streamAgentReply(question, userProfile, sessionId, mentorIds, controller.signal);
       } else {
         // RAG 模式：一次性 JSON（保持原行为，作为固定对照）
         const { ok, data } = await safeFetchJson<{
@@ -274,7 +305,7 @@ export function ChatPanel() {
         }>("/api/chat", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ question, userProfile, sessionId, mode: "rag" }),
+          body: JSON.stringify({ question, userProfile, sessionId, mode: "rag", mentors: mentorIds }),
           signal: controller.signal,
         });
         if (!ok) {
@@ -315,12 +346,13 @@ export function ChatPanel() {
     question: string,
     userProfile: UserProfile | null,
     currentSessionId: string,
+    mentorIds: MentorId[],
     signal: AbortSignal,
   ) {
     const response = await fetch("/api/chat/stream", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ question, userProfile, sessionId: currentSessionId, mode: "agent" }),
+      body: JSON.stringify({ question, userProfile, sessionId: currentSessionId, mode: "agent", mentors: mentorIds }),
       signal,
     });
 
@@ -486,7 +518,9 @@ export function ChatPanel() {
             </span>
             <div>
               <h1 className="room-title">天道茶寮</h1>
-              <p className="room-sub">夜场对谈 · 三贤在席</p>
+              <p className="room-sub">
+                夜场对谈 · {attendanceLabel}
+              </p>
             </div>
           </div>
           <div className="room-top-actions">
@@ -511,13 +545,26 @@ export function ChatPanel() {
           >
             看示例回复
           </button>
-          <div className="room-cast">
-            {DIALOGUE_MENTORS.map((m) => (
-              <div key={m.id} className={`cast-item tone-${m.tone}`} title={m.epithet}>
+          <div className="room-cast" data-tour-id="mentor-selection">
+            {DIALOGUE_MENTORS.map((m) => {
+              const isActive = selectedMentorIds.includes(m.id);
+              const isLastActive = isActive && selectedMentorIds.length === 1;
+              return (
+              <button
+                key={m.id}
+                type="button"
+                className={`cast-item tone-${m.tone}${isActive ? " is-active" : " is-away"}`}
+                onClick={() => toggleMentor(m.id)}
+                aria-pressed={isActive}
+                aria-label={isActive ? `请${m.shortName}下席` : `请${m.shortName}入席`}
+                title={isLastActive ? `${m.shortName}是当前唯一在席角色` : `${isActive ? "请下席" : "请入席"}：${m.epithet}`}
+                disabled={busy || isLastActive}
+              >
                 <MentorAvatar mentor={m} size="sm" />
                 <span className="cast-name">{m.selfAddress.split(" / ")[0]}</span>
-              </div>
-            ))}
+              </button>
+              );
+            })}
           </div>
           </div>
         </header>
@@ -528,7 +575,11 @@ export function ChatPanel() {
           <div className="room-welcome">
             <p className="room-welcome-line">茶温着。把心里那件事说出来就好。</p>
             <p className="room-welcome-meta">
-              老胡先批局势，李再拆自欺，贫道·玄收尾——听完会给你能走的下一步。
+              {selectedMentorIds.length === DIALOGUE_MENTORS.length
+                ? "老胡先批局势，李再拆自欺，贫道·玄收尾——听完会给你能走的下一步。"
+                : activeMentors.length === 1
+                  ? `${activeMentors[0].shortName}独席，只从自己的专长回应这轮问题。`
+                  : `${activeMentors.map((mentor) => mentor.shortName).join("、")}在席，只从各自专长回应这轮问题。`}
             </p>
             <div className="room-hints">
               {TAVERN_DEMO_HINTS.map((hint) => (
@@ -570,7 +621,7 @@ export function ChatPanel() {
 
         {busy && !streaming ? (
           <div className="typing-row">
-            {DIALOGUE_MENTORS.map((m) => (
+            {activeMentors.map((m) => (
               <div key={m.id} className="typing-pill">
                 <MentorAvatar mentor={m} size="sm" />
                 <span>{m.shortName}在想…</span>
@@ -597,7 +648,7 @@ export function ChatPanel() {
       <footer className="room-composer">
         <textarea
           data-tour-id="chat-input"
-          placeholder="跟三贤说点什么… Enter 发送，Shift+Enter 换行"
+          placeholder={`跟${activeMentors.length === 1 ? activeMentors[0].shortName : "在席诸贤"}说点什么… Enter 发送，Shift+Enter 换行`}
           value={input}
           rows={2}
           onChange={(event) => setInput(event.target.value)}

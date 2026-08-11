@@ -39,7 +39,7 @@ export class OpenAIChatProvider implements LlmProvider {
       max_tokens: 4096,
       stream,
       messages: [
-        { role: "system", content: buildMentorSystemPrompt(input.userProfile ?? null) },
+        { role: "system", content: buildMentorSystemPrompt(input.userProfile ?? null, input.mentorIds) },
         {
           role: "user",
           content: buildMentorUserPrompt(
@@ -47,6 +47,7 @@ export class OpenAIChatProvider implements LlmProvider {
             input.context,
             input.userProfile ?? null,
             input.conversationContext,
+            input.mentorIds,
           ),
         },
       ],

@@ -63,6 +63,17 @@ export const ONBOARDING_LESSONS: Lesson[] = [
         },
       },
       {
+        element: "[data-tour-id='mentor-selection']",
+        popover: {
+          title: "角色卡可以选择：让最合适的人回答",
+          description:
+            "怎么选：点头像可以请角色入席或下席，至少保留一位；三位全选仍按老胡、李、玄的完整仪轨回答。\n\n" +
+            "什么时候单人回答：八字、岁运和命理判断适合只留老胡；现实选择与自欺适合李；方向、节奏和因果收束适合玄。\n\n" +
+            "链路变化：选择会同时限制检索专库、角色材料、生成 Prompt、引用校验和声口校验，不只是隐藏头像。",
+          side: "bottom",
+        },
+      },
+      {
         element: "[data-tour-id='uploader-card']",
         popover: {
           title: "二 · 入阁藏书：把自己的资料变成可核验记忆",

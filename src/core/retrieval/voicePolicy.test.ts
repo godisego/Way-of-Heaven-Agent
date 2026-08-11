@@ -91,4 +91,13 @@ describe("checkVoice（声口校验器）", () => {
   it("老胡自己说「老夫」不算违规", () => {
     expect(check(GOOD).filter((x) => x.kind === "cross-voice")).toEqual([]);
   });
+
+  it("只请老胡时，单段老胡通过且其他角色会被判为未受邀", () => {
+    const huOnly = `【盲派算师·老胡】\n哎，老夫瞧着，这局先守。`;
+    expect(checkVoice(parseMentorDialogue(huOnly), ["hu"])).toEqual([]);
+
+    const withXuan = `${huOnly}\n\n【主事·玄】\n贫道听着。`;
+    expect(checkVoice(parseMentorDialogue(withXuan), ["hu"]))
+      .toEqual(expect.arrayContaining([expect.objectContaining({ kind: "unexpected-role", mentorId: "xuan" })]));
+  });
 });

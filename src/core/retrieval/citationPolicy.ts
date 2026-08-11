@@ -128,7 +128,8 @@ export function validateCitationsByMentor(
 export function needsCitation(answer: string): boolean {
   // 无据兜底是固定三贤文本：只陈述证据边界和下一步，不是在引用思想内容。
   if (
-    answer.includes("典籍中暂时没有能贴合你这个困惑的内容") &&
+    answer.includes("典籍中暂时没有能贴合你这个困惑的内容") ||
+    answer.includes("材料不足，我不会借一个漂亮观点替你回答") ||
     answer.includes("无据，不妄言")
   ) {
     return false;

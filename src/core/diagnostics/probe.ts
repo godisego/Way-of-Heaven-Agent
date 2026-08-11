@@ -26,23 +26,33 @@ export async function probeChat(baseUrl: string, apiKey: string, authStyle: Auth
       ? { "x-api-key": apiKey, "anthropic-version": "2023-06-01" }
       : { authorization: `Bearer ${apiKey}` };
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15_000);
-  try {
-    const response = await fetch(url, { method: "GET", headers, signal: controller.signal });
-    if (!response.ok) return { ok: false, models: [], error: diagnoseHttpError(response.status, authStyle) };
-    const data = (await response.json()) as { data?: Array<{ id?: string }>; models?: Array<{ id?: string } | string> };
-    const list = data.data ?? data.models ?? [];
-    const ids = list
-      .map((item) => (typeof item === "string" ? item : item?.id))
-      .filter((id): id is string => typeof id === "string" && id.length > 0)
-      .sort();
-    return { ok: true, models: ids };
-  } catch (e) {
-    return { ok: false, models: [], error: diagnoseError(e) };
-  } finally {
-    clearTimeout(timer);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15_000);
+    try {
+      const response = await fetch(url, { method: "GET", headers, signal: controller.signal });
+      if (!response.ok) return { ok: false, models: [], error: diagnoseHttpError(response.status, authStyle) };
+      const data = (await response.json()) as { data?: Array<{ id?: string }>; models?: Array<{ id?: string } | string> };
+      const list = data.data ?? data.models ?? [];
+      const ids = list
+        .map((item) => (typeof item === "string" ? item : item?.id))
+        .filter((id): id is string => typeof id === "string" && id.length > 0)
+        .sort();
+      return { ok: true, models: ids };
+    } catch (error) {
+      if (attempt === 0 && isTransientNetworkError(error)) continue;
+      return { ok: false, models: [], error: diagnoseError(error) };
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  return { ok: false, models: [], error: "连接失败" };
+}
+
+function isTransientNetworkError(error: unknown): boolean {
+  if (!(error instanceof Error) || error.name === "AbortError") return false;
+  const cause = (error as Error & { cause?: { code?: string } }).cause;
+  return ["ECONNRESET", "ETIMEDOUT", "EPIPE", "UND_ERR_SOCKET"].includes(cause?.code ?? "");
 }
 
 // ── Embedding 探活：实跑一次向量，看是否真模型（非 mock 回退） ─────────────

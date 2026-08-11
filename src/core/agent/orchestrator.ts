@@ -15,7 +15,7 @@ import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";
 import { mergeConfig, type ConfigOverride } from "@/core/config/appConfig";
 import type { GenerateAnswerInput, GenerateAnswerResult } from "@/core/providers/llmProvider";
 import type { UserProfile } from "@/data/userProfile";
-import { parseMentorDialogue } from "@/data/mentors";
+import { parseMentorDialogue, type MentorId } from "@/data/mentors";
 import { buildContext } from "@/core/retrieval/retrieveContext";
 import { needsCitation, validateCitations, type Citation } from "@/core/retrieval/citationPolicy";
 import { checkVoice, violationRetryText, type VoiceViolation } from "@/core/retrieval/voicePolicy";
@@ -33,6 +33,7 @@ import {
   DEFAULT_AGENT_LIMITS,
   type AgentAnswer,
   type AgentEvent,
+  type EvidenceItem,
   type AgentLimits,
   type AgentState,
   type AgentTrace,
@@ -67,6 +68,8 @@ export type RunAgentOptions = {
   conversationContext?: string;
   /** 运行时配置覆盖（内部测试或显式调用方）：透传给 transport/draftProvider/search_library 工具 */
   configOverride?: ConfigOverride;
+  /** 本轮在席角色；缺省表示三贤全到。 */
+  mentorIds?: MentorId[];
 };
 
 function sanitizeArgs(args: unknown): Record<string, unknown> | undefined {
@@ -78,6 +81,18 @@ function sanitizeArgs(args: unknown): Record<string, unknown> | undefined {
     else out[k] = "…";
   }
   return out;
+}
+
+function buildAllowedCitationInstruction(evidence: EvidenceItem[]): string {
+  const allowed = [...new Set(evidence.map((item) => {
+    const book = item.bookTitle ?? item.sourceFileName;
+    const section = item.sectionTitle ?? `第${item.pageNumber}节`;
+    return `[《${book}》, ${section}]`;
+  }))];
+  return (
+    "- 本轮只允许原样复制下列引用；列表之外的书名或章节一律删除，不得凭记忆补充：\n" +
+    allowed.map((citation) => `  ${citation}`).join("\n")
+  );
 }
 
 /**
@@ -103,6 +118,9 @@ export async function runAgentLoop(
   opts: RunAgentOptions = {},
 ): Promise<AgentAnswer> {
   const startedAt = Date.now();
+  const retryFormat = opts.mentorIds
+    ? `保持 ${opts.mentorIds.length} 段在席角色格式与各自声口`
+    : "保持三段格式与各自声口";
   const limits: AgentLimits = { ...DEFAULT_AGENT_LIMITS, ...opts.limits };
   const ledger = new EvidenceLedger();
   const seenDocumentIds = new Set<string>();
@@ -216,6 +234,7 @@ export async function runAgentLoop(
         seenDocumentIds,
         stepIndex,
         configOverride: opts.configOverride,
+        activeMentors: opts.mentorIds,
       });
       const evidenceIds = result.evidence
         .map((e) => ledger.idOf(e.chunkId))
@@ -265,7 +284,7 @@ export async function runAgentLoop(
     answer = "取证过程出错，本轮未能生成回应。请稍后重试。";
   } else if (stopReason === "insufficient" || ledger.count() === 0) {
     finalState = "insufficient";
-    answer = buildNoEvidenceAnswer(insufficientMissing, userProfile);
+    answer = buildNoEvidenceAnswer(insufficientMissing, userProfile, opts.mentorIds);
     // 检索工具报错（向量空间错位等）时，把根因透传给用户，而非只让三贤说"材料不足"
     if (retrievalError) {
       answer = `${answer}\n\n⚠️ 检索未成功：${retrievalError}。这通常是 embedding 配置与索引不匹配——可在齿轮面板点「测试全部」诊断，或「用当前配置重建索引」。`;
@@ -277,7 +296,11 @@ export async function runAgentLoop(
     const tDraft = Date.now();
     modelCalls += 1;
     answer = (
-      await draftAnswer(provider, { question, context, userProfile, conversationContext: opts.conversationContext }, emit)
+      await draftAnswer(
+        provider,
+        { question, context, userProfile, conversationContext: opts.conversationContext, mentorIds: opts.mentorIds },
+        emit,
+      )
     ).trim();
     pushStep({
       phase: "draft",
@@ -287,11 +310,12 @@ export async function runAgentLoop(
 
     // 校验：引用（对证据台账）+ 声口；合并一次定向重试
     citations = validateCitations(answer, ledger.records());
-    let voiceViolations: VoiceViolation[] = checkVoice(parseMentorDialogue(answer));
+    let voiceViolations: VoiceViolation[] = checkVoice(parseMentorDialogue(answer), opts.mentorIds);
     const problems: string[] = [];
     if (needsCitation(answer) && citations.length === 0) {
       problems.push(
         "- 引用的出处无法核对：凡引述思想或原文，必须使用 [《书名》, 章节] 格式，且只能取自 Sources 的 cite_as。",
+        buildAllowedCitationInstruction(ledger.records()),
       );
     }
     if (voiceViolations.length) problems.push(violationRetryText(voiceViolations));
@@ -304,16 +328,17 @@ export async function runAgentLoop(
         await draftAnswer(
           provider,
           {
-            question: `${question}\n\n上一次回应存在以下问题，请整组重写并逐条修正（保持三段格式与各自声口）：\n${problems.join("\n")}`,
+            question: `${question}\n\n上一次回应存在以下问题，请整组重写并逐条修正（${retryFormat}）：\n${problems.join("\n")}`,
             context,
             userProfile,
             conversationContext: opts.conversationContext,
+            mentorIds: opts.mentorIds,
           },
           emit,
         )
       ).trim();
       citations = validateCitations(answer, ledger.records());
-      voiceViolations = checkVoice(parseMentorDialogue(answer));
+      voiceViolations = checkVoice(parseMentorDialogue(answer), opts.mentorIds);
     }
 
     if (needsCitation(answer) && citations.length === 0) {
@@ -324,7 +349,7 @@ export async function runAgentLoop(
     const allMissingRole =
       voiceViolations.length > 0 && voiceViolations.every((v) => v.kind === "missing-role");
     if (allMissingRole) {
-      answer = wrapAsMentorDialogue(answer);
+      answer = wrapAsMentorDialogue(answer, opts.mentorIds);
     } else if (voiceViolations.length) {
       answer = `${answer}\n\n⚠️ 本轮未完全通过角色声口校验：${voiceViolations.map((v) => v.detail).join("；")}。`;
     }

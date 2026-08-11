@@ -41,6 +41,14 @@ describe("buildNoEvidenceAnswer", () => {
     expect(segments[0].body).toContain("大运");
     expect(segments[1].body).not.toMatch(/[甲乙丙丁戊己庚辛壬癸]|大运|流年|日主/);
   });
+
+  it("子集兜底只生成在席角色", () => {
+    const huOnly = buildNoEvidenceAnswer("缺命理原文", null, ["hu"]);
+    expect(parseMentorDialogue(huOnly).map((segment) => segment.mentorId)).toEqual(["hu"]);
+    expect(huOnly).not.toContain("存在主义导师");
+    expect(huOnly).not.toContain("主事·玄");
+    expect(needsCitation(huOnly)).toBe(false);
+  });
 });
 
 describe("wrapAsMentorDialogue", () => {
@@ -83,5 +91,11 @@ describe("wrapAsMentorDialogue", () => {
     const wrapped = wrapAsMentorDialogue(raw);
     expect(wrapped).toContain("【盲派算师·老胡】");
     expect(wrapped).not.toContain("系统整编");
+  });
+
+  it("单角色裸文本只包装给该角色", () => {
+    const wrapped = wrapAsMentorDialogue("这轮只给老胡的一段具体回答。", ["hu"]);
+    expect(parseMentorDialogue(wrapped).map((segment) => segment.mentorId)).toEqual(["hu"]);
+    expect(wrapped).not.toContain("存在主义导师");
   });
 });

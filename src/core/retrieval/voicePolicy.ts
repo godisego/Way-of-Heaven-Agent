@@ -14,9 +14,10 @@
  */
 
 import type { DialogueSegment, MentorId } from "@/data/mentors";
+import { resolveMentorIds } from "@/data/mentorSelection";
 
 export type VoiceViolation = {
-  kind: "missing-role" | "wrong-order" | "cross-voice" | "li-mingli" | "broke-character";
+  kind: "missing-role" | "unexpected-role" | "wrong-order" | "cross-voice" | "li-mingli" | "broke-character";
   mentorId: MentorId | null;
   detail: string;
 };
@@ -56,32 +57,45 @@ const BREAK_CHARACTER_PATTERN = /作为(一个|一名)?(AI|人工智能|大语�
 const EXPECTED_ORDER: MentorId[] = ["hu", "li", "xuan"];
 const MENTOR_CN: Record<MentorId, string> = { hu: "老胡", li: "李", xuan: "玄" };
 
-export function checkVoice(segments: DialogueSegment[]): VoiceViolation[] {
+export function checkVoice(
+  segments: DialogueSegment[],
+  mentorIds?: readonly MentorId[],
+): VoiceViolation[] {
   const violations: VoiceViolation[] = [];
+  const expectedOrder = resolveMentorIds(mentorIds);
   const mentorSegments = segments.filter(
     (s): s is DialogueSegment & { mentorId: MentorId } => s.mentorId !== null,
   );
 
-  // 1) 三位都到场
+  // 1) 应到角色齐全，未被邀请的角色不得出现
   const presentIds = mentorSegments.map((s) => s.mentorId);
-  for (const id of EXPECTED_ORDER) {
+  for (const id of expectedOrder) {
     if (!presentIds.includes(id)) {
       violations.push({
         kind: "missing-role",
         mentorId: id,
-        detail: `${MENTOR_CN[id]}缺席——必须恰好三段发言`,
+        detail: `${MENTOR_CN[id]}缺席——本轮必须由在席角色完整发言`,
+      });
+    }
+  }
+  for (const id of presentIds) {
+    if (!expectedOrder.includes(id)) {
+      violations.push({
+        kind: "unexpected-role",
+        mentorId: id,
+        detail: `${MENTOR_CN[id]}未在本轮受邀名单中，不应出现`,
       });
     }
   }
 
-  // 2) 顺序 老胡 → 李 → 玄（对到场者检查相对顺序）
-  const orderFiltered = presentIds.filter((id) => EXPECTED_ORDER.includes(id));
-  const expectedFiltered = EXPECTED_ORDER.filter((id) => presentIds.includes(id));
+  // 2) 按茶寮固定顺序检查本轮在席角色
+  const orderFiltered = presentIds.filter((id) => expectedOrder.includes(id));
+  const expectedFiltered = expectedOrder.filter((id) => presentIds.includes(id));
   if (orderFiltered.join(",") !== expectedFiltered.join(",")) {
     violations.push({
       kind: "wrong-order",
       mentorId: null,
-      detail: `发言顺序应为 老胡 → 李 → 玄，实际为 ${presentIds.map((i) => MENTOR_CN[i]).join(" → ")}`,
+      detail: `发言顺序应为 ${expectedOrder.map((id) => MENTOR_CN[id]).join(" → ")}，实际为 ${presentIds.map((i) => MENTOR_CN[i]).join(" → ")}`,
     });
   }
 

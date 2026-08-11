@@ -38,7 +38,7 @@ export class AnthropicProvider implements LlmProvider {
       model: this.cfg.chatModel,
       max_tokens: 4096,
       stream,
-      system: buildMentorSystemPrompt(input.userProfile ?? null),
+      system: buildMentorSystemPrompt(input.userProfile ?? null, input.mentorIds),
       messages: [
         {
           role: "user",
@@ -47,6 +47,7 @@ export class AnthropicProvider implements LlmProvider {
             input.context,
             input.userProfile ?? null,
             input.conversationContext,
+            input.mentorIds,
           ),
         },
       ],

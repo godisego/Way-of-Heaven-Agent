@@ -5,6 +5,7 @@ import { ToolRegistry, type ToolDefinition, type ToolResult } from "./toolRegist
 import type { ToolTransport, TransportDecision, TransportTurn } from "./transport";
 import type { AgentEvent, EvidenceItem } from "./types";
 import { parseMentorDialogue } from "@/data/mentors";
+import type { GenerateAnswerInput } from "@/core/providers/llmProvider";
 
 /** 脚本化 Transport：按预设序列吐决策，零 token 复现循环行为。
  *  turn 构造沿用 Anthropic 协议格式（与实际 AnthropicToolTransport 一致）。 */
@@ -135,6 +136,30 @@ describe("runAgentLoop（受控取证循环）", () => {
     expect(stub.calls).toHaveLength(1);
   });
 
+  it("角色子集贯穿到生成与声口校验，只输出老胡", async () => {
+    let received: GenerateAnswerInput | null = null;
+    const huAnswer = `【盲派算师·老胡】\n哎，老夫瞧着——势未成，宜守。[《测试书》, 第1节] 这两周先理旧账，别急着硬碰。`;
+    const r = await runAgentLoop("问八字", null, {
+      transport: new ScriptedTransport([
+        toolCall("search_library", { query: "命理" }),
+        toolCall("ready_to_answer", { sufficient: true }),
+      ]),
+      registry: registryWith(),
+      mentorIds: ["hu"],
+      draftProvider: {
+        async generateAnswer(input) {
+          received = input;
+          return { text: huAnswer };
+        },
+      },
+    });
+
+    expect(received).toMatchObject({ mentorIds: ["hu"] });
+    expect(parseMentorDialogue(r.answerMarkdown).map((segment) => segment.mentorId)).toEqual(["hu"]);
+    expect(r.answerMarkdown).not.toContain("存在主义导师");
+    expect(r.citations).toHaveLength(1);
+  });
+
   it("ready(false)：insufficient，透出 missing，不进入生成", async () => {
     const stub = draftStub();
     const r = await runAgentLoop("问", null, {
@@ -253,6 +278,8 @@ describe("runAgentLoop（受控取证循环）", () => {
     });
     expect(stub.calls).toHaveLength(2);
     expect(stub.calls[1]).toContain("命理语汇");
+    expect(stub.calls[1]).toContain("本轮只允许原样复制下列引用");
+    expect(stub.calls[1]).toContain("[《测试书》, 第1节]");
     expect(r.citations).toHaveLength(1);
     expect(r.trace.finalState).toBe("completed");
   });
