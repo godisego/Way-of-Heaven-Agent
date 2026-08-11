@@ -11,6 +11,8 @@
 [![Local First](https://img.shields.io/badge/data-local--first-8a5f38)](#十--数据与隐私)
 [![License: MIT](https://img.shields.io/badge/License-MIT-a8473c)](LICENSE)
 
+项目主页 / Project website: [tiandaoagent.bbroot.com](https://tiandaoagent.bbroot.com) · [English README](README.en.md)
+
 <img src="docs/assets/screenshot-chat.png" alt="三贤茶寮对谈界面" width="820" />
 
 </div>
@@ -238,10 +240,17 @@ data/
 
 ## 十一 · 贡献与联系
 
-个人学习项目，欢迎 Issue 交流想法；提交 PR 前请先读 `docs/roadmap.md` 与相应设计文档，保持「本地优先 / 确定性优先 / 学习优先」三原则。
+个人学习项目，欢迎 Issue 交流想法；提交 PR 前请先读 [`CONTRIBUTING.md`](CONTRIBUTING.md)，再读 `docs/roadmap.md` 与相应设计文档，保持「本地优先 / 确定性优先 / 学习优先」三原则。
 
 - 作者：**kiko**
 - 邮箱：<chikongmuzhi@gmail.com>
 - 许可：[MIT](LICENSE)。注意：你上传入库的典籍归各自版权方所有，默认只存本机、被 Git 忽略，**不要**把受版权保护的书随仓库提交。
+- 社区行为守则：[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) · 安全问题：[`SECURITY.md`](SECURITY.md)
+
+## 十二 · 鸣谢
+
+感谢开源社区让这间学习茶寮得以成立。项目以 [Next.js](https://nextjs.org)、[React](https://react.dev)、[TypeScript](https://www.typescriptlang.org)、[Zod](https://zod.dev)、[Vitest](https://vitest.dev) 为工程基础；使用 [lunar-javascript](https://github.com/6tail/lunar-javascript) 处理历法干支，以 [PDF.js](https://mozilla.github.io/pdf.js/) 读取 PDF，并提供 [Supabase](https://supabase.com) 的可选同步能力。也感谢所有提出问题、修正文档、贡献测试与分享学习经验的参与者。
+
+本项目的仓库规范化结构参考了优秀开源项目的公共实践：清晰的 README、贡献指南、行为守则、安全政策，以及可复用的 Issue / Pull Request 模板。
 
 <div align="center"><sub>以茶代酒 · 以问代卜</sub></div>

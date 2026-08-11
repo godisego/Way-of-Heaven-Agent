@@ -2,6 +2,7 @@
   "name": "way-of-heaven-agent",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://tiandaoagent.bbroot.com",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

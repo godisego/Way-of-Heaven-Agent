@@ -1,0 +1,30 @@
+name: Bug report · 问题报告
+description: Report a reproducible problem · 报告可复现的问题
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve the project. Please remove API keys and personal data.
+        感谢反馈。请勿提交 API Key、出生信息或私人文档。
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction · 复现步骤
+      description: What did you do, and what happened? · 请描述操作步骤与实际结果。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior · 预期行为
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment · 环境
+      description: OS, Node.js version, browser, and commit/version.
+    validations:
+      required: true
