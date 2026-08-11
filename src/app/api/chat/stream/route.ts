@@ -24,6 +24,7 @@ import { buildConversationContext, sessionApi } from "@/data/sessionStore";
 import { prepareUserProfileForAgent, type UserProfile } from "@/data/userProfile";
 import { MentorSelectionError, parseMentorSelection } from "@/data/mentorSelection";
 import type { MentorId } from "@/data/mentors";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 const SSE_HEADERS = {
   "content-type": "text/event-stream; charset=utf-8",
@@ -34,6 +35,23 @@ const SSE_HEADERS = {
 };
 
 export async function POST(request: Request) {
+  // 速率限制：流式端点每分钟最多 15 次（比普通端点更严格）
+  const rateCheck = checkRateLimit(request, {
+    maxRequests: 15,
+    windowMs: 60000,
+  });
+  if (!rateCheck.allowed) {
+    return new Response(
+      JSON.stringify({ error: `请求过于频繁，请 ${rateCheck.retryAfter} 秒后重试` }),
+      {
+        status: 429,
+        headers: {
+          "content-type": "application/json",
+          "Retry-After": String(rateCheck.retryAfter),
+        },
+      },
+    );
+  }
   let body: {
     question?: unknown;
     userProfile?: unknown;

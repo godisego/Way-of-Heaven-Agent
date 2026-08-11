@@ -17,7 +17,15 @@ type Choice = {
   secondary: string;
 };
 
-/** 两段引导之间的轻量选择卡；内容用 textContent 写入，避免 HTML 注入。 */
+/**
+ * 两段引导之间的轻量选择卡；内容用 textContent 写入，避免 HTML 注入。
+ *
+ * SECURITY: 使用 innerHTML 创建静态 DOM 结构。
+ * 安全性保障：
+ * 1. innerHTML 仅用于静态 HTML 模板（无用户输入）
+ * 2. 所有动态内容通过 textContent 安全写入（line 39-47）
+ * 3. choice 参数来自硬编码的提示文本，不包含用户输入
+ */
 function chooseNext(choice: Choice): Promise<boolean> {
   return new Promise((resolve) => {
     const overlay = document.createElement("div");

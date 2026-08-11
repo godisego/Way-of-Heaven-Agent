@@ -7,8 +7,20 @@ import { buildConversationContext, sessionApi } from "@/data/sessionStore";
 import { prepareUserProfileForAgent, type UserProfile } from "@/data/userProfile";
 import { readLocalVectorRecords } from "@/core/vector/localJsonVectorStore";
 import { MentorSelectionError, parseMentorSelection } from "@/data/mentorSelection";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
+  // 速率限制：每分钟最多 20 次问答请求
+  const rateCheck = checkRateLimit(request, {
+    maxRequests: 20,
+    windowMs: 60000,
+  });
+  if (!rateCheck.allowed) {
+    return NextResponse.json(
+      { error: `请求过于频繁，请 ${rateCheck.retryAfter} 秒后重试` },
+      { status: 429, headers: { "Retry-After": String(rateCheck.retryAfter) } },
+    );
+  }
   try {
     const body = await request.json();
     const question = String(body.question ?? "").trim();

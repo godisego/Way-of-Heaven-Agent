@@ -25,6 +25,13 @@ import { SystemOverviewCard } from "./SystemOverviewFigure";
  * <div class="mingli-fig-slot" data-mingli-fig="xxx"></div> 占位符。
  * 本组件在正文渲染后扫描这些占位符，用 createRoot 把可交互的
  * React 图表组件注入进去——这样图表出现在对应文字段落处。
+ *
+ * SECURITY: 使用 dangerouslySetInnerHTML 注入 HTML。
+ * 安全性保障：
+ * 1. 内容仅来自本地 docs/ 目录的 Markdown 文件（受版本控制）
+ * 2. miniMarkdown.ts 实现了完整的 HTML 转义（escapeHtml 函数）
+ * 3. 不接受任何用户输入或动态内容
+ * 4. 所有链接协议受白名单限制（http/https/mailto/#/相对路径）
  */
 export function LearnArticle({ html }: { html: string }) {
   const ref = useRef<HTMLElement>(null);
