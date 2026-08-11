@@ -581,6 +581,7 @@ export function ChatPanel() {
                   ? `${activeMentors[0].shortName}独席，只从自己的专长回应这轮问题。`
                   : `${activeMentors.map((mentor) => mentor.shortName).join("、")}在席，只从各自专长回应这轮问题。`}
             </p>
+            <p className="room-welcome-hint">点上方头像可请人下席，只留一位单独深答。</p>
             <div className="room-hints">
               {TAVERN_DEMO_HINTS.map((hint) => (
                 <button

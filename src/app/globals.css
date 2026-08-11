@@ -45,6 +45,9 @@
   --celadon-soft: rgba(95, 122, 116, 0.12);
   --celadon-line: rgba(95, 122, 116, 0.48);
 
+  /* 在席指示 · 鲜亮在线绿（仅状态点，不进主色系） */
+  --online: #34c759;
+
   /* 三贤矿物色（只以细线与名款印出现） */
   --tone-ink-accent: #4d5a6b;
   --tone-earth-accent: #8a5f38;
@@ -661,7 +664,7 @@ button {
   height: 6px;
   border: 1px solid var(--paper-bright, #ffffff);
   border-radius: 50%;
-  background: var(--cinnabar, #a8473c);
+  background: var(--online, #34c759);
 }
 
 .cast-item:focus-visible {
@@ -758,6 +761,16 @@ button {
   color: var(--muted);
   line-height: 2;
   letter-spacing: 0.06em;
+  max-width: 30em;
+}
+
+.room-welcome-hint {
+  margin: -20px 0 28px;
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.7;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
   max-width: 30em;
 }
 
@@ -1804,6 +1817,13 @@ button {
   letter-spacing: 0.1em;
 }
 
+.mentor-tag-solo {
+  color: var(--online);
+  border: 1px solid var(--online);
+  padding: 1px 4px;
+  letter-spacing: 0.15em;
+}
+
 .mentor-expand-hint {
   font-size: 9px;
   color: var(--muted-faint);
@@ -1840,6 +1860,24 @@ button {
   font-size: 11px !important;
   color: var(--muted) !important;
   margin-bottom: 4px !important;
+}
+
+/* 独席 skill 区块：用在线绿做轻标记，呼应顶栏在席点 */
+.mentor-detail-block:has(.mentor-solo-role) h4 {
+  color: var(--online);
+}
+
+.mentor-solo-role {
+  border-left: 2px solid var(--online);
+  padding-left: 8px !important;
+}
+
+.mentor-detail-sub {
+  margin: 8px 0 2px !important;
+  font-size: 10px !important;
+  letter-spacing: 0.2em;
+  color: var(--muted) !important;
+  font-family: var(--font-serif);
 }
 
 .mentor-list {

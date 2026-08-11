@@ -121,6 +121,7 @@ function MentorCard({
                 {t.label}
               </span>
             ))}
+            {mentor.solo ? <span className="mentor-tag mentor-tag-solo">独席可单答</span> : null}
           </div>
         </div>
         <span className="mentor-expand-hint">{expanded ? "收" : "展"}</span>
@@ -165,6 +166,17 @@ function MentorCard({
           <DetailBlock title="边界">
             <p>{mentor.boundaries}</p>
           </DetailBlock>
+          {mentor.solo ? (
+            <DetailBlock title="独席 · 另一面">
+              <p className="mentor-solo-role">{mentor.solo.roleInRound}</p>
+              <p className="mentor-detail-sub">独席口头禅</p>
+              <ul className="mentor-list">
+                {mentor.solo.catchphrases.map((c) => (
+                  <li key={c}>「{c}」</li>
+                ))}
+              </ul>
+            </DetailBlock>
+          ) : null}
         </div>
       ) : null}
     </article>

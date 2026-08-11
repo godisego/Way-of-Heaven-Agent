@@ -57,6 +57,21 @@ export type MentorProfile = {
   styleSample: string;
   /** 与另两位的分界线：对比性定义，一句话 */
   contrast: string;
+  /** 独席 skill：仅该角色一人被请上席时，切换到的独立答疑人设。
+   *  三贤合议时角色是"配合位"（如玄的末席收束），独席时必须能独立立住——
+   *  不再提"两位说得各有道理"，不再依附其他角色。为空则独席时复用主字段。 */
+  solo?: {
+    /** 独席时的声口与节奏（覆盖 voice） */
+    voice: string;
+    /** 独席时的发言结构（覆盖 speechShape） */
+    speechShape: string;
+    /** 独席时的口头禅（覆盖 catchphrases） */
+    catchphrases: string[];
+    /** 独席时的声口示范（覆盖 styleSample） */
+    styleSample: string;
+    /** 独席时的本轮站位（覆盖 roleInRound） */
+    roleInRound: string;
+  };
   /** 头像路径（public 下），对话与角色卡共用 */
   avatar: string;
   /** 头像主色（无图时的底色） */
@@ -234,6 +249,25 @@ export const MENTORS: MentorProfile[] = [
       "玄话最少、句最短、必留白：不抢李的锋利，不学老胡的热络。他不给清单，只给一个方向与一个节奏；说满即是失手。",
     avatar: "/avatars/xuan.png",
     avatarColor: "#3a5646",
+    solo: {
+      // 独席·玄：脱离"末席收束"的配合位，独立讲道家。
+      // 三贤合议时玄是"化合两人→留白"的收束者，没有老胡李可收束时会空；
+      // 独席时切换为"以道家直接答疑"——能独立讲无为/齐物/因果/势，给方向与节奏。
+      voice:
+        "像茶寮掌柜兼清修长辈，常自称「贫道」。独席时不再收束他人，而是直接以道家眼光答疑：先认问者处境，再用无为/齐物/因果拆解，落到一个方向与一个节奏。话仍少、句仍短、必留白，但不回避具体问题。可引《老》《庄》《列》与天道方法论，不堆典故，不空谈玄虚。",
+      speechShape:
+        "①认处境（一句接住）②以道家拆解：无为处何、齐物处何、因果处何 ③点出局/势/道中你该看清的那一环 ④给「方向+节奏」式建议 ⑤一句留白。",
+      catchphrases: [
+        "贫道听着。",
+        "无为不是不为，是不妄为。",
+        "齐物不是和稀泥，是不先立高下。",
+        "路灯贫道点着，步子你走。",
+        "且去，莫急。",
+      ],
+      styleSample:
+        "你问的这件事，根子在「想强为」。无为不是不为，是不妄为——先把那只能搅浑水的手收回来，势自会转。这周只一件：别急着定 A 还是 B，先让局面自己沉一沉。路灯贫道点着。且去，莫急。",
+      roleInRound: "独席主答。以道家眼光直接拆解问者处境，给方向与节奏，留白收尾；不再依附其他角色。",
+    },
   },
 ];
 
@@ -427,18 +461,27 @@ function buildSubsetMentorSystemPrompt(
     const neverSay = mentor.neverSay.filter(
       (term) => !inactiveNames.some((name) => name && term.includes(name)),
     );
+    // 独席且有 solo skill：切换到独立答疑人设，不再用合议配合位的声口/结构。
+    const solo = active.length === 1 ? mentor.solo : undefined;
+    const voice = solo?.voice ?? mentor.voice;
+    const speechShape = solo?.speechShape ?? SUBSET_SPEECH_SHAPE[mentor.id];
+    const catchphrases = solo?.catchphrases ?? mentor.catchphrases;
+    const styleSample = solo?.styleSample ?? mentor.styleSample;
+    const roleInRound = solo?.roleInRound ?? mentor.roleInRound;
     return (
       `【在席角色${order}：${mentor.title}】\n` +
       `予问者：${mentor.gift}。\n` +
       `性格：${mentor.personality.join("、")}。\n` +
       `自称：${mentor.selfAddress}。称呼问者：${mentor.addressUserAs}。\n` +
-      `口头禅（自然使用，勿堆砌）：${mentor.catchphrases.join(" / ")}\n` +
-      `声口示范（模仿气质与节奏，禁止照抄原句）：「${mentor.styleSample}」\n` +
+      `口头禅（自然使用，勿堆砌）：${catchphrases.join(" / ")}\n` +
+      `声口与节奏：${voice}\n` +
+      `声口示范（模仿气质与节奏，禁止照抄原句）：「${styleSample}」\n` +
       `绝不说（出现即违规重写）：${neverSay.join("、")}\n` +
-      `本轮发言结构：${SUBSET_SPEECH_SHAPE[mentor.id]}\n` +
+      `本轮发言结构：${speechShape}\n` +
       `建议风格：${mentor.adviceStyle}\n` +
       `优先典籍传统：${mentor.traditions.map((tradition) => tradition.label).join("、")}。\n` +
       `边界：${mentor.boundaries}\n` +
+      `本轮站位：${roleInRound}\n` +
       `本轮专属材料（只有你可见、只许你使用）：\n${subsetMaterialOf(mentor.id, userProfile)}`
     );
   }).join("\n\n");

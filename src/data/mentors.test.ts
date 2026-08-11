@@ -141,4 +141,17 @@ describe("buildMentorSystemPrompt（分角色注入与铁律）", () => {
     expect(parseMentorDialogue("【盲派算师·老胡】\n老夫瞧着，先看月令。"))
       .toEqual([{ mentorId: "hu", heading: "盲派算师·老胡", body: "老夫瞧着，先看月令。" }]);
   });
+
+  it("只选玄时切换到独席道家 skill，不再用合议收束声口", () => {
+    const system = buildMentorSystemPrompt(profile, ["xuan"]);
+    // 独席口头禅：无为/齐物（solo 专属），合议口头禅"两位说得各有道理"必须消失
+    expect(system).toContain("无为不是不为");
+    expect(system).toContain("独席主答");
+    expect(system).not.toContain("两位说得各有道理");
+    // 独席声口示范（solo.styleSample）覆盖合议示范
+    expect(system).toContain("想强为");
+    // 仍只有玄一个角色
+    expect(system).not.toContain("存在主义导师·李");
+    expect(system).not.toContain("盲派算师·老胡");
+  });
 });
