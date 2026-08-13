@@ -18,7 +18,27 @@ export type LearnDoc = {
 };
 
 export const LEARN_DOCS: LearnDoc[] = [
-  // Agent 径：概念地图 → 系统结构 → 可信 RAG → 工具循环 → 调试与评测。
+  // Agent 径：全景图 → 概念地图 → 系统结构 → 可信 RAG → 工具循环 → 调试与评测 → 作业。
+  {
+    slug: "ai-agent-panorama",
+    file: "docs/ai-agent-panorama.md",
+    title: "AI Agent 全景图",
+    blurb: "从 ChatGPT 到 RAG 到 Agent 到多智能体的完整演进线——把散落的点连成一条线",
+    track: "agent",
+    order: 5,
+    stage: "零 · 全景",
+    level: "入门",
+  },
+  {
+    slug: "llm-fundamentals",
+    file: "docs/llm-fundamentals.md",
+    title: "LLM 基础原理速览",
+    blurb: "Token、上下文窗口、温度、幻觉、Function Calling——给完全不懂 AI 的人",
+    track: "agent",
+    order: 8,
+    stage: "一 · 认地图",
+    level: "入门",
+  },
   {
     slug: "rag-concepts",
     file: "docs/rag-concepts-primer.md",
@@ -40,6 +60,16 @@ export const LEARN_DOCS: LearnDoc[] = [
     level: "入门",
   },
   {
+    slug: "prompt-engineering",
+    file: "docs/prompt-engineering.md",
+    title: "Prompt Engineering 入门",
+    blurb: "系统提示词、Few-shot、Chain of Thought——三贤人设就是 prompt engineering 的实战",
+    track: "agent",
+    order: 25,
+    stage: "一 · 认地图",
+    level: "入门",
+  },
+  {
     slug: "architecture",
     file: "docs/architecture.md",
     title: "系统架构总览",
@@ -56,6 +86,16 @@ export const LEARN_DOCS: LearnDoc[] = [
     blurb: "Next.js、provider、local JSON、Supabase 与测试工具各自负责哪一层",
     track: "agent",
     order: 40,
+    stage: "二 · 拆系统",
+    level: "进阶",
+  },
+  {
+    slug: "vector-search-hands-on",
+    file: "docs/vector-search-hands-on.md",
+    title: "向量检索实战",
+    blurb: "embedding 选型、维度、mock vs real 对比、余弦相似度手算——从概念到能动手调参",
+    track: "agent",
+    order: 45,
     stage: "二 · 拆系统",
     level: "进阶",
   },
@@ -128,6 +168,16 @@ export const LEARN_DOCS: LearnDoc[] = [
     order: 110,
     stage: "五 · 调试与评测",
     level: "工程",
+  },
+  {
+    slug: "exercises",
+    file: "docs/exercises.md",
+    title: "作业练习册",
+    blurb: "5 道由浅入深的动手题——从跑通环境到改一行代码到自己设计 prompt",
+    track: "agent",
+    order: 120,
+    stage: "六 · 动手练",
+    level: "入门",
   },
 
   // 命理径：认盘 → 认关系 → 加时间 → 完整走盘 → 工程口径。
