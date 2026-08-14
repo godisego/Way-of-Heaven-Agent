@@ -33,6 +33,11 @@ import { SystemOverviewCard } from "./SystemOverviewFigure";
  * 3. 不接受任何用户输入或动态内容
  * 4. 所有链接协议受白名单限制（http/https/mailto/#/相对路径）
  */
+// slot 容器 → 其 React root 的注册表。
+// 复用已有 root（再次调 render()）而非对同一 DOM 容器重复 createRoot——
+// 后者会触发 React 警告：“createRoot() on a container that has already been passed to createRoot()”。
+const slotRoots = new WeakMap<Element, ReturnType<typeof createRoot>>();
+
 export function LearnArticle({ html }: { html: string }) {
   const ref = useRef<HTMLElement>(null);
 
@@ -40,20 +45,34 @@ export function LearnArticle({ html }: { html: string }) {
     const root = ref.current;
     if (!root) return;
     const slots = root.querySelectorAll<HTMLElement>(".mingli-fig-slot[data-mingli-fig]");
-    const roots: Array<{ el: Element; root: ReturnType<typeof createRoot> }> = [];
+    const managed: Array<{ el: Element; root: ReturnType<typeof createRoot> }> = [];
+
     slots.forEach((slot) => {
       const fig = slot.getAttribute("data-mingli-fig");
-      const r = createRoot(slot);
+      // StrictMode 下 effect 会重跑；html 不变时是同一批 DOM 节点，
+      // 复用已有 root 并再次 render()，避免对同一容器重复 createRoot。
+      let r = slotRoots.get(slot);
+      if (!r) {
+        r = createRoot(slot);
+        slotRoots.set(slot, r);
+      }
       r.render(<FigureRouter fig={fig} />);
-      roots.push({ el: slot, root: r });
+      managed.push({ el: slot, root: r });
     });
-    // 清理：组件卸载或 html 变化时卸载注入的 roots。
+
+    // 清理：组件卸载或 html 变化时处理注入的 roots。
     // cleanup 在 React commit 阶段同步执行，此时同步 unmount 另一个 createRoot 会触发
     // “Attempted to synchronously unmount a root while React was already rendering” 警告——
     // 推迟到微任务（当前 commit 完成后）再卸载即可消除该 race condition。
+    // 此外，只卸载「已脱离文档」的容器（html 变化把旧 slot 换成了新节点）；
+    // 仍在文档中的（StrictMode 重跑 / 同一份 html）保留 root，下一轮 effect 复用。
     return () => {
       queueMicrotask(() => {
-        roots.forEach(({ root }) => root.unmount());
+        managed.forEach(({ el, root }) => {
+          if (el.isConnected) return;
+          root.unmount();
+          slotRoots.delete(el);
+        });
       });
     };
   }, [html]);
