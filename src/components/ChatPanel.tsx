@@ -513,9 +513,8 @@ export function ChatPanel() {
         {/* 顶栏：店招 + 在席角色 */}
         <header className="room-top">
           <div className="room-brand">
-            <span className="room-lantern" aria-hidden>
-              道
-            </span>
+            {/* 品牌章：天道 logo（太极·水墨圆章） */}
+            <img className="room-lantern" src="/logo.png" alt="" aria-hidden width={42} height={42} />
             <div>
               <h1 className="room-title">天道茶寮</h1>
               <p className="room-sub">
