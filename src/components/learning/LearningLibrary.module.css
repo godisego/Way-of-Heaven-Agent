@@ -1101,6 +1101,17 @@
   font-size: 13px;
 }
 
+/* 标题内的行内代码：去掉灰底、随标题色，否则在 H3（朱砂底白字）这类彩色标题里
+   灰底 + 继承的白字会糊成一片不可读。文件名只靠 monospace 字形区分即可。 */
+.docPage :global(.learn-article h1 code),
+.docPage :global(.learn-article h2 code),
+.docPage :global(.learn-article h3 code),
+.docPage :global(.learn-article h4 code) {
+  background: transparent;
+  padding: 0 2px;
+  font-weight: 600;
+}
+
 .docPage :global(.learn-article pre) {
   margin: 20px 0;
   border-radius: 6px;
