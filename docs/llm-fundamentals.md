@@ -44,10 +44,12 @@ description: LLM 基础原理速览：Token、上下文窗口、温度、幻觉�
 
 | 模型 | 上下文窗口 | 大约能装 |
 |------|-----------|---------|
-| GPT-3.5 | 4K tokens | 3000 字 |
-| GPT-4 | 8K~128K tokens | 6000~96000 字 |
-| Claude 3.5 | 200K tokens | 15 万字 |
-| MiniMax M3 | 245K tokens | 18 万字 |
+| DeepSeek V3 | 128K tokens | 约 10 万字 |
+| GLM-4.6 | 200K tokens | 约 15 万字 |
+| GPT-5 | 400K tokens | 约 30 万字 |
+| Claude Fable 5 | 1M tokens | 约 75 万字 |
+
+> 注：数字随版本更新会变。一个明显的趋势是——**2026 年的主流旗舰模型（GPT-5.6 / Claude Fable 5 / GLM-5.2）上下文窗口已普遍达到 1M（百万 token）**，相比两年前 GPT-3.5 的 4K 扩大了约 250 倍；也有 DeepSeek V3 这类仍在 128K 档的。
 
 **上下文窗口 = 模型的"工作记忆"**。你问一个问题、模型回答——这一来一回的全部文本，不能超过这个窗口。
 
@@ -103,12 +105,21 @@ RAG 检索回来的 topK 段落要拼到 prompt 里——如果段落太长，�
 
 ## 七 · Provider：谁来提供模型服务
 
-LLM 不是跑在你电脑上的——它在云端。你需要一个 **Provider**（供应商）来调用：
+调用 LLM 有两条路：**云端 Provider**（把请求发给别人的服务器）或**本地自托管**（把模型下载到自己机器上跑）。多数人用云端，但本地跑也越来越常见：
 
 | Provider 类型 | 例子 | 天道茶寮怎么配 |
 |--------------|------|-------------|
 | OpenAI 兼容 | OpenAI、智谱、百川 | `OPENAI_COMPAT_BASE_URL` |
 | Anthropic 兼容 | Anthropic、MiniMax | `CHAT_BASE_URL` + protocol=anthropic |
+| **本地自托管** | Ollama、LM Studio、vLLM | 同样走 OpenAI 兼容，把 `OPENAI_COMPAT_BASE_URL` 指向 `http://localhost:11434/v1` |
+
+**本地自托管**值得一说——用 [Ollama](https://ollama.com)、LM Studio 这类工具，可以把模型直接下载到自己电脑上跑。好处是**数据不出本机、完全免费、能离线**；代价是**非常吃硬件**：
+
+- 跑得动的"小"模型（7B~8B 参数）也要 **8~16 GB 显存**；
+- 大模型（70B 级别）得上专业显卡，甚至多张卡；
+- 普通笔记本、集显虽然能跑起来，但**吞吐很慢**——每秒蹦出几个字，体验远不如云端。
+
+一句话：**追求速度和质量，首选云端；在意隐私、想免费尝鲜、愿意折腾硬件，才考虑本地。**
 
 天道茶寮把聊天和 embedding 拆成两个独立 provider：
 - **聊天 provider**：负责生成回答（你的问题 → 模型生成三贤回应）
