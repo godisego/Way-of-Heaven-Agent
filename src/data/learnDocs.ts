@@ -179,6 +179,38 @@ export const LEARN_DOCS: LearnDoc[] = [
     stage: "六 · 动手练",
     level: "入门",
   },
+  {
+    slug: "build-an-agent",
+    file: "docs/build-an-agent.md",
+    title: "造一个智能体",
+    blurb: "从需求拆解到交付的全链路实战——智能体分类、RAG 地基、工具封装、本体配置、调试优化",
+    track: "agent",
+    order: 130,
+    stage: "七 · 造一个",
+    level: "进阶",
+  },
+
+  // 附录：基础开发知识。
+  {
+    slug: "sql-basics",
+    file: "docs/sql-basics.md",
+    title: "SQL 基础（附录）",
+    blurb: "SELECT / WHERE / ORDER BY / GROUP BY / JOIN——给从没写过 SQL 的人",
+    track: "agent",
+    order: 200,
+    stage: "附录 · 基础知识",
+    level: "入门",
+  },
+  {
+    slug: "python-basics",
+    file: "docs/python-basics.md",
+    title: "Python 基础（附录）",
+    blurb: "变量 / 列表 / 字典 / 循环 / 函数 / 文件读写 / 调用 API——给从没写过 Python 的人",
+    track: "agent",
+    order: 210,
+    stage: "附录 · 基础知识",
+    level: "入门",
+  },
 
   // 命理径：认盘 → 认关系 → 加时间 → 完整走盘 → 工程口径。
   {
