@@ -539,12 +539,206 @@ with open("cleaned_chunks.json", "w", encoding="utf-8") as f:
 
 这个脚本用到了：文件读写、字符串操作、列表、字典、循环、函数、`os`/`json`/`hashlib`/`Counter`——就是上面学的全部内容。
 
-## 十三 · 自测
+## 十三 · Git 版本控制
+
+写代码不版本控制 = 走钢丝不挂保险绳。Git 是程序员的"存档/读档"系统。
+
+### 核心概念
+
+```
+工作区（你在改的文件）
+  │
+  │ git add
+  ▼
+暂存区（准备提交的文件）
+  │
+  │ git commit
+  ▼
+仓库（已提交的历史记录）
+  │
+  │ git push
+  ▼
+远程仓库（GitHub / Gitee）
+```
+
+### 五个最常用的命令
+
+```bash
+# 1. 查看改了什么
+git status              # 哪些文件改了
+git diff                # 具体改了哪几行
+
+# 2. 保存一个存档
+git add .               # 把所有改动放进暂存区
+git commit -m "修复了XX问题"
+# commit message 要说清楚做了什么，不要写"改了点东西"
+
+# 3. 推送到远程
+git push origin main    # 把本地存档推到 GitHub
+
+# 4. 拉取最新代码
+git pull origin main    # 把 GitHub 上的最新代码拉到本地
+
+# 5. 回退到之前的版本
+git log --oneline       # 查看历史存档
+git checkout <commit>   # 回退到某个存档
+git revert <commit>    # 撤销某次提交（安全，不改历史）
+```
+
+### 天道茶寮的 Git 工作流
+
+```bash
+# 第一次：克隆项目
+git clone https://github.com/godisego/Way-of-Heaven-Agent.git
+cd Way-of-Heaven-Agent
+
+# 日常开发
+git pull origin main          # 先拉最新
+# ...改代码...
+npm run typecheck             # 类型检查
+npm test                      # 跑测试
+git add .                     # 暂存
+git commit -m "feat: 加了XX功能"
+git push origin main          # 推送
+
+# 如果改坏了
+git checkout -- .             # 放弃所有改动，回到上次 commit
+```
+
+### .gitignore
+
+不是所有文件都该提交到 git。敏感配置和临时文件要忽略：
+
+```bash
+# .gitignore 文件
+.env.local              # 含 API Key，绝对不能提交！
+data/                   # 本地数据，不提交
+node_modules/           # 依赖包，不提交（用 npm ci 重装）
+*.log                   # 日志文件
+```
+
+### 常见坑
+
+| 坑 | 后果 | 怎么避免 |
+|----|------|---------|
+| 提交了 `.env.local` | API Key 泄露到 GitHub | `.gitignore` 加上 `.env.local` |
+| 不写 commit message | 不知道改了什么 | `git commit -m "说明改了什么"` |
+| 直接 push 到 main | 可能覆盖别人的代码 | 团队协作用分支 + PR |
+| 不拉就 push | 冲突 | 先 `git pull` 再 `git push` |
+
+## 十四 · 调试技巧
+
+代码有 bug 是正常的。关键是高效地找到 bug。
+
+### 方法 1：print 大法（最简单）
+
+```python
+def search_chunks(query, top_k=5):
+    print(f"[DEBUG] query={query}, top_k={top_k}")    # 打印输入
+    embedding = embed(query)
+    print(f"[DEBUG] embedding dim={len(embedding)}")  # 打印中间结果
+    results = vector_search(embedding, top_k)
+    print(f"[DEBUG] found {len(results)} results")    # 打印结果
+    for r in results:
+        print(f"  score={r.score:.3f} src={r.source}")  # 打印详情
+    return results
+```
+
+**原则**：在"输入→处理→输出"的每一步都打印，看哪一步出问题。
+
+### 方法 2：断点调试
+
+```python
+import pdb
+
+def search_chunks(query):
+    embedding = embed(query)
+    pdb.set_trace()          # 程序会停在这里，进入交互模式
+    results = vector_search(embedding)
+    return results
+
+# 在 pdb 里可以：
+# n → 执行下一行
+# s → 进入函数内部
+# p variable → 打印变量
+# c → 继续执行
+# q → 退出
+```
+
+### 方法 3：异常日志
+
+```python
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
+
+def search_chunks(query):
+    logger.info(f"开始搜索: {query}")
+    try:
+        embedding = embed(query)
+        results = vector_search(embedding)
+        logger.info(f"搜索完成: 找到 {len(results)} 条结果")
+        return results
+    except Exception as e:
+        logger.error(f"搜索失败: {e}", exc_info=True)  # 打印完整堆栈
+        raise
+```
+
+### 方法 4：单元测试
+
+```python
+# test_search.py
+def test_search_returns_results():
+    results = search_chunks("天干地支")
+    assert len(results) > 0          # 应该有结果
+    assert results[0].score > 0       # 分数应该是正的
+
+def test_search_empty_query():
+    results = search_chunks("")
+    assert len(results) == 0          # 空查询应该返回空
+
+# 运行测试
+# pytest test_search.py -v
+```
+
+**原则**：每个函数都写测试。改代码后跑一遍测试，确保没改坏。
+
+### 天道茶寮的调试方式
+
+天道茶寮用 TypeScript + vitest，但调试思路一样：
+
+```bash
+# 看类型有没有错
+npm run typecheck
+
+# 跑测试
+npm test
+
+# 看执行轨迹（Agent 模式）
+# 对谈界面点「循迹」开关，看每步工具调用
+
+# 看检索结果
+curl -X POST http://localhost:3000/api/search \
+  -H "Content-Type: application/json" \
+  -d '{"query":"天干地支","topK":5}'
+
+# 看健康状态
+curl -X POST http://localhost:3000/api/health \
+  -H "Content-Type: application/json" -d '{}'
+```
+
+→ 想深入：[执行轨迹调试手册](/learn/agent-trace-debugging) 有更详细的 Agent 调试方法。
+
+## 十五 · 自测
 
 1. 列表和字典的区别是什么？各适合什么场景？
 2. `with open(...)` 和 `open(...)` 的区别是什么？为什么推荐前者？
 3. f-string 是什么？写一个带变量和小数位数的例子。
 4. `try/except` 捕获异常的顺序有什么要求？
 5. 写一个 Python 函数：接收一段文本，返回它的 SHA-256 hash。
+6. Git 的三个区域是什么？`git add` 和 `git commit` 各做什么？
+7. 为什么 `.env.local` 不能提交到 git？怎么避免？
+8. 四种调试方法分别是什么？哪种最适合"不知道哪里出问题"？
 
 > 边界：这篇是"够用就行"——类、装饰器、生成器、async/await 等高级特性没讲，但入门智能体开发够了。想深入推荐 [Python 官方教程](https://docs.python.org/zh-cn/3/tutorial/)。

@@ -308,12 +308,86 @@ DELETE FROM books WHERE id = 999;
 | 向量搜索 | `SELECT * FROM match_chunks(...)` | `vectorStore.ts`（Supabase） |
 | 插入文档 | `INSERT INTO documents ...` | `documentRepository.ts` |
 
-## 九 · 自测
+## 九 · 数据治理：质量、脱敏、权限
+
+AI 应用用的数据如果脏、泄露、被越权访问——产品就完了。这三件事必须在数据库层就管好。
+
+### 数据质量
+
+垃圾进、垃圾出。数据质量直接影响 AI 回答质量。
+
+```sql
+-- 检查空值（AI 最怕拿到空数据）
+SELECT COUNT(*) FROM books WHERE author IS NULL;
+-- 结果：1 → 有 1 本书没填 author
+
+-- 检查重复
+SELECT title, COUNT(*) as cnt
+FROM books
+GROUP BY title
+HAVING COUNT(*) > 1;
+-- 结果：如果有重复 → 需要去重
+
+-- 检查异常值
+SELECT * FROM chunks WHERE LENGTH(text) < 10;
+-- 结果：如果有 → 太短的 chunk 可能没有信息量
+
+-- 检查孤立数据（chunk 指向不存在的文档）
+SELECT c.* FROM chunks c
+LEFT JOIN documents d ON c.document_id = d.id
+WHERE d.id IS NULL;
+-- 结果：如果有 → 数据完整性被破坏
+```
+
+### 数据脱敏
+
+用户的敏感信息（PII）在存进数据库前要脱敏：
+
+```sql
+-- 假设有个用户表，含手机号
+-- 存的时候就脱敏（只存后4位）
+INSERT INTO users (name, phone_masked)
+VALUES ('张三', '****1234');
+
+-- 查询时也不暴露完整手机号
+SELECT name, phone_masked FROM users;
+-- 结果：张三 | ****1234
+
+-- 如果必须存完整手机号（如发短信），用单独的加密表
+-- 主表只存引用
+SELECT name, phone_masked FROM users;           -- 所有人能查
+SELECT phone_full FROM user_pii WHERE user_id=1; -- 只有有权限的人能查
+```
+
+### 权限控制
+
+```sql
+-- 创建只读用户（给 AI 查询用）
+CREATE ROLE ai_reader WITH PASSWORD 'xxx';
+GRANT SELECT ON books, chunks TO ai_reader;
+-- ai_reader 不能 INSERT / UPDATE / DELETE
+
+-- 创建写用户（给入库脚本用）
+CREATE ROLE ai_writer WITH PASSWORD 'yyy';
+GRANT SELECT, INSERT, UPDATE ON books, chunks TO ai_writer;
+-- ai_writer 不能 DELETE（防止误删）
+
+-- 管理员才有完整权限
+CREATE ROLE ai_admin WITH PASSWORD 'zzz' SUPERUSER;
+```
+
+**原则**：AI 应用用最小权限。查询用只读账号，入库用写账号，不要用 admin。
+
+→ 想深入：[AI 安全与治理](/learn/ai-security-governance) 有完整的数据分级和治理体系。
+
+## 十 · 自测
 
 1. `SELECT *` 和 `SELECT title, author` 有什么区别？
 2. `WHERE` 和 `HAVING` 的区别是什么？
 3. `INNER JOIN` 和 `LEFT JOIN` 的区别是什么？
 4. 写一个 SQL：查 daoism 类的、有 author 的、按 title 排序的书。
 5. 写一个 SQL：统计每个 tradition 有多少个 chunk。
+6. 数据质量检查要查哪四种异常？
+7. 为什么 AI 应用要用只读数据库账号？
 
 > 边界：这篇是"够用就行"——SQL 的窗口函数、CTE、索引优化等高级特性没讲，但入门智能体开发够了。想深入推荐 [SQLZoo](https://sqlzoo.net/) 交互练习。
