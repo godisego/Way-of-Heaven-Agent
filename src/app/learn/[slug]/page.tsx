@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { LEARN_DOCS, getAdjacentDocs, getLearnDoc, getTrackDocs } from "@/data/learnDocs";
 import { renderMarkdownToHtml } from "@/core/utils/miniMarkdown";
 import { LearnArticle } from "@/components/learning/MingliFigureInjector";
+import { QuickAsk } from "@/components/learning/QuickAsk";
 import styles from "@/components/learning/LearningLibrary.module.css";
 
 export function generateStaticParams() {
@@ -79,6 +80,7 @@ export default async function LearnDocPage({ params }: { params: Promise<{ slug:
           </Link>
         ) : <span />}
       </nav>
+      <QuickAsk docTitle={doc.title} />
     </main>
   );
 }

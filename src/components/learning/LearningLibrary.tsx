@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { GLOSSARY } from "@/data/concepts";
 import { getTrackDocs, LEARN_DOCS, type LearnDoc, type LearnTrack } from "@/data/learnDocs";
 import { MingliQuickReference } from "@/components/learning/MingliQuickReference";
+import { QuizPanel } from "@/components/learning/QuizPanel";
+import { MistakeBook } from "@/components/learning/MistakeBook";
 import { kbSize } from "@/core/mingli/mingliKb";
 import { startLesson } from "@/components/learning/tourController";
 import {
@@ -150,6 +152,29 @@ function Curriculum({ track, onOpenQuick }: { track: LearnTrack; onOpenQuick: ()
           </dl>
         </details>
       ) : null}
+
+      {/* 自测练习 + 错题本 */}
+      <details className="learn-quiz-panel" data-tour-id="learn-quiz">
+        <summary>
+          <span>
+            <small>检测学力</small>
+            自测练习
+          </span>
+          <em>{track === "agent" ? "30" : "10"} 题</em>
+        </summary>
+        <QuizPanel track={track} />
+      </details>
+
+      <details className="learn-mistake-panel" data-tour-id="learn-mistakes">
+        <summary>
+          <span>
+            <small>本机记录</small>
+            错题本
+          </span>
+          <em>自动收集</em>
+        </summary>
+        <MistakeBook />
+      </details>
     </section>
   );
 }

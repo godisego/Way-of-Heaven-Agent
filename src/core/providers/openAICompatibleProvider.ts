@@ -1,6 +1,6 @@
 import { mergeConfig, type ConfigOverride } from "@/core/config/appConfig";
 import { hasPersistedEmbeddingConfig } from "@/core/config/providerSettingsFile";
-import type { EmbedTextsInput, EmbedTextsResult, EmbeddingProvider, GenerateAnswerInput, GenerateAnswerResult, LlmProvider, OnAnswerToken } from "./llmProvider";
+import type { EmbedTextsInput, EmbedTextsResult, EmbeddingProvider, GenerateAnswerInput, GenerateAnswerResult, LlmProvider, OnAnswerToken, SummarizeInput, SummarizeResult } from "./llmProvider";
 import { AnthropicProvider } from "./anthropicProvider";
 import { OpenAIChatProvider } from "./openAIChatProvider";
 import { MockEmbeddingProvider } from "./mockEmbeddingProvider";
@@ -109,6 +109,14 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
       return this.chatProvider.streamAnswer(input, onToken);
     }
     return this.chatProvider.generateAnswer(input);
+  }
+
+  // 通用文本生成（非三贤）：委托给底层 chat provider（如 Anthropic / OpenAI Chat）
+  async summarize(input: SummarizeInput): Promise<SummarizeResult> {
+    if (typeof this.chatProvider.summarize === "function") {
+      return this.chatProvider.summarize(input);
+    }
+    throw new Error("当前 chat provider 未实现 summarize 接口");
   }
 }
 
