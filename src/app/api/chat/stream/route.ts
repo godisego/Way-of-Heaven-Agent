@@ -20,6 +20,7 @@ export const runtime = "nodejs";
 
 import { runAgentLoop } from "@/core/agent/orchestrator";
 import type { AgentEvent } from "@/core/agent/types";
+import { maybeAnswerFromWeb } from "@/core/search/webFallback";
 import { sessionApi } from "@/data/sessionStore";
 import { buildContextWithSummary } from "@/core/conversation/contextBuilder";
 import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";
@@ -125,28 +126,52 @@ export async function POST(request: Request) {
       const onEvent = (event: AgentEvent) => send(event);
 
       try {
-        const answer = await runAgentLoop(question, safeProfile, {
-          signal: request.signal,
-          conversationContext,
-          onEvent,
-          mentorIds,
-        });
+        // 联网回退：真实 embedding 检索最高分低于阈值（典籍库确实没有相关内容）
+        // 且不是引用库内书的问题时，不再空转 Agent 循环，改为联网搜索 + 单轮生成。
+        const webAnswer = await maybeAnswerFromWeb(question, { mentorIds });
+        if (webAnswer) {
+          send({ type: "step", step: webAnswer.trace.steps[0] });
+          send({ type: "delta", text: webAnswer.answerMarkdown });
+          sessionApi.appendMessage(activeSession.id, {
+            role: "assistant",
+            content: webAnswer.answerMarkdown,
+            citations: [],
+            trace: webAnswer.trace,
+            webSearch: webAnswer.webSearch,
+          });
+          send({
+            type: "final",
+            answerMarkdown: webAnswer.answerMarkdown,
+            citations: [],
+            usedContext: "",
+            trace: webAnswer.trace,
+            webSearch: webAnswer.webSearch,
+            sessionId: activeSession.id,
+          });
+        } else {
+          const answer = await runAgentLoop(question, safeProfile, {
+            signal: request.signal,
+            conversationContext,
+            onEvent,
+            mentorIds,
+          });
 
-        // done 已由 orchestrator 发出。落盘助手消息后，发终结帧给前端收尾。
-        sessionApi.appendMessage(activeSession.id, {
-          role: "assistant",
-          content: answer.answerMarkdown,
-          citations: answer.citations,
-          trace: answer.trace,
-        });
-        send({
-          type: "final",
-          answerMarkdown: answer.answerMarkdown,
-          citations: answer.citations,
-          usedContext: answer.usedContext,
-          trace: answer.trace,
-          sessionId: activeSession.id,
-        });
+          // done 已由 orchestrator 发出。落盘助手消息后，发终结帧给前端收尾。
+          sessionApi.appendMessage(activeSession.id, {
+            role: "assistant",
+            content: answer.answerMarkdown,
+            citations: answer.citations,
+            trace: answer.trace,
+          });
+          send({
+            type: "final",
+            answerMarkdown: answer.answerMarkdown,
+            citations: answer.citations,
+            usedContext: answer.usedContext,
+            trace: answer.trace,
+            sessionId: activeSession.id,
+          });
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : "流式问答失败";
         // request.signal 触发的 abort 在多数运行时表现为 AbortError——视为取消，文案对齐。

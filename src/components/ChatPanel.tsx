@@ -19,6 +19,7 @@ import { readSseStream } from "./streamSse";
 import { safeFetchJson, FetchNotJsonError } from "@/lib/safeFetch";
 import type { AgentTrace, TraceStep } from "@/core/agent/types";
 import type { RagPipelineNotes } from "@/core/retrieval/answerWithCitations";
+import type { WebSearchBadge } from "@/core/search/webSearch";
 
 type Message = {
   role: "user" | "assistant";
@@ -30,6 +31,8 @@ type Message = {
   trace?: AgentTrace;
   /** RAG 管线注解（学习模式下展示） */
   pipeline?: RagPipelineNotes;
+  /** 联网搜索标注：知识库未命中转网络兜底时展示来源链接 */
+  webSearch?: WebSearchBadge;
 };
 
 type SessionSummary = { id: string; title: string; updatedAt: string };
@@ -37,7 +40,7 @@ type SessionSummary = { id: string; title: string; updatedAt: string };
 type StoredMessage = Message & { id: string; createdAt: string };
 
 function toMessages(messages: StoredMessage[]): Message[] {
-  return messages.map(({ role, content, citations, isDemo, trace, pipeline }) => ({
+  return messages.map(({ role, content, citations, isDemo, trace, pipeline, webSearch }) => ({
     role,
     content: content ?? "",
     // 防御：历史会话（旧版本写入）可能缺这些字段，兜底成空数组/丢弃残缺对象
@@ -47,6 +50,8 @@ function toMessages(messages: StoredMessage[]): Message[] {
     trace: trace && Array.isArray(trace.steps) && trace.totals ? trace : undefined,
     // pipeline 残缺（无 retrieved）则丢弃
     pipeline: pipeline && pipeline.retrieved ? pipeline : undefined,
+    // webSearch 残缺（无 sources 且无 note）则丢弃
+    webSearch: webSearch && (Array.isArray(webSearch.sources) || webSearch.note) ? webSearch : undefined,
   }));
 }
 
@@ -300,6 +305,7 @@ export function ChatPanel() {
           answerMarkdown?: string;
           citations?: Citation[];
           pipeline?: unknown;
+          webSearch?: WebSearchBadge;
           sessionId?: string;
           error?: string;
         }>("/api/chat", {
@@ -319,6 +325,7 @@ export function ChatPanel() {
             content: data.answerMarkdown ?? "",
             citations: data.citations ?? [],
             pipeline: data.pipeline as Message["pipeline"],
+            webSearch: (data.webSearch ?? undefined) as Message["webSearch"],
           },
         ]);
         if (typeof data.sessionId === "string") setSessionId(data.sessionId);
@@ -396,6 +403,7 @@ export function ChatPanel() {
             citations?: Citation[];
             trace?: AgentTrace;
             usedContext?: unknown;
+            webSearch?: WebSearchBadge;
             sessionId?: string;
           };
           updateLastAssistant((msg) => ({
@@ -403,6 +411,7 @@ export function ChatPanel() {
             content: typeof final.answerMarkdown === "string" ? final.answerMarkdown : msg.content,
             citations: Array.isArray(final.citations) ? final.citations : msg.citations,
             trace: final.trace ?? msg.trace,
+            webSearch: final.webSearch ?? msg.webSearch,
           }));
           if (typeof final.sessionId === "string") setSessionId(final.sessionId);
           void refreshSessions();
@@ -614,6 +623,7 @@ export function ChatPanel() {
               isDemo={message.isDemo}
               trace={message.trace}
               pipeline={message.pipeline}
+              webSearch={message.webSearch}
               learningOn={learningOn}
             />
           ),
@@ -682,6 +692,7 @@ function AssistantRound({
   isDemo,
   trace,
   pipeline,
+  webSearch,
   learningOn,
 }: {
   content: string;
@@ -689,6 +700,7 @@ function AssistantRound({
   isDemo?: boolean;
   trace?: AgentTrace;
   pipeline?: RagPipelineNotes;
+  webSearch?: WebSearchBadge;
   learningOn?: boolean;
 }) {
   const segments = parseMentorDialogue(content);
@@ -706,6 +718,33 @@ function AssistantRound({
       {trace ? (
         <div className="round-citations">
           <TracePanel trace={trace} />
+        </div>
+      ) : null}
+      {webSearch ? (
+        <div className="round-websearch">
+          <p className="websearch-tag">
+            🌐 联网搜索回答{webSearch.note ? "（搜索暂不可用，以下为模型自身知识）" : "（典籍库未收录相关内容，来源来自网络）"}
+          </p>
+          {webSearch.sources.length > 0 ? (
+            <ul className="websearch-sources">
+              {webSearch.sources.map((s) => {
+                let host = s.url;
+                try {
+                  host = new URL(s.url).host;
+                } catch {
+                  /* 保留原始串 */
+                }
+                return (
+                  <li key={s.url}>
+                    <a href={s.url} target="_blank" rel="noreferrer noopener">
+                      {s.title}
+                    </a>
+                    <span className="websearch-host"> — {host}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
         </div>
       ) : null}
       {!trace && learningOn && pipeline?.retrieved ? (

@@ -38,6 +38,8 @@ export type SessionMessage = {
   citations: Citation[];
   trace?: AgentTrace;
   pipeline?: RagPipelineNotes;
+  /** 联网回答回答的来源标注（web-fallback 链路写入） */
+  webSearch?: import("@/core/search/webSearch").WebSearchBadge;
   /** demo 模板回复，不落库（但允许标记 assistant 消息来源） */
   isDemo?: boolean;
   createdAt: string;

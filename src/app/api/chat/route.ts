@@ -8,6 +8,7 @@ import { sessionApi } from "@/data/sessionStore";
 import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";
 import { prepareUserProfileForAgent, type UserProfile } from "@/data/userProfile";
 import { readLocalVectorRecords } from "@/core/vector/localJsonVectorStore";
+import { maybeAnswerFromWeb } from "@/core/search/webFallback";
 import { MentorSelectionError, parseMentorSelection } from "@/data/mentorSelection";
 import { checkRateLimit } from "@/lib/rateLimit";
 
@@ -64,6 +65,26 @@ export async function POST(request: Request) {
 
     // M5 已完成人工验收：默认走受控工具循环；显式 mode="rag" 时保留固定链路。
     if (body.mode !== "rag") {
+      // 联网回退：真实 embedding 检索最高分低于阈值（典籍库确实没有相关内容）
+      // 且不是引用库内书的问题时，不再空转 Agent 循环，改为联网搜索 + 单轮生成。
+      const webAnswer = await maybeAnswerFromWeb(question, { mentorIds, configOverride: null });
+      if (webAnswer) {
+        sessionApi.appendMessage(activeSession.id, {
+          role: "assistant",
+          content: webAnswer.answerMarkdown,
+          citations: [],
+          trace: webAnswer.trace,
+          webSearch: webAnswer.webSearch,
+        });
+        return NextResponse.json({
+          answerMarkdown: webAnswer.answerMarkdown,
+          citations: [],
+          usedContext: "",
+          trace: webAnswer.trace,
+          webSearch: webAnswer.webSearch,
+          sessionId: activeSession.id,
+        });
+      }
       const answer = await runAgentLoop(question, safeProfile, {
         signal: request.signal,
         conversationContext,

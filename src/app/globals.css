@@ -3078,6 +3078,50 @@ button {
   font-family: var(--font-serif);
 }
 
+/* ── 联网搜索标注（知识库未命中 → 网络兜底） ────────────── */
+.round-websearch {
+  margin: -8px 0 0 62px;
+  max-width: 640px;
+  padding: 10px 14px;
+  border: 1px dashed var(--border, #d8cdb8);
+  border-radius: 8px;
+  background: rgba(138, 95, 56, 0.05);
+}
+
+.round-websearch .websearch-tag {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-family: var(--font-serif);
+}
+
+.round-websearch .websearch-sources {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.round-websearch .websearch-sources li {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.round-websearch .websearch-sources a {
+  color: var(--accent, #8a5f38);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
+.round-websearch .websearch-host {
+  color: var(--muted-faint);
+  font-size: 10.5px;
+  font-family: var(--font-latin);
+}
+
 /* ── /learn 学习馆 ───────────────────────────────────── */
 .learn-shell {
   max-width: 1120px;
