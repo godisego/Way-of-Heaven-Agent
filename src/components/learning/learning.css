@@ -1148,9 +1148,11 @@ body[data-learning="true"] .concept-tip:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.15s;
+  transition: filter 0.15s, background-color 0.15s;
 }
-.quick-ask-fab:hover { transform: scale(1.08); }
+/* hover 只变明暗不做 transform 缩放——持续的几何变化会让自动化点击
+   （以及部分触控板误触场景）判定元素不稳定；变色反馈同样清晰。 */
+.quick-ask-fab:hover { filter: brightness(1.12); }
 .quick-ask-panel {
   position: fixed;
   bottom: 132px;

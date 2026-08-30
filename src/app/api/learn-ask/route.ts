@@ -106,15 +106,46 @@ export async function POST(request: Request) {
 }
 
 /**
- * 简单关键词匹配：从问题中提取关键词，匹配讲义标题和简介。
- * 不走向量检索——这是"快速问"，不需要精确匹配。
+ * 从问题中提取关键词，匹配讲义标题和简介。不走向量检索——"快速问"不需要精确匹配。
+ *
+ * 中文没有空格分词，因此对 CJK 片段做二元切分（bigram）再匹配，
+ * 纯拉丁词（embedding/RAG/LoRA）整词匹配；常见虚词 bigram 进停用表。
+ * currentDoc 是 QuickAsk 传来的「学生正在读《标题》」或讲义标题/slug，
+ * 统一从《》里提取标题后再排除，避免拿整句上下文去比 slug 导致排不掉。
  */
-function findRelatedDocs(question: string, currentDoc?: string): Array<{ slug: string; title: string }> {
-  const keywords = question.toLowerCase().split(/\s+/).filter((w) => w.length >= 2);
-  const results: Array<{ slug: string; title: string; score: number }> = [];
+const RELATED_STOPGRAMS = new Set([
+  "什么", "怎么", "为什", "如何", "这个", "那个", "我们", "你们", "他们",
+  "自己", "就是", "不是", "但是", "可是", "因为", "所以", "如果", "还是",
+  "或者", "以及", "一个", "一些", "请问", "帮我", "告诉", "到底", "究竟",
+  "应该", "需要", "而且", "然后", "没有", "可以", "已经", "关于", "一下",
+  "不懂", "明白", "理解", "问题", "内容", "地方", "时候", "感觉",
+  "觉得", "为啥", "含义", "意思", "讲讲", "介绍",
+]);
 
+function findRelatedDocs(question: string, currentDoc?: string): Array<{ slug: string; title: string }> {
+  // 当前讲义标题：《xxx》→ xxx；没有《》时原样作为标题匹配
+  const currentTitle = currentDoc?.match(/《([^》]+)》/)?.[1] ?? currentDoc ?? "";
+
+  const questionLower = question.toLowerCase();
+  const keywords = new Set<string>();
+  for (const segment of questionLower.split(/[^\p{Script=Han}a-z0-9]+/u)) {
+    if (!segment) continue;
+    if (/^[\p{Script=Han}]+$/u.test(segment)) {
+      // 中文片段：二元切分，滤掉虚词
+      for (let i = 0; i + 2 <= segment.length; i++) {
+        const gram = segment.slice(i, i + 2);
+        if (!RELATED_STOPGRAMS.has(gram)) keywords.add(gram);
+      }
+    } else if (segment.length >= 2) {
+      // 拉丁/数字词整词匹配
+      keywords.add(segment);
+    }
+  }
+  if (!keywords.size) return [];
+
+  const results: Array<{ slug: string; title: string; score: number }> = [];
   for (const doc of LEARN_DOCS) {
-    if (doc.slug === currentDoc) continue; // 不推荐当前讲义
+    if (doc.slug === currentDoc || doc.title === currentTitle) continue; // 不推荐当前讲义
     const haystack = `${doc.title} ${doc.blurb}`.toLowerCase();
     let score = 0;
     for (const kw of keywords) {
