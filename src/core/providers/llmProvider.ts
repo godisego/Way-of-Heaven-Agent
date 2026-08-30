@@ -1,5 +1,11 @@
 export type EmbedTextsInput = {
   texts: string[];
+  /**
+   * 向量用途：db=入库，query=检索查询。
+   * MiniMax 等供应商按用途生成非对称检索向量，两侧混用会损失召回；
+   * 不传默认 db，与历史行为一致。
+   */
+  purpose?: "db" | "query";
 };
 
 export type EmbedTextsResult = {

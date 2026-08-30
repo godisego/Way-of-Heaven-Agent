@@ -48,7 +48,7 @@ export const CHAT_PRESETS: ProviderPreset[] = [
     defaultModel: "MiniMax-M3",
     embeddingModel: "embo-01",
     embeddingBaseUrl: "https://api.minimaxi.com/v1",
-    note: "⚠ Coding Plan / TokenPlan 不含嵌入（embedding）权限，典籍检索将回退本地 mock。需嵌入请开通按量付费，或典籍检索另配智谱/Ollama 等。",
+    note: "2026-08 实测：Coding Plan 的 key 可直接调通嵌入（embo-01，1536 维，入库用 type=db / 查询用 type=query）。若你的套餐返回 403/无权限，再考虑开通按量付费或典籍检索另配智谱/Ollama。",
   },
   {
     id: "anthropic",
@@ -159,7 +159,7 @@ export const EMBEDDING_PRESETS: ProviderPreset[] = [
     authStyle: "openai",
     supportsModelList: false,
     defaultModel: "embo-01",
-    note: "需按量付费账户；Coding Plan / TokenPlan 无嵌入权限。",
+    note: "2026-08 实测：Coding Plan key 可直接调通 embo-01（1536 维）。若返回 403/无权限，说明你的套餐类型不含嵌入，需开通按量付费。",
   },
   {
     id: "zhipu",

@@ -52,13 +52,13 @@ export class OpenAICompatibleProvider implements EmbeddingProvider, LlmProvider 
     // 同时发多个字段以兼容各供应商：
     // - input（OpenAI/智谱/通义/Ollama/硅基流动标准）
     // - texts（MiniMax 原生读这个）
-    // - type=db（MiniMax 必填，"db"=入库用 / "query"=查询用；其他端点忽略此字段）
+    // - type（MiniMax 必填："db"=入库 / "query"=查询，按 input.purpose 区分；其他端点忽略此字段）
     let response: Response;
     try {
       response = await fetch(`${this.cfg.openAICompatBaseUrl.replace(/\/$/, "")}/embeddings`, {
         method: "POST",
         headers: this.headers(),
-        body: JSON.stringify({ model: this.cfg.embeddingModel, input: input.texts, texts: input.texts, type: "db" }),
+        body: JSON.stringify({ model: this.cfg.embeddingModel, input: input.texts, texts: input.texts, type: input.purpose ?? "db" }),
       });
     } catch (e) {
       // 网络层失败（DNS/连接拒绝）→ 回退 mock，不阻塞聊天
@@ -181,8 +181,12 @@ function extractEmbeddingError(data: unknown): string | null {
   if (!data || typeof data !== "object") return null;
   const obj = data as Record<string, unknown>;
   const baseResp = obj.base_resp as { status_msg?: string; status_code?: number } | undefined;
-  if (baseResp && typeof baseResp.status_msg === "string" && baseResp.status_msg) {
-    return `${baseResp.status_msg}（code ${baseResp.status_code ?? "?"}）`;
+  if (baseResp) {
+    // MiniMax：status_code=0 且 status_msg="success" 是成功响应，不能当错误回退
+    const code = baseResp.status_code;
+    const msg = baseResp.status_msg;
+    const failed = typeof code === "number" ? code !== 0 : Boolean(msg) && msg !== "success";
+    if (failed) return `${msg ?? "unknown"}（code ${code ?? "?"}）`;
   }
   const err = obj.error as { message?: string } | undefined;
   if (err && typeof err.message === "string" && err.message) return err.message;

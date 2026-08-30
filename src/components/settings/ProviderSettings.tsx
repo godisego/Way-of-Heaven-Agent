@@ -72,12 +72,14 @@ export function ProviderSettings() {
   const chatReady = isProviderConfigComplete(settings.chat);
   const embedReady = settings.unified ? chatReady : isProviderConfigComplete(settings.embedding);
 
-  // unified 模式下，保存时把聊天配置同步到嵌入（baseUrl/key 复用，model 用配套嵌入模型）
+  // unified 模式下，保存时把聊天配置同步到嵌入（baseUrl/key 复用，model 用配套嵌入模型）。
+  // 注意：MiniMax 等供应商聊天与嵌入端点不同（/anthropic vs /v1），地址只从
+  // 预设的 embeddingBaseUrl 取；自定义供应商保留已填的嵌入地址，不能拿聊天地址硬套。
   const effectiveSettings: ProviderSettings = settings.unified
     ? (() => {
         const preset = findPreset("chat", settings.chat.provider);
         const embModel = settings.embedding.model || preset?.embeddingModel || settings.chat.model;
-        const embBaseUrl = preset?.embeddingBaseUrl ?? settings.chat.baseUrl;
+        const embBaseUrl = preset?.embeddingBaseUrl ?? (settings.embedding.baseUrl || settings.chat.baseUrl);
         return {
           ...settings,
           embedding: { ...settings.chat, model: embModel, baseUrl: embBaseUrl, protocol: "openai" as const },

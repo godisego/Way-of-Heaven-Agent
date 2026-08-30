@@ -57,7 +57,7 @@ export const searchLibraryTool: ToolDefinition<SearchLibraryArgs> = {
   maxCallsPerRun: 4,
   async execute(args, ctx): Promise<ToolResult> {
     const provider = getDefaultProvider(ctx.configOverride);
-    const { embeddings, model } = await provider.embedTexts({ texts: [args.query] });
+    const { embeddings, model } = await provider.embedTexts({ texts: [args.query], purpose: "query" });
     const topK = args.topK ?? 5;
     const filter = (result: VectorRecord) => {
       if (args.tradition && result.tradition !== args.tradition) return false;
