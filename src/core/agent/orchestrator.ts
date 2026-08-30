@@ -17,7 +17,7 @@ import type { GenerateAnswerInput, GenerateAnswerResult } from "@/core/providers
 import type { UserProfile } from "@/data/userProfile";
 import { parseMentorDialogue, isSourceAllowedFor, type MentorId } from "@/data/mentors";
 import { buildContext } from "@/core/retrieval/retrieveContext";
-import { needsCitation, validateCitationsByMentor, type Citation } from "@/core/retrieval/citationPolicy";
+import { needsCitation, parseCitations, validateCitationsByMentor, type Citation } from "@/core/retrieval/citationPolicy";
 import { checkVoice, violationRetryText, type VoiceViolation } from "@/core/retrieval/voicePolicy";
 import { buildNoEvidenceAnswer, wrapAsMentorDialogue } from "@/core/retrieval/noEvidenceAnswer";
 import { EvidenceLedger } from "./evidenceLedger";
@@ -282,7 +282,8 @@ export async function runAgentLoop(
   } else if (stopReason === "failed") {
     finalState = "failed";
     answer = "取证过程出错，本轮未能生成回应。请稍后重试。";
-  } else if (stopReason === "insufficient" || ledger.count() === 0) {
+  } else if (ledger.count() === 0) {
+    // 证据真空（检索全空/入库为空）：模板诚实兜底，不假装有据。
     finalState = "insufficient";
     answer = buildNoEvidenceAnswer(insufficientMissing, userProfile, opts.mentorIds);
     // 检索工具报错（向量空间错位等）时，把根因透传给用户，而非只让三贤说"材料不足"
@@ -290,6 +291,13 @@ export async function runAgentLoop(
       answer = `${answer}\n\n⚠️ 检索未成功：${retrievalError}。这通常是 embedding 配置与索引不匹配——可在齿轮面板点「测试全部」诊断，或「用当前配置重建索引」。`;
     }
   } else {
+    // 有证据就按三贤正常生成——即使模型自报「证据不足」：模板会把整套人设
+    // 和已命中的证据丢掉，回答退化成机械文案。改为带诚实约束起草：
+    // 只讲证据支持的部分、明说这不是全盘判断；引用照常过分库校验。
+    const limitedEvidence = stopReason === "insufficient";
+    const draftQuestion = limitedEvidence
+      ? `${question}\n\n（系统注：本轮证据有限，没有找到针对问者情形的专属材料。请只讲证据支持的部分，并明确说明这不是全盘判断、哪些结论还需要更多信息；不得编造 Sources 之外的内容。）`
+      : question;
     const provider: DraftProvider = opts.draftProvider ?? getDefaultProvider(opts.configOverride);
     const context = buildContext(ledger.records());
 
@@ -298,7 +306,7 @@ export async function runAgentLoop(
     answer = (
       await draftAnswer(
         provider,
-        { question, context, userProfile, conversationContext: opts.conversationContext, mentorIds: opts.mentorIds },
+        { question: draftQuestion, context, userProfile, conversationContext: opts.conversationContext, mentorIds: opts.mentorIds },
         emit,
       )
     ).trim();
@@ -356,7 +364,7 @@ export async function runAgentLoop(
         await draftAnswer(
           provider,
           {
-            question: `${question}\n\n上一次回应存在以下问题，请整组重写并逐条修正（${retryFormat}）：\n${problems.join("\n")}`,
+            question: `${draftQuestion}\n\n上一次回应存在以下问题，请整组重写并逐条修正（${retryFormat}）：\n${problems.join("\n")}`,
             context,
             userProfile,
             conversationContext: opts.conversationContext,
@@ -372,7 +380,12 @@ export async function runAgentLoop(
     }
 
     if (needsCitation(answer) && citations.length === 0) {
-      answer = `${answer}\n\n⚠️ 这段回应中引用的出处未能通过校验，请打开下方检索到的典籍原文自行核对。`;
+      // 区分两种失败：模型给了引用但没过校验（提醒核对原文）；
+      // 模型压根没附引用（如实说明这是基于有限证据的转述）。
+      const attempted = parseCitations(answer).length > 0;
+      answer = attempted
+        ? `${answer}\n\n⚠️ 这段回应中引用的出处未能通过校验，请打开下方检索到的典籍原文自行核对。`
+        : `${answer}\n\n⚠️ 本轮回应未附可核验的典籍引用——以上是贤者基于有限证据的转述，请以入库讲义与典籍原文为准。`;
     }
     // 格式兜底：模型完全没按三贤格式输出（三位全缺席）时，用模板包装让 UI 能拆气泡。
     // 流式模式下，final 帧会覆盖前端已显示的裸文本。

@@ -17,6 +17,7 @@ import { TracePanel } from "./TracePanel";
 import { useLearning } from "./learning/LearningProvider";
 import { readSseStream } from "./streamSse";
 import { safeFetchJson, FetchNotJsonError } from "@/lib/safeFetch";
+import { renderMarkdownToHtml } from "@/core/utils/miniMarkdown";
 import type { AgentTrace, TraceStep } from "@/core/agent/types";
 import type { RagPipelineNotes } from "@/core/retrieval/answerWithCitations";
 import type { WebSearchBadge } from "@/core/search/webSearch";
@@ -771,7 +772,12 @@ function MentorSpeech({ segment }: { segment: DialogueSegment }) {
           <strong>{name}</strong>
           {sub ? <span>{sub}</span> : null}
         </div>
-        <div className="bubble-text">{segment.body}</div>
+        {/* 贤者发言走 miniMarkdown：**加粗**、列表等轻量格式可正常渲染。
+            该渲染器先整体转义再处理标记，链接协议白名单放行（安全审计已核），无 XSS 面。 */}
+        <div
+          className="bubble-text bubble-text-md"
+          dangerouslySetInnerHTML={{ __html: renderMarkdownToHtml(segment.body) }}
+        />
       </div>
     </div>
   );
