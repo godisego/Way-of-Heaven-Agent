@@ -51,6 +51,15 @@ export function findLiMingliTerm(text: string): string | null {
   return null;
 }
 
+/**
+ * 引号内的内容视为「引述他人原话」（如李复述问者的话『你说"丁丑日主"』），
+ * 不算李本人使用命理语汇——符合本文件“宁可漏报，不可误伤”的设计原则。
+ * 扫描前把各类引号包裹的片段挖掉。
+ */
+function stripQuotedSpans(text: string): string {
+  return text.replace(/「[^」]*」|『[^』]*』|“[^”]*”|"[^"]*"/g, "□");
+}
+
 /** AI 自指 / 出戏 */
 const BREAK_CHARACTER_PATTERN = /作为(一个|一名)?(AI|人工智能|大语言模型|语言模型|助手)|我是(一个|一名)?(AI|人工智能|大?语言模型)/i;
 
@@ -116,9 +125,9 @@ export function checkVoice(
       }
     }
 
-    // 4) 李禁命理语汇
+    // 4) 李禁命理语汇（引述问者/典籍的原话不算）
     if (seg.mentorId === "li") {
-      const term = findLiMingliTerm(body);
+      const term = findLiMingliTerm(stripQuotedSpans(body));
       if (term) {
         violations.push({
           kind: "li-mingli",

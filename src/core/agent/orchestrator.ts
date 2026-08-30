@@ -15,9 +15,9 @@ import { getDefaultProvider } from "@/core/providers/openAICompatibleProvider";
 import { mergeConfig, type ConfigOverride } from "@/core/config/appConfig";
 import type { GenerateAnswerInput, GenerateAnswerResult } from "@/core/providers/llmProvider";
 import type { UserProfile } from "@/data/userProfile";
-import { parseMentorDialogue, type MentorId } from "@/data/mentors";
+import { parseMentorDialogue, isSourceAllowedFor, type MentorId } from "@/data/mentors";
 import { buildContext } from "@/core/retrieval/retrieveContext";
-import { needsCitation, validateCitations, type Citation } from "@/core/retrieval/citationPolicy";
+import { needsCitation, validateCitationsByMentor, type Citation } from "@/core/retrieval/citationPolicy";
 import { checkVoice, violationRetryText, type VoiceViolation } from "@/core/retrieval/voicePolicy";
 import { buildNoEvidenceAnswer, wrapAsMentorDialogue } from "@/core/retrieval/noEvidenceAnswer";
 import { EvidenceLedger } from "./evidenceLedger";
@@ -308,17 +308,43 @@ export async function runAgentLoop(
       durationMs: Date.now() - tDraft,
     });
 
-    // 校验：引用（对证据台账）+ 声口；合并一次定向重试
-    citations = validateCitations(answer, ledger.records());
-    let voiceViolations: VoiceViolation[] = checkVoice(parseMentorDialogue(answer), opts.mentorIds);
-    const problems: string[] = [];
-    if (needsCitation(answer) && citations.length === 0) {
-      problems.push(
-        "- 引用的出处无法核对：凡引述思想或原文，必须使用 [《书名》, 章节] 格式，且只能取自 Sources 的 cite_as。",
-        buildAllowedCitationInstruction(ledger.records()),
-      );
-    }
-    if (voiceViolations.length) problems.push(violationRetryText(voiceViolations));
+    // 校验：引用按发言人分库（M3 规则，与 RAG 模式同一套 validateCitationsByMentor）
+    // + 声口；合并定向重试（最多两轮）。此前 agent 模式用的是全局台账校验，
+    // 李引老胡专库的书不会被拦——分库校验堵住这个口子。
+    const evaluate = (text: string) => {
+      const records = ledger.records();
+      const scopedLedger = {
+        byMentor: {
+          hu: records.filter((r) => isSourceAllowedFor("hu", r.tradition)),
+          li: records.filter((r) => isSourceAllowedFor("li", r.tradition)),
+          xuan: records.filter((r) => isSourceAllowedFor("xuan", r.tradition)),
+        },
+        merged: records,
+      };
+      const outcome = validateCitationsByMentor(text, scopedLedger);
+      const voice = checkVoice(parseMentorDialogue(text), opts.mentorIds);
+      const probs: string[] = [];
+      for (const v of outcome.violations) {
+        probs.push(
+          v.reason === "cross-library"
+            ? `- 越库引用：${v.cite} 不在该发言人的专库里——每位只许引用自己 Sources 分区的内容。删掉这条引用，或改引自己分区的典籍；无据则明说暂未入藏。`
+            : `- 引用查无此源：${v.cite} 不在本轮证据台账中。必须使用 Sources 的 cite_as 原文，或明说暂未入藏。`,
+        );
+      }
+      if (needsCitation(text) && outcome.citations.length === 0 && !outcome.violations.length) {
+        probs.push(
+          "- 引用的出处无法核对：凡引述思想或原文，必须使用 [《书名》, 章节] 格式，且只能取自 Sources 的 cite_as。",
+          buildAllowedCitationInstruction(ledger.records()),
+        );
+      }
+      if (voice.length) probs.push(violationRetryText(voice));
+      return { citations: outcome.citations, voiceViolations: voice, problems: probs };
+    };
+
+    const firstEvaluation = evaluate(answer);
+    citations = firstEvaluation.citations;
+    let voiceViolations: VoiceViolation[] = firstEvaluation.voiceViolations;
+    let problems = firstEvaluation.problems;
 
     let retried = false;
     // 最多两轮定向重试：声口偶发口误（LLM 随机性）通常一轮可清，
@@ -339,16 +365,10 @@ export async function runAgentLoop(
           emit,
         )
       ).trim();
-      citations = validateCitations(answer, ledger.records());
-      voiceViolations = checkVoice(parseMentorDialogue(answer), opts.mentorIds);
-      problems.length = 0;
-      if (needsCitation(answer) && citations.length === 0) {
-        problems.push(
-          "- 引用的出处无法核对：凡引述思想或原文，必须使用 [《书名》, 章节] 格式，且只能取自 Sources 的 cite_as。",
-          buildAllowedCitationInstruction(ledger.records()),
-        );
-      }
-      if (voiceViolations.length) problems.push(violationRetryText(voiceViolations));
+      const next = evaluate(answer);
+      citations = next.citations;
+      voiceViolations = next.voiceViolations;
+      problems = next.problems;
     }
 
     if (needsCitation(answer) && citations.length === 0) {
