@@ -321,7 +321,9 @@ export async function runAgentLoop(
     if (voiceViolations.length) problems.push(violationRetryText(voiceViolations));
 
     let retried = false;
-    if (problems.length) {
+    // 最多两轮定向重试：声口偶发口误（LLM 随机性）通常一轮可清，
+    // 两轮把「警告未清」的交付率压到更低；仍失败则按软警告交付。
+    for (let attempt = 0; attempt < 2 && problems.length; attempt++) {
       retried = true;
       modelCalls += 1;
       answer = (
@@ -339,6 +341,14 @@ export async function runAgentLoop(
       ).trim();
       citations = validateCitations(answer, ledger.records());
       voiceViolations = checkVoice(parseMentorDialogue(answer), opts.mentorIds);
+      problems.length = 0;
+      if (needsCitation(answer) && citations.length === 0) {
+        problems.push(
+          "- 引用的出处无法核对：凡引述思想或原文，必须使用 [《书名》, 章节] 格式，且只能取自 Sources 的 cite_as。",
+          buildAllowedCitationInstruction(ledger.records()),
+        );
+      }
+      if (voiceViolations.length) problems.push(violationRetryText(voiceViolations));
     }
 
     if (needsCitation(answer) && citations.length === 0) {
@@ -356,7 +366,7 @@ export async function runAgentLoop(
 
     pushStep({
       phase: "verify",
-      observationSummary: `校验完成：有效引用 ${citations.length} 条${retried ? "（曾定向重试一次）" : ""}${voiceViolations.length ? "，声口警告未清" : ""}`,
+      observationSummary: `校验完成：有效引用 ${citations.length} 条${retried ? "（曾定向重试）" : ""}${voiceViolations.length ? "，声口警告未清" : ""}`,
       durationMs: 0,
     });
     finalState = "completed";
