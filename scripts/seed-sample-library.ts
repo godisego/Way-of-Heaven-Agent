@@ -44,6 +44,18 @@ const SAMPLE_BOOKS: SampleBook[] = [
     tradition: "chinese-classics",
   },
   {
+    fileName: "论语处世选读.md",
+    bookTitle: "论语处世选读",
+    author: "公版古籍选句·知识库整理",
+    tradition: "chinese-classics",
+  },
+  {
+    fileName: "阴符经观天之道选读.md",
+    bookTitle: "阴符经观天之道选读",
+    author: "公版古籍选句·知识库整理",
+    tradition: "daoism",
+  },
+  {
     fileName: "命理判断边界与人事建议.md",
     bookTitle: "命理判断边界与人事建议",
     author: "知识库原创整理",
