@@ -7,7 +7,7 @@ description: LLM 基础原理速览：Token、上下文窗口、温度、幻觉�
 
 你大概用过 ChatGPT 或类似的产品——输入一句话，它回一段话。但"它"到底在干什么？这篇不读代码、不碰数学，只说清楚几件你必须知道的事。
 
-> 速查：[RAG](/learn#rag-concepts) · [幻觉](/learn#glossary-幻觉) · [Agent](/learn#agent-walkthrough)
+> 速查：[RAG](/learn/rag-concepts) · [幻觉](/learn/llm-fundamentals) · [Agent](/learn/agent-walkthrough)
 
 ## 一 · LLM 在做什么
 

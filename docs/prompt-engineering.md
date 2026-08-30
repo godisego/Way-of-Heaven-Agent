@@ -9,7 +9,7 @@ Prompt = 你给模型的指令。Prompt Engineering = 怎么写指令让模型�
 
 天道茶寮的三贤人设——老胡直给、玄不批命、李只面对选择——全部靠 prompt 实现。这篇用三贤做例子，讲清楚四种核心技巧。
 
-> 速查：[Agent](/learn#agent-walkthrough) · [幻觉](/learn#glossary-幻觉)
+> 速查：[Agent](/learn/agent-walkthrough) · [幻觉](/learn/llm-fundamentals)
 
 ## 一 · 为什么 Prompt 重要
 

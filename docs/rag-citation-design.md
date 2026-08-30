@@ -54,7 +54,7 @@ text: ...
 5. 只把纯粹的资料不足回应视为免引用；“资料不足，但我断言……”仍需引用。
 6. 重试后仍失败时明确显示警告。
 
-当前校验能证明“位置真实存在于本轮来源”，还不能证明每一句结论都被该片段蕴含。下一阶段应增加 Evidence Ledger：每个结论绑定一个或多个 Evidence ID，再由 Verifier 检查证据覆盖率。
+当前校验能证明“位置真实存在于本轮来源”，还不能证明每一句结论都被该片段蕴含。**证据台账（Evidence Ledger）已实现**：见 [`src/core/agent/evidenceLedger.ts`](../src/core/agent/evidenceLedger.ts)，Agent 循环中每个证据绑定 Evidence ID 进入台账，执行轨迹面板可查（详见 [agent-loop-design.md](agent-loop-design.md)）。逐结论的覆盖率校验（Verifier）仍是后续方向。
 
 ## 资料不足
 
@@ -65,6 +65,6 @@ text: ...
 - 向量 + 关键词混合检索
 - 最低相关性阈值与 rerank
 - 邻页/邻章节扩展
-- Evidence Ledger 与逐结论覆盖率
+- 逐结论证据覆盖率校验（Verifier；台账本体已建成）
 - PDF 页面渲染与原文高亮
 - Prompt Injection 隔离与恶意文档测试

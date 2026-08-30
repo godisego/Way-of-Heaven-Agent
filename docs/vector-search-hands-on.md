@@ -7,7 +7,7 @@ description: 向量检索实战：embedding 选型、维度、mock vs real 对�
 
 RAG 的核心是"检索"——从知识库里找到最相关的几段文本。但"相关"怎么量化？这篇从概念到动手，把向量检索拆到底。
 
-> 速查：[Embedding](/learn#glossary-Embedding) · [余弦相似度](/learn#glossary-余弦相似度) · [Chunking](/learn#glossary-Chunking) · [topK](/learn#glossary-topK)
+> 速查：[Embedding](/learn/rag-concepts) · [余弦相似度](/learn/vector-search-hands-on) · [Chunking](/learn/rag-concepts) · [topK](/learn/rag-concepts)
 
 ## 一 · 检索的本质：把"相关"变成数学
 

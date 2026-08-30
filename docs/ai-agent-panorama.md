@@ -9,7 +9,7 @@ description: AI Agent 全景图：从 ChatGPT 到 RAG 到 Agent 到多智能体�
 
 读完这篇，你会知道——天道茶寮这个项目在整个 AI 版图里站在哪、为什么选择这条路线、下一步能往哪走。
 
-> 速查：[RAG](/learn#rag-concepts) · [Agent](/learn#agent-walkthrough) · [向量](/learn#glossary-向量) · [幻觉](/learn#glossary-幻觉) · [工具循环](/learn#glossary-工具循环)
+> 速查：[RAG](/learn/rag-concepts) · [Agent](/learn/agent-walkthrough) · [向量](/learn/rag-concepts) · [幻觉](/learn/llm-fundamentals) · [工具循环](/learn/agent-loop)
 
 ## 一 · 先看整张地图
 

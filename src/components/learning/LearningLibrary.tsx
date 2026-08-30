@@ -6,6 +6,7 @@ import { GLOSSARY } from "@/data/concepts";
 import { getTrackDocs, LEARN_DOCS, type LearnDoc, type LearnTrack } from "@/data/learnDocs";
 import { MingliQuickReference } from "@/components/learning/MingliQuickReference";
 import { QuizPanel } from "@/components/learning/QuizPanel";
+import { QUIZ_QUESTIONS } from "@/data/quizQuestions";
 import { MistakeBook } from "@/components/learning/MistakeBook";
 import { kbSize } from "@/core/mingli/mingliKb";
 import { startLesson } from "@/components/learning/tourController";
@@ -160,7 +161,7 @@ function Curriculum({ track, onOpenQuick }: { track: LearnTrack; onOpenQuick: ()
             <small>检测学力</small>
             自测练习
           </span>
-          <em>{track === "agent" ? "30" : "10"} 题</em>
+          <em>{QUIZ_QUESTIONS.filter((q) => q.track === track).length} 题</em>
         </summary>
         <QuizPanel track={track} />
       </details>
