@@ -41,11 +41,11 @@ Three principles guide the implementation: **local-first** (data stays on the ma
 
 **Web search fallback (knowledge-base miss → network backup)** — Every question first runs one real-embedding retrieval pass. If the library has relevant content, normal three-mentor RAG proceeds. When the library genuinely lacks the topic (e.g. "how do I braise pork"), the system automatically falls back to a web search (Brave, zero-dependency parsing); the mentors answer grounded in those results, the answer is annotated with a "**🌐 web search answer**" badge listing source links, and the trace panel shows the `web_search` step. Questions that explicitly cite an in-library book never trigger the fallback — they stay on RAG for an honest "not in the library." If the search itself fails, the answer degrades to plain model knowledge with a note, so Q&A never blocks.
 
-**Learning center and learning library (two paths, agent-focused)** — The **Learn** control provides 11 in-page guided lessons: six Agent-path lessons on RAG, trust chains, tool loops, persona engineering, the agent landscape, and trace debugging; the Bazi path has five lessons on recognizing a chart, stems/branches and Ten Gods, timelines, full analysis, and the seven-step reading workflow. Each lesson takes three to five minutes and progress is stored locally. The standalone [`/learn`](http://localhost:3000/learn) library contains **42 structured guides** (24 Agent, 18 Bazi), 27 core agent terms, a 132-entry Bazi cross-reference, **31 quiz questions + a mistake book**, and a quick-ask AI assistant. Their different purposes, curriculum, and reading path are explained in [section 4](#4--learning-library).
+**Learning center and learning library (two paths, agent-focused)** — The **Learn** control provides 11 in-page guided lessons: six Agent-path lessons on RAG, trust chains, tool loops, persona engineering, the agent landscape, and trace debugging; the Bazi path has five lessons on recognizing a chart, stems/branches and Ten Gods, timelines, full analysis, and the seven-step reading workflow. Each lesson takes three to five minutes and progress is stored locally. The standalone [`/learn`](http://localhost:3000/learn) library contains **51 structured guides** (33 Agent, 18 Bazi), 44 core agent terms, a 132-entry Bazi cross-reference, **51 quiz questions + a mistake book**, and a quick-ask AI assistant. Their different purposes, curriculum, and reading path are explained in [section 4](#4--learning-library).
 
 **Bazi chart calculation (practitioner-oriented conventions)** — Apparent solar time (longitude correction plus equation of time), luck-cycle starts calculated down to **years, months, and days**, selectable late-zi-hour conventions, major/minor/annual luck cycles, shen sha, life palace, body palace, and fetal origin; stems and branches are color-coded by the Five Elements. See [`docs/bazi-guide.md`](docs/bazi-guide.md) for methods and conventions.
 
-**Bazi rule engine (137 entries + full analysis)** — Every chart element can be clicked for an explanation and cross-links. **Chart overview** gives an eight-part analysis: day master/month command, strength score, Five-Element balance, favorable directions, Ten-God tendencies and personality cues, current major and annual luck, and palaces. It is calculated from lookup tables and generating/controlling rules, not by the model. Every card can send a contextual question to the mentors or search the library.
+**Bazi rule engine (132 entries + full analysis)** — Every chart element can be clicked for an explanation and cross-links. **Chart overview** gives an eight-part analysis: day master/month command, strength score, Five-Element balance, favorable directions, Ten-God tendencies and personality cues, current major and annual luck, and palaces. It is calculated from lookup tables and generating/controlling rules, not by the model. Every card can send a contextual question to the mentors or search the library.
 
 **Library intake** — Upload PDF, Markdown, or TXT files. They are split and indexed by page or section, then classified by intellectual tradition. Scanned PDFs are clearly marked as unsupported instead of silently pretending to succeed.
 
@@ -107,23 +107,26 @@ The learning library is the project's structured self-study entrance. Rather tha
 
 | Entry point | Scale | Questions it answers | Outcome |
 | --- | --- | --- | --- |
-| **Agent path** | 11 guides / 5 stages | How does RAG ingest and retrieve? Why does an agent call a particular tool? How do citations, stopping, and evaluation become code? | Find the first failure from a trace and turn it into a regression evaluation |
-| **Bazi path** | 17 guides / 6 stages | What are the Four Pillars, stems, branches, hidden stems, Ten Gods, strength, luck-cycle start, and annual luck? | Explain a chart using the seven-step workflow and distinguish tradition, project algorithm, and unimplemented boundaries |
-| **Bazi quick reference** | 137 entries / 7 categories | Look up a character, Ten God, or palace and follow related concepts | Search, filter, read, and follow cross-links within one explanation system |
+| **Agent path** | 33 guides / 5 layers + appendix | How does RAG ingest and retrieve? Why does an agent call a particular tool? How do citations, stopping, and evaluation become code? | Find the first failure from a trace and turn it into a regression evaluation |
+| **Bazi path** | 18 guides / 6 stages | What are the Four Pillars, stems, branches, hidden stems, Ten Gods, strength, luck-cycle start, and annual luck? | Explain a chart using the seven-step workflow and distinguish tradition, project algorithm, and unimplemented boundaries |
+| **Bazi quick reference** | 132 entries / 7 categories | Look up a character, Ten God, or palace and follow related concepts | Search, filter, read, and follow cross-links within one explanation system |
 
 The three-part control at the top changes tasks. The curriculum view places stages on the left and ordered guides on the right. Each path gives a learning goal and a **Start at lesson 01** entry; lesson rows show order, level, synopsis, and direct Bazi-reference links. The **Learning-library tour** in the header takes about two minutes through task selection, stage navigation, continuous reading, the term list, and the Bazi quick reference, switching views to show the real interface.
 
-### Agent path: from concepts to an evaluable system
+### Agent path: five layers of AI learning
 
-| Stage | Guides | Focus |
-| --- | --- | --- |
-| 01 · Map the territory | RAG concepts; Agent basics | Core coordinates for embeddings, chunks, topK, tools, planning, memory, and reflection |
-| 02 · Deconstruct the system | System architecture; technology stack | How a request passes through the UI, ingestion, vector retrieval, the agent loop, and three-mentor generation |
-| 03 · Build a trust chain | RAG code walkthrough; citation validation | Source anchoring, scoped retrieval, whole-set invalidation, targeted retry, and voice validation |
-| 04 · Let the model act | Tool-loop design (M0–M5); target agent blueprint | Tool registry, evidence ledger, stopping conditions, and places for planning/memory/evals |
-| 05 · Debug and evaluate | Trace-debugging guide; verification plan; M5 live-service acceptance | Find the root cause from a trace and turn failure cases into repeatable checks |
+Start with the [five-layer map](docs/ai-learning-map.md). The 33 Agent guides retain their existing URLs while following this curriculum:
 
-The end of the path includes a collapsed list of **27 core Agent terms**. Each entry explains the concept and points to its implementation path in the repository, helping readers align terminology before reading source code.
+| Layer | Focus |
+| --- | --- |
+| AI worldview | Perception, representation, prediction, decisions, and action |
+| AI taxonomy | Methods, domains, models, application patterns; RAG, agents, and Jev typed decisions |
+| Model mechanics | Tokens, embeddings, Q/K/V attention, FFNs, residuals, normalization, training and inference |
+| AI Engineering | Context, memory, RAG, tools, runtimes, MCP / A2A / Skills, recovery, evaluation and observability |
+| AI product thinking | User needs, business baselines, error costs, ROI, and Solution / FDE delivery |
+| Appendix | SQL and Python foundations |
+
+The September 21, 2026 content review adds 9 guides and distinguishes official product claims from established concepts and implemented project features. Jev is covered as a typed decision model; TypeSafe's System One label is not presented as a universal academic category. Typed outputs do not guarantee correct business decisions. The local library includes 44 Agent terms and 51 quiz questions across both paths, plus the existing mistake book. These guides are currently written in Chinese; the website provides English course summaries.
 
 ### Bazi path: from reading a chart to independent analysis
 
@@ -139,7 +142,7 @@ All examples use fictional charts and do not describe real people. Guides separa
 
 ### Bazi quick reference
 
-The quick reference uses [`src/core/mingli/mingliKb.ts`](src/core/mingli/mingliKb.ts) as its single source of truth and shares the same 137 entries as the click-to-explain chart UI, preventing the course and chart explanations from drifting apart.
+The quick reference uses [`src/core/mingli/mingliKb.ts`](src/core/mingli/mingliKb.ts) as its single source of truth and shares the same 132 entries as the click-to-explain chart UI, preventing the course and chart explanations from drifting apart.
 
 - Search terms, summaries, and full explanations, for example “hidden stems,” “Jia,” “Direct Officer,” or “major luck.”
 - Filter by basic concept, Ten Heavenly Stems, Twelve Earthly Branches, Ten Gods, Five Elements, Four-Pillar palaces, or shen sha.
@@ -153,7 +156,7 @@ The quick reference uses [`src/core/mingli/mingliKb.ts`](src/core/mingli/mingliK
 | --- | --- | --- |
 | In-page guided lessons | **Learn** in the lower-right corner | Follow highlights through the live interface in 3–5 minutes; 6 Agent lessons and 5 Bazi lessons, with browser-local progress |
 | Structured guides | `/learn` library | Read the Markdown guides continuously by stage; document pages include breadcrumbs, course progress, related terms, and previous/next navigation |
-| Immediate explanation | Chart cards or Bazi quick reference | Click a field on your own chart or use the 137 entries for search and cross-checking |
+| Immediate explanation | Chart cards or Bazi quick reference | Click a field on your own chart or use the 132 entries for search and cross-checking |
 | Running observation | Header **Trace** switch | Bring a lesson concept into a real answer and inspect retrieval, tool calls, evidence ledger, stopping reason, and validation result |
 
 The shortest recommended path is: finish the relevant in-page guided lessons to form an overall impression; continue from guide 01 in the learning library; use the quick reference whenever a Bazi concept appears; and, when learning Agent engineering, turn on **Trace** to connect every mechanism in the guide to a real execution.
@@ -221,7 +224,7 @@ npm run sync:supabase        # Optional one-way local-snapshot upload
 
 ## 9 · Project status
 
-**Completed**: minimal Agent tool loop (M0–M3), **execution-trace panel (M4)** and Trace switch, trusted RAG chain (scoped retrieval, double validation, targeted retry, learning-mode pipeline annotations), **M5 acceptance script** (`npm run acceptance`), learning center (six Agent lessons and six Bazi stages/seventeen lessons) plus `/learn` library (28 structured guides, 27 Agent terms, 137 Bazi reference entries), a complete Bazi chart and rule engine, strengthened mentor personas, and new-Chinese-style visual language v5.
+**Completed**: minimal Agent tool loop (M0–M3), **execution-trace panel (M4)** and Trace switch, trusted RAG chain (scoped retrieval, double validation, targeted retry, learning-mode pipeline annotations), **M5 acceptance script** (`npm run acceptance`), learning center (six Agent guided lessons and five Bazi guided lessons) plus `/learn` library (51 structured guides: 33 Agent and 18 Bazi; 44 Agent terms; 132 Bazi reference entries; 51 quiz questions), a complete Bazi chart and rule engine, strengthened mentor personas, and new-Chinese-style visual language v5.
 
 **Completed**: M5 automatic and manual acceptance (26 hard checks and 2 manual content checks passed). Agent is the default mode; turning off Trace explicitly uses fixed RAG.
 

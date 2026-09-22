@@ -43,12 +43,12 @@ export const LIBRARY_LESSON: Lesson = {
       },
     },
     {
-      element: () => currentElement("[data-tour-id='learn-track-list']"),
+      element: () => currentElement("[data-tour-id='learn-course-flow']"),
       popover: {
         title: "Agent 学径：把当前项目当作活教材",
         description:
-          "怎么学：从 RAG 与 Agent 基础概念开始，再顺着真实请求拆 Next.js 前后端、Provider、文档切块、Embedding、向量检索、工具循环、SSE 轨迹、引用校验与测试。\n\n" +
-          "能学到：怎样划分确定性代码与模型职责，怎样让 Agent 会用工具也会停止，怎样用证据、边界和评测把演示系统变成可调试工程。每篇都指向对应源码，不只讲名词。",
+          "怎么学：统一沿五层地图：AI 世界观 → AI 技术树 → 模型原理 → AI Engineering → AI 产品思维。先给概念归位，再拆模型、上下文、工具与评测，最后算清用户价值。\n\n" +
+          "能学到：Jev 与 LLM 怎样分工，MCP / A2A / Skills 各解决什么问题，怎样管理上下文、恢复失败，并以业务基线验证交付。讲义区分通用原理与本项目已实现能力。",
         side: "right",
         nextBtnText: "看命理学径",
         onNextClick: (_element, _step, { driver }) => {
@@ -57,7 +57,7 @@ export const LIBRARY_LESSON: Lesson = {
       },
     },
     {
-      element: () => currentElement("[data-tour-id='learn-track-list']"),
+      element: () => currentElement("[data-tour-id='learn-course-flow']"),
       popover: {
         title: "命理学径：从点一个字到按顺序读完整张盘",
         description:

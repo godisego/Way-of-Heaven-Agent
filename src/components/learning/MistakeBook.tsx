@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { loadMistakes, clearMistakes, MISTAKES_EVENT, resolveMistake } from "@/data/mistakeBook";
+import { loadMistakes, clearMistakes, MISTAKES_EVENT, resolveMistake, type MistakeRecord } from "@/data/mistakeBook";
 import { getQuizById } from "@/data/quizQuestions";
 
 /**
@@ -11,19 +11,16 @@ import { getQuizById } from "@/data/quizQuestions";
  * 数据纯 localStorage，不上传服务器。
  */
 export function MistakeBook() {
-  const [version, setVersion] = useState(0);
+  // 服务端与首次客户端渲染保持一致，挂载后再读取本机记录。
+  const [mistakes, setMistakes] = useState<MistakeRecord[]>([]);
   const [trackFilter, setTrackFilter] = useState<"all" | "agent" | "mingli">("all");
 
   useEffect(() => {
-    const handler = () => setVersion((v) => v + 1);
+    const handler = () => setMistakes(loadMistakes());
     window.addEventListener(MISTAKES_EVENT, handler);
+    handler();
     return () => window.removeEventListener(MISTAKES_EVENT, handler);
   }, []);
-
-  const mistakes = useMemo(() => {
-    void version;
-    return loadMistakes();
-  }, [version]);
 
   const filteredMistakes = useMemo(() => {
     if (trackFilter === "all") return mistakes;

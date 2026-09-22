@@ -3960,3 +3960,49 @@ button {
     border-right: none;
   }
 }
+
+/* AI 学径：五层概念地图，复用学习馆的纸色与强调色。 */
+.learn-ai-map {
+  margin: 24px 0 32px;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--paper-bright);
+}
+.learn-ai-map-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.learn-ai-map-intro h3 { margin: 8px 0 0; font-size: 1.15rem; }
+.learn-ai-map a { color: inherit; text-decoration: none; }
+.learn-ai-map-intro > a, .learn-ai-map > p a { text-decoration: underline; text-underline-offset: 4px; }
+.learn-ai-map-layers {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  gap: 12px;
+}
+.learn-ai-map-layers li { min-width: 0; }
+.learn-ai-map-layers a {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.learn-ai-map-layers a:hover { background: var(--learn-agent-soft, var(--celadon-soft)); }
+.learn-ai-map a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.learn-ai-map-layers strong { font-size: 1rem; }
+.learn-ai-map-layers span:not(.learn-kicker) { font-size: 0.88rem; line-height: 1.6; }
+.learn-ai-map-layers small { font-size: 0.78rem; line-height: 1.7; opacity: 0.8; }
+.learn-ai-map > p { margin: 18px 0 0; font-size: 0.85rem; line-height: 1.9; }
+@media (max-width: 1080px) { .learn-ai-map-layers { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .learn-ai-map-layers { grid-template-columns: 1fr; } }

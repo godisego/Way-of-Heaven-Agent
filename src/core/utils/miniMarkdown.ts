@@ -12,49 +12,13 @@
  * 所有文本先做 HTML 转义——渲染结果只来自本仓库 docs/，但防御性转义是习惯。
  */
 
-const DOC_LINK: Record<string, string> = {
-  "docs/rag-concepts-primer.md": "/learn/rag-concepts",
-  "docs/rag-beginner-walkthrough.md": "/learn/rag-walkthrough",
-  "docs/agent-beginner-walkthrough.md": "/learn/agent-walkthrough",
-  "docs/agent-loop-design.md": "/learn/agent-loop",
-  "docs/rag-citation-design.md": "/learn/citation-design",
-  "docs/bazi-guide.md": "/learn/bazi-guide",
-  "docs/architecture.md": "/learn/architecture",
-  "docs/tech-stack.md": "/learn/tech-stack",
-  "docs/agent-blueprint.md": "/learn/agent-blueprint",
-  "docs/agent-trace-debugging.md": "/learn/agent-trace-debugging",
-  "docs/verification-plan.md": "/learn/verification-plan",
-  "docs/m5-acceptance.md": "/learn/m5-acceptance",
-  "docs/ai-agent-panorama.md": "/learn/ai-agent-panorama",
-  "docs/llm-fundamentals.md": "/learn/llm-fundamentals",
-  "docs/prompt-engineering.md": "/learn/prompt-engineering",
-  "docs/vector-search-hands-on.md": "/learn/vector-search-hands-on",
-  "docs/exercises.md": "/learn/exercises",
-  "docs/build-an-agent.md": "/learn/build-an-agent",
-  "docs/sql-basics.md": "/learn/sql-basics",
-  "docs/python-basics.md": "/learn/python-basics",
-  "docs/ai-product-scenarios.md": "/learn/ai-product-scenarios",
-  "docs/api-integration.md": "/learn/api-integration",
-  "docs/production-deployment.md": "/learn/production-deployment",
-  "docs/ai-security-governance.md": "/learn/ai-security-governance",
-  "docs/model-training-infra.md": "/learn/model-training-infra",
-  "docs/bazi-chart-anatomy.md": "/learn/bazi-chart-anatomy",
-  "docs/bazi-overview.md": "/learn/bazi-overview",
-  "docs/bazi-yinyang-wuxing-primer.md": "/learn/bazi-yinyang-wuxing-primer",
-  "docs/bazi-stems-branches.md": "/learn/bazi-stems-branches",
-  "docs/bazi-ten-gods-strength.md": "/learn/bazi-ten-gods-strength",
-  "docs/bazi-branch-relations.md": "/learn/bazi-branch-relations",
-  "docs/bazi-twelve-stages.md": "/learn/bazi-twelve-stages",
-  "docs/bazi-shishen-zuhe.md": "/learn/bazi-shishen-zuhe",
-  "docs/bazi-gege-yongshen.md": "/learn/bazi-gege-yongshen",
-  "docs/bazi-tiaohou.md": "/learn/bazi-tiaohou",
-  "docs/bazi-classics-guide.md": "/learn/bazi-classics-guide",
-  "docs/bazi-mangpai-primer.md": "/learn/bazi-mangpai-primer",
-  "docs/bazi-school-differences.md": "/learn/bazi-school-differences",
-  "docs/bazi-luck-cycles.md": "/learn/bazi-luck-cycles",
-  "docs/bazi-reading-workflow.md": "/learn/bazi-reading-workflow",
-  "docs/mentor-libraries-and-bazi-design.md": "/learn/mentor-libraries-bazi",
-};
+import { LEARN_DOCS } from "../../data/learnDocs";
+
+// 由可读文档白名单生成，新增课程无需维护第二份路由表。
+const DOC_LINK = Object.fromEntries(LEARN_DOCS.flatMap((doc) => [
+  [doc.file, `/learn/${doc.slug}`],
+  [doc.file.replace(/^docs\//, ""), `/learn/${doc.slug}`],
+]));
 
 /** 命理图表围栏标记 → 占位 div 的 data 值 */
 const FIGURE_FENCES = new Set([
@@ -83,20 +47,23 @@ function renderInline(escaped: string): string {
   const codes: string[] = [];
   s = s.replace(/`([^`]+)`/g, (_m, c: string) => {
     codes.push(`<code>${c}</code>`);
-    return ` ${codes.length - 1} `;
+    return `\u0000CODE${codes.length - 1}\u0000`;
   });
   s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   s = s.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
   // 链接：[text](url)，只放行安全协议；仓库内 docs 路径转 /learn
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, text: string, url: string) => {
-    const mapped = DOC_LINK[url.replace(/^\.\//, "")] ?? url;
+    const normalized = url.replace(/^\.\//, "");
+    const [pathname, fragment] = normalized.split(/#(.*)/s);
+    const target = DOC_LINK[pathname];
+    const mapped = target ? `${target}${fragment ? `#${fragment}` : ""}` : url;
     if (/^(https?:\/\/|mailto:|#|\/)/.test(mapped)) {
       const external = /^https?:\/\//.test(mapped) ? ' target="_blank" rel="noreferrer"' : "";
       return `<a href="${mapped}"${external}>${text}</a>`;
     }
     return text;
   });
-  s = s.replace(/ (\d+) /g, (_m, i: string) => codes[Number(i)] ?? "");
+  s = s.replace(/\u0000CODE(\d+)\u0000/g, (_m, i: string) => codes[Number(i)] ?? "");
   return s;
 }
 

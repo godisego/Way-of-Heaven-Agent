@@ -1,375 +1,107 @@
-# 智能体（Agent）入门 —— 跟着天道智能体看 Agent 的零件
+# 智能体（Agent）入门：跟着真实工具循环看零件
 
-> 这份文档假设你已经读完了 `rag-concepts-primer.md`。
-> RAG 是在「资料里找一段交给 LLM」。
-> Agent 是「让 LLM 自己决定要不要找、找什么、找几次」。
->
-> 这个项目**目前还不是完整 Agent**，只是 RAG + 三贤角色化生成 + 几处 agent-flavored 的细节。
-> 我们先讲清楚 Agent 是什么，再回头看天道智能体缺什么、怎么补。
+这篇连接五层地图的**第二层技术分类**与**第四层 AI Engineering**。先读 [AI Agent 全景图](/learn/ai-agent-panorama)，再把下面的每个零件映射回代码。
 
----
+天道茶寮已经有受控 Agent 工具循环。**循迹默认开启，走 Agent 路径；关闭循迹走固定 RAG 路径。** 三贤由同一生成任务按角色组织回应，当前不是三个独立 Agent。旧版“还没有 Tool Use / 没有工具循环”的描述已经不适用。
 
-## 0. 这份文档适合谁
+## 一 · 先把概念放回正确抽屉
 
-- 完全没听过 Agent / Tool use / ReAct / Reflexion 的同学。
-- 已经能跑通天道智能体的 RAG 流程，想理解它**离完整 Agent 还差什么**。
-- 想在天道智能体上做改造，把它真正升级成"会自己思考、自己用工具"的系统。
+| 概念 | 是什么 | 判断依据 |
+|---|---|---|
+| LLM | 模型类别 | 从上下文生成输出 |
+| RAG | 检索增强生成的应用架构模式 | 生成是否使用检索得到的外部资料 |
+| Workflow | 预定义流程编排 | 主要步骤、分支与校验是否由程序预先规定 |
+| Agent | 运行系统 / 软件架构 | 是否根据目标与环境反馈动态决定下一步 |
 
-读完你应该能：
+不要按“调了几次模型”来区分。RAG 可以多次改写查询和检索；Workflow 可以调用许多模型；Agent 在简单问题上也可能直接回答。它们可以组合，并不存在“每个产品最后都该升级成多智能体”的要求。[Anthropic 的架构说明](https://www.anthropic.com/engineering/building-effective-agents)给出了按流程控制权区分 Workflow 与 Agent 的方式。
 
-- 区分"LLM 一次调用"、"RAG"、"Agent"三者的差别。
-- 说出 Tool use / ReAct / Reflexion / Multi-agent 各自解决什么问题。
-- 看完天道智能体代码后，识别出哪些是 agent-flavored 模式、哪些不是。
-- 拿到 3~5 个具体可动手的 agent 升级点。
+## 二 · 模型提出动作，运行时真正执行
 
----
-
-## 1. 核心区分：LLM 调用、RAG、Agent
-
-把三者放在一张表上：
-
-| | 一次性 LLM 调用 | RAG | Agent |
-|---|---|---|---|
-| **模型被叫几次** | 1 次 | 2 次（embedding + chat） | 多次，由 Agent 自主决定 |
-| **能用什么工具？** | 只能靠 prompt 里的文字 | 只能检索向量库 | 可以调任意工具（检索、计算、写文件、调 API……） |
-| **能"思考下一步"吗？** | 不能 | 不能 | **能**，每一步先规划再行动 |
-| **典型失败时怎么办？** | 没法，直接返回 | 多调一次检索，或者改写 query | **自我反思**，可能换工具、改方案、查漏补缺 |
-| **天道智能体当前版本是？** | ❌ 不是 | ✅ 是 | ❌ 还不是（只有一点点影子） |
-
-**一句话**：
-- LLM 调用是"问一次答一次"。
-- RAG 是"先查资料再答一次"。
-- Agent 是"在循环里反复『想→做→看结果→再想→再做』，直到把任务做完"。
-
-### 类比
-
-| 系统类型 | 比喻 |
-|---|---|
-| LLM 调用 | 问一个人答一个问题，他说啥就是啥 |
-| RAG | 给这个人一份参考资料，让他答一个问题 |
-| Agent | 给一个人工具箱（锤子、扳手、卷尺），让他自己决定用哪个、什么时候用、直到把活干完 |
-
----
-
-## 2. Tool use (Function Calling) —— Agent 的"手脚"
-
-**Agent 之所以能动起来，是因为它能调"工具"。**
-
-工具是模型之外的、确定性的操作：
-
-- `search_documents(query)` —— 检索向量库
-- `get_page_text(file, page)` —— 读典籍某一页原文
-- `calculate(expression)` —— 跑数学
-- `search_web(q)` —— 调搜索引擎
-- `write_file(path, content)` —— 写文件
-- `send_email(to, body)` —— 发邮件
-
-模型**不直接执行**这些函数，而是生成一段结构化输出（JSON）告诉框架"请帮我调这个函数，参数是这些"，**框架**真的去执行，然后把结果再喂回给模型。
-
-### 关键点
-
-- 模型"决定"调哪个，**框架负责执行**。这避免了模型信口开河"我帮你算完了" —— 它只能吐出意图。
-- 这一套的契约（JSON Schema 函数描述 + 结构化输出）叫 **Function Calling** 或 **Tool Use**。OpenAI / Anthropic / Google 都支持。
-- 没有 Tool use 的 Agent 只能嘴上说"我帮你查了" —— 没动手；有 Tool use 的 Agent 才真的能跑流程。
-
-天道智能体现状：**没有 tool use**。检索是在 chat 入口处程序化调的，模型不知道也不能决定要不要查。详见第 9.1 节怎么加。
-
----
-
-## 3. Planning —— Agent 怎么拆解任务
-
-复杂任务不是一步做完的。Agent 需要先**规划**：把"分析我当前人生阶段该怎么走"拆成：
-
-```
-1. 判断问题需要哪些证据（典籍、问者档、排盘结果）
-2. 在已经入藏的《存在与虚无》《周易》等资料中检索并核对原文
-3. 结合问者档（八字、大运、背景）分析局势
-4. 综合三贤视角写一份建议，思想或原文出处带可核验引用
+```text
+目标与当前状态
+  → 模型选择工具名 + 参数
+  → 注册表检查工具是否存在、参数是否合法、调用是否超限
+  → 工具执行并返回观察结果
+  → 更新证据与执行轨迹
+  → 模型再决定下一步，或运行时强制停止
 ```
 
-经典实现方式：
+这就是 Tool Use / Function Calling 的交界。工具可以是检索、计算、文件操作或外部 API，但可用范围由宿主授权与工具注册决定。**模型不能因为输出了一个函数名，就获得任意执行权限。** 工具也可能超时、返回空结果或错误，不能把“有 Tool Use”直接等同于“任务成功”。
 
-- **一次性规划**：让模型先输出一个步骤列表，再按列表执行（便宜、好调试）。
-- **动态规划**：每一步都根据上一步结果决定下一步做什么（更灵活、更像 Agent）。
+本项目当前工具位于 `src/core/agent/tools.ts`：
 
-天道智能体当前：**没有 planning**。一次 chat 一轮 prompt 一次回答，模型没有"先列计划"的机会。
+| 工具 | 用途 | 当前边界 |
+|---|---|---|
+| `search_library` | 检索已入库材料 | 查询长度校验、可用思想传统过滤、默认 topK=5、最高 8、每轮最多调用 4 次 |
+| `read_source_unit` | 精读 PDF 页或文本章节 | documentId 必须来自本轮已见搜索结果；每轮最多调用 3 次 |
+| `ready_to_answer` | 声明证据是否充分并收束 | 是停止信号，不是事实正确性的证明 |
 
----
+工具注册与执行约束在 `src/core/agent/toolRegistry.ts`；各工具还有自己的超时。本课不把发邮件、转账等举例当作项目已实现功能。
 
-## 4. ReAct (Reason + Act) —— "想一步做一步"循环
+## 三 · 一次循迹取证怎样进行
 
-**ReAct** 是经典的 Agent 模式，由 Yao 等人在 2022 年提出。论文常用 `Thought / Action / Observation` 描述循环；工程产品不应把模型的私有思维链原样展示或保存，而应记录可审计的计划摘要、工具调用和结果摘要。例如：
+```text
+用户：关于“自由与选择”，材料里有什么依据？
 
+Action:      search_library({"query":"自由与选择"})
+Observation: 找到若干候选片段，附来源位置与证据编号
+
+Action:      read_source_unit({"documentId":"搜索已返回的ID","pageNumber":2})
+Observation: 返回该来源单元，补全片段上下文
+
+Action:      ready_to_answer({"sufficient":true})
+系统：        从证据台账构建 Sources → 生成回应 → 校验 → 交付
 ```
-Plan summary: 先核对关于“自由与选择”的典籍证据。
-Action:       search_library({"query":"自由与选择"})
-Observation:  返回 5 条候选；《存在与虚无》“第二章 自欺”相关性最高。
 
-Plan summary: 问题还涉及时机，需要补充《周易》相关证据。
-Action:       search_library({"query":"易经 时机 进退"})
-Observation:  找到《周易》“乾卦”与“需卦”的候选段落。
+这是流程示意，具体命中内容取决于你已入库的材料。没有命中时，模型可以改写查询；仍不足则应如实说明。轨迹记录工具、参数、观察摘要、证据与停止原因，便于核查真实行动。它不记录或要求披露模型完整的私有思维链。
 
-Plan summary: 证据足够，进入三贤结构化生成与引用校验。
-Action:       draft_mentor_answer({"evidenceIds":["ev_1","ev_2"]})
-Final Answer: ……[《存在与虚无》, 第二章 自欺]……[《周易》, 需卦]
-```
-
-**关键观察**：
-
-- 模型或编排器根据当前状态选择 **Action（动作）**，框架执行工具后把 **Observation（观察）** 交回下一步。
-- 循环既可以由提示词引导，也可以由模型原生 tool use 与框架状态机共同约束。
-- 真正应当可见、可调试的是结构化执行轨迹：计划摘要、工具名、参数、耗时、结果摘要、证据和停止原因；不是私有思维链。
-
-天道智能体当前：没有 ReAct 或工具循环。`searchChunks` 由 API 固定执行一次，模型拿到的是问题与 Sources，不能决定是否继续检索或读取完整来源单元。
-
----
-
+[ReAct 论文](https://arxiv.org/abs/2210.03629)提出把推理与行动交错组织的范式。工程实现不必照抄论文中的文本标签；原生 Tool Use 与状态机也能组织“动作—观察—下一步”循环。项目的真实入口是 `src/core/agent/orchestrator.ts`。
 
 ```agentloop
 ```
 
-## 5. Reflexion —— "反思上一轮为什么失败"
+## 四 · Agent 必须能停，也必须能检查结果
 
-ReAct 解决了"做什么"的问题。**Reflexion** 解决"做错了怎么办"。
+`src/core/agent/types.ts` 的默认配置给取证循环 6 个工具步骤、45 秒单次模型调用超时与 90 秒预算检查。另有重复调用检测、工具限次、`ready_to_answer`、无工具调用、异常与取消等退出情况。预算检查不是“端到端必定 90 秒结束”的服务承诺，生成与重试也会影响交付时间。
 
-### 天道智能体现状的 self-correct（伪 Reflexion）
+`EvidenceLedger` 给取证结果去重并编号，起草阶段由这些证据构建上下文。模型只说“我查过了”不够；应能对回工具返回和来源。
 
-```text
-第一次回答 → 没引用 → 
-强制重试 1 次（prompt 说"上一次没引用，请加上"）→
-还失败 → 挂 warning
-```
+生成后，程序检查引用是否属于相应角色的资料范围，以及角色声口是否违反规则。当前 Agent 路径最多做两轮定向重试，RAG 路径一轮；仍失败时可能带警告交付。**出处有效不是结论正确，重试也不是正确性保证。** 高代价场景还需更严格的事实验收和人工接管，不能默认项目已有完整生产保障。
 
-这只是**单步机械重试**，没有真正的反思。
+## 五 · Planning、Memory、Reflexion 分别解决什么
 
-### 真 Reflexion 该做这些
+**Planning** 是安排或调整步骤。可以先列固定计划，也可以根据观察动态选择动作。本项目已经有动态工具决策，但没有独立、持久化的复杂任务计划管理器。
 
-每次失败之后：
+**Memory** 是应用存储、选择和重新提供相关信息的机制。当前项目已有会话持久化与滚动摘要，见 `src/data/sessionStore.ts`、`src/core/conversation/contextBuilder.ts`；摘要与最近消息会被装入上下文。存储过不等于本次模型看到了，摘要还可能遗漏细节。
 
-1. **记录为什么失败**（LLM 自己说："我上次引用错了页码"）
-2. **累积到下次的"经验"**（把这条反思塞进 system prompt 或长期记忆）
-3. **下次主动避免**（"上次犯的错：不要发明页码，只引用 Sources 里的"）
+**Reflexion** 是利用任务反馈形成可供后续尝试使用的语言经验。[Reflexion 论文](https://arxiv.org/abs/2303.11366)包含反馈、反思与记忆机制；单次“引用错了，请重写”只是有反馈的重试，不能自动称为完整 Reflexion。本项目当前没有跨任务反思学习系统。保存反思通常改变的是应用记忆，不能据此声称模型权重在持续学习，也不能保证失败越来越少。
 
-最小实现 schema：
+如果未来增加长期经验库，要定义写入证据、来源、时效、用户范围、冲突处理与删除方式，并评测错误经验是否被反复放大。继续读 [上下文与记忆工程](/learn/context-memory-engineering)。
 
-```text
-短期记忆: 本轮计划摘要、工具调用、Observation、证据与验证结果
-长期记忆: 过去的反思（累积），例:
-  - "F-001: 不要引用 Sources 里没有的页码"
-  - "F-002: 用户问'未来'类问题时，严格拒答或说'暂未入藏'"
-错误信号: 本轮 answer 通过校验吗？ retrieved scores 高吗？
-```
+## 六 · 多智能体什么时候有用
 
-天道智能体当前：**没有**长期记忆、没有真反思。详见第 9.2 节怎么补。
+多个独立 Agent 可以各有上下文和执行状态，通过消息或任务交接协作。仅让同一个模型分别扮演三个人、依次写三段回应，并不构成这种系统。
 
----
+拆分可用于可并行研究、不同权限区域或需要独立复核的任务，也会引入通信成本、状态同步、重复劳动与错误传播。决定拆分前，对比单 Agent 与多 Agent 在同一组任务上的完成率、严重错误率、延迟和费用。三贤当前适合作为角色隔离、资料分区和生成校验的学习例子，而非未经测量就必须拆分的候选。
 
-## 6. Memory —— 短期 vs 长期
+## 七 · 现代 Agent 工程还需要哪些接口
 
-Agent 必须记住两件事：
+| 概念 | 解决什么 | 项目状态 |
+|---|---|---|
+| Runtime / Harness | 管理循环、状态、工具、预算、检查与恢复 | 已有最小受控运行时；并非完整长任务恢复平台 |
+| Context Engineering | 每一步应看到哪些信息，如何筛选、压缩与更新 | 已有检索材料、证据台账和会话摘要 |
+| MCP | 标准化应用与外部工具、资源、提示模板的连接 | 扩展知识；当前内部工具注册不等于 MCP 接入 |
+| A2A | 不同 Agent 系统之间发现能力、交换任务和结果 | 扩展知识；当前没有 A2A 协作 |
+| Skills | 打包可复用任务说明与可选脚本、资源 | 扩展知识；不是新的模型或自动授权机制 |
+| Evals / Observability | 验证结果是否达标，并解释哪一步失败 | 已有测试、验收脚本与执行轨迹；仍应扩展任务级指标 |
 
-| 类型 | 内容 | 存在哪 | 典型实现 |
-|---|---|---|---|
-| **短期记忆** | 当前会话/任务的消息、计划摘要、工具结果与证据 | 当次 context window / 会话状态 | 编排器按需注入 prompt |
-| **长期记忆** | 用户确认的稳定偏好、长期目标、版本化失败经验 | JSON / Supabase / 专用存储 | 当前 `data/app.json` 元数据层可作为本地起点 |
+分别见 [运行时与协议](/learn/agent-runtime-protocols) 和 [评测与可观测性](/learn/agent-evaluation-observability)。
 
-天道智能体当前：**只有短期（prompt）+ 文档元数据**，没有"上次你反省过什么"。这是升级成真 Reflexion 的最大缺口。
+## 八 · 下一步练习
 
----
+1. 同一个资料问题分别开关循迹，比较实际工具次数、引用与延迟；不要预设 Agent 必然更好。
+2. 准备“库内可答、库外无据、相似但无关、文档冲突”四类任务，分别记录证据相关性和回答正确性。
+3. 查看长会话摘要，检查用户明确约束是否被保留；把被遗漏的信息做成回归样例。
+4. 为未来有副作用的工具设计幂等键、结果回执与人工接管边界，先写设计，不把重试当作成功证明。
 
-## 7. Multi-Agent —— "一群 Agent 协作"
-
-复杂任务可以交给多个 Agent 分工：
-
-- 一个 Agent 负责检索典籍
-- 一个 Agent 负责校验引用
-- 一个 Agent 负责生成三贤回答
-- 一个 Agent 负责评审回答质量，不过就打回
-
-经典框架：AutoGen、CrewAI、LangGraph。
-
-代价：贵、慢、难调试。天道智能体第一阶段应继续由一个受控编排器调用一个模型生成三贤结构化结果；只有评测证明角色隔离确实不足时，再拆成多个独立 Agent。
-
----
-
-## 8. RAG + Agent = 现代知识库标配
-
-```
-                ┌─────────────────────────┐
-                │      Agent 主循环       │
-                │  (ReAct / Reflexion / …)│
-                └────────────┬────────────┘
-                             │
-         ┌───────────────────┼───────────────────┐
-         ▼                   ▼                   ▼
-   Tool: search_       Tool: get_page_     Tool: calculate(
-        docs                 text                "...")
-         │                   │                   │
-         ▼                   ▼                   ▼
-    [RAG 检索]          [典籍原文读取]       [本地计算]
-         │
-         ▼
-    Embedding + Vector Store
-```
-
-**RAG 是 Agent 的一个工具**，不是 Agent 的对立面。
-天道智能体现在是"RAG 套了个壳"。要变 Agent，只要把"在 chat 入口被动调检索"改成"让模型主动决定调检索"。
-
----
-
-## 9. 天道智能体里"看着像 Agent 但还不是"的地方
-
-回头看天道智能体的代码，有几个 agent-flavored 模式：
-
-### 9.1 自纠重试（`answerWithCitations.ts:31-39`）
-
-```ts
-if (needsCitation(answer) && citations.length === 0) {
-  answer = (await provider.generateAnswer({
-    question: `${question}\n\n上一次回答没有有效引用。请重新回答……`
-  })).text.trim();
-  citations = validateCitations(answer, retrieved);
-}
-```
-
-**像什么**：Self-correct
-**缺什么**：不是真 Reflexion —— 没有把"为什么失败"记录下来、没有累积经验。
-
-### 9.2 Provider 抽象（`llmProvider.ts`）
-
-```ts
-export interface LlmProvider {
-  generateAnswer(args: { question: string; context: string }): Promise<{ text: string }>;
-  embedTexts(args: { texts: string[] }): Promise<{ embeddings: number[][] }>;
-}
-```
-
-**像什么**：依赖倒置（DIP）/ 可替换 Provider
-**缺什么**：这其实是"工具注册表"的雏形。如果把 `generateAnswer / embedTexts` 改成更通用的 `runTool(name, args)`，再注册 `search_docs / read_page / calculate`，模型就能选工具，这就是 Agent 的起点。
-
-### 9.3 文档状态机（`documentTypes.ts`）
-
-```text
-"uploaded" → "extracting" → "indexing" → "indexed"
-                              └──────→ "failed"
-```
-
-**像什么**：状态机 + 异步任务管理
-**用处**：Agent 在跑长任务时（上传/索引/检索）需要进度反馈，这给前端用。Agent 本身**不需要**这个；它是给**人看的**。
-
-### 9.4 三贤角色化生成（`mentors.ts`）
-
-```ts
-system: buildMentorSystemPrompt(input.userProfile ?? null),
-```
-
-**像什么**：Multi-agent 的简化版 —— 三个角色在一个 system prompt 里协作
-**缺什么**：不是真的多 Agent（没有独立思考、没有工具选择、没有分工），只是一个模型模拟三个角色对话。
-
----
-
-## 10. 天道智能体的 Agent 升级动手路径
-
-按难度递增，从最容易的开始改。
-
-### 10.1 给 LLM 加一个"工具"—— search_documents / read_page
-
-**目标**：让模型自己决定要不要检索、检索什么，而不是 chat 入口先检索。
-
-**改动**：
-- 新增独立 `ToolRegistry`，为 `search_library`、`read_source_unit`、`calculate_bazi` 等工具声明 schema、权限、超时和返回类型。
-- 在 Anthropic/OpenAI provider 启用原生 tool use（Anthropic 已经有这个能力）。
-- chat 入口交给受控 Orchestrator；模型只选择允许的 tool call，框架负责校验参数并执行。
-- 框架把 Observation 与证据 ID 写入本轮状态，达到证据充分或步骤/时间/费用上限后停止。
-
-**收益**：天道智能体第一次变成真 Agent。
-
-### 10.2 把单步 self-correct 升级成真 Reflexion
-
-**改动**：
-- 新增 `ReflectionMemory` 抽象（本地可先存 JSON，云端使用带用户隔离的数据库）。
-- `answerWithCitations.ts` 失败时由校验器记录结构化失败原因，例如 `invalid_citation` 或 `insufficient_evidence`。
-- 把这条反思**累积**到长期记忆，下次回答前 system prompt 自动注入过去 N 条反思。
-- 失败超过 K 次就 hint "你总是引用 Sources 里没的页码，这次严格只用 Sources"。
-
-**收益**：跨会话学习，失败越来越少。
-
-### 10.3 加轻量 ReAct 循环
-
-**目标**：让编排器执行“计划摘要 → Action → Observation → 证据判断 → 再行动或生成”的受控循环。
-
-**改动**：
-- system prompt 与工具策略规定何时可调用 `search_library / read_source_unit`，但允许普通闲聊直接回答。
-- 框架侧最多循环 N 步，记录结构化 `{planSummary, action, observationSummary, evidenceIds}`，并设置超时、费用预算与取消机制。
-
-**收益**：模型能拆解复杂问题，而不是拿到一堆 Sources 就硬答。
-
-### 10.4 加 eval —— Agent 也需要体检
-
-**目标**：量化"做对/做错"，把"我又用直觉调了一个 prompt"变成"回归测试覆盖率上升了 X%"。
-
-**改动**：
-- 实现 `docs/verification-plan.md` 提到的 7 项程序测试。
-- 准备 20~50 个 QA，人工标注"好/坏"，跑全量。
-- 跟踪指标：引用命中率、首次无需重试率、平均步数、平均 token。
-- 至少先做引用命中率和拒绝答错的指标，这两个最影响用户感受。
-
-**收益**：改动有依据，不会退步。
-
-### 10.5 加 Memory 层
-
-**目标**：Agent 记得"上次你跟这个用户聊到过什么 / 我犯过哪些错"。
-
-**改动**：
-- JSON / Supabase 表存 `(memory_type, content, created_at, user_id, consent)`。
-- 每次回答前 topK 召回相关 memory，塞进 prompt。
-- 用户侧：用户可以查 / 删除 / 编辑 memory。
-
-**收益**：长期会话质量上升。
-
----
-
-## 11. 概念清单（自检）
-
-学完应该能口头解释：
-
-| 概念 | 一句话 |
-|---|---|
-| LLM 调用 | 模型接 prompt 出 response，一次结束 |
-| RAG | 先检索再生成，知识可更新、可追溯 |
-| Agent | 在循环里自己决定工具和步骤，直到任务完成 |
-| Tool use / Function calling | 模型输出"调用哪个函数 + 参数"，框架去执行 |
-| Planning | 把大任务拆成步骤 |
-| ReAct | 依据当前状态行动，观察结果后再决定下一步，直到 Final；产品展示结构化摘要而非私有思维链 |
-| Reflexion | 失败后自我归因，把经验累积到下次 |
-| Memory | 短期（prompt） + 长期（向量库/库文件） |
-| Multi-agent | 多个 Agent 分工协作 |
-| Self-correct | 失败后重试（不一定真反思） |
-| Function schema | 工具的"说明书"（名字、参数、说明） |
-
----
-
-## 12. 学完这套您能往哪走
-
-按接下来 1~3 个月可走的路径：
-
-1. **天道智能体内**：
-   - 完成 10.1（加 tool use）—— 看一次模型自己跑工具
-   - 完成 10.4（加 eval）—— 拿到基线指标
-   - 完成 10.2（真 Reflexion）—— 让它跨会话积累教训
-2. **横向类比**：
-   - 用 LangChain / LlamaIndex 写一个简化版 RAG，对比实现差异。
-   - 用 OpenAI Agents SDK 或 Anthropic tool use 文档，看官方 Agent 抽象长什么样。
-3. **纵向深挖**：
-   - 读 ReAct 原论文（Yao et al., 2022）、Reflexion 论文（Shinn et al., 2023）。
-   - 看 LangGraph / AutoGen / CrewAI 源码，理解工程化细节。
-
----
-
-## 13. 推荐补充阅读
-
-- OpenAI Function calling 官方文档
-- Anthropic Tool use（tool use / computer use）官方文档
-- Lilian Weng 的博客："LLM Powered Autonomous Agents"
-- ReAct 论文、Reflexion 论文
-- LangChain / LangGraph 的 Agent 教程（对比实现思路）
+> 核对日期：2026-09-21。已实现能力以运行源码为准；长任务恢复、跨任务反思、MCP、A2A 等为扩展学习方向。

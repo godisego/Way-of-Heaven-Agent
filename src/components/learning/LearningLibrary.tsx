@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { GLOSSARY } from "@/data/concepts";
-import { getTrackDocs, LEARN_DOCS, type LearnDoc, type LearnTrack } from "@/data/learnDocs";
+import { AGENT_LAYERS, getTrackDocs, LEARN_DOCS, type LearnDoc, type LearnTrack } from "@/data/learnDocs";
 import { MingliQuickReference } from "@/components/learning/MingliQuickReference";
 import { QuizPanel } from "@/components/learning/QuizPanel";
 import { QUIZ_QUESTIONS } from "@/data/quizQuestions";
@@ -19,10 +19,10 @@ type LearnView = "agent" | "mingli" | "quick";
 
 const TRACK_COPY: Record<LearnTrack, { eyebrow: string; title: string; blurb: string; outcome: string }> = {
   agent: {
-    eyebrow: "Agent 工程学径",
-    title: "从一次请求，读懂一套智能体",
-    blurb: "先认 RAG 与 Agent 的基本零件，再沿着真实请求拆架构、可信检索、工具循环、调试与评测。",
-    outcome: "能沿执行轨迹定位第一处错误，并把失败沉淀成可回归的评测。",
+    eyebrow: "AI 与 Agent 五层学径",
+    title: "从 AI 世界观，到系统设计与产品交付",
+    blurb: "统一用五层地图学习：先把概念放对位置，再理解模型、搭建系统，最后验证用户价值。",
+    outcome: "能解释模型与 Jev 的分工，设计可评测的 Agent，并算清一次业务试点的收益与代价。",
   },
   mingli: {
     eyebrow: "命理系统学径",
@@ -91,6 +91,31 @@ function Curriculum({ track, onOpenQuick }: { track: LearnTrack; onOpenQuick: ()
           </div>
         </div>
       </header>
+
+      {track === "agent" ? (
+        <section className="learn-ai-map" aria-label="AI 学习五层地图">
+          <div className="learn-ai-map-intro">
+            <div>
+              <span className="learn-kicker">统一学习地图 · 2026-09-21 更新</span>
+              <h3>每遇到一个新概念，先找到它的位置</h3>
+            </div>
+            <Link href="/learn/ai-learning-map">阅读地图与分层验收 →</Link>
+          </div>
+          <ol className="learn-ai-map-layers">
+            {AGENT_LAYERS.map((layer, index) => (
+              <li key={layer.stage}>
+                <a href={`#agent-stage-${stages.indexOf(layer.stage) + 1}`}>
+                  <span className="learn-kicker">第 {index + 1} 层</span>
+                  <strong>{layer.title}</strong>
+                  <span>{layer.question}</span>
+                  <small>{layer.outcome}</small>
+                </a>
+              </li>
+            ))}
+          </ol>
+          <p>新课：<Link href="/learn/jev-decision-models">Jev 与类型化决策</Link> · <Link href="/learn/context-memory-engineering">上下文与记忆</Link> · <Link href="/learn/agent-runtime-protocols">MCP / A2A / Skills</Link> · <Link href="/learn/agent-evaluation-observability">评测与可观测性</Link></p>
+        </section>
+      ) : null}
 
       <div className="learn-course-layout">
         <aside className="learn-stage-rail" data-tour-id="learn-stage-rail" aria-label={`${copy.eyebrow}阶段目录`}>
@@ -245,7 +270,7 @@ export function LearningLibrary() {
         <div className="learn-home-copy">
           <span className="learn-kicker">系统课程库</span>
           <h1>学习馆</h1>
-          <p>两条完整学径，一套随时可查的命理词典。内容与互动图都在本地，无需 Key。</p>
+          <p>AI 与 Agent 五层地图、命理系统学径，以及随时可查的术语。讲义、自测与互动图都在本地，无需 Key。</p>
         </div>
         <dl className="learn-overview-stats" aria-label="学习馆内容统计">
           <div><dt>课程讲义</dt><dd>{LEARN_DOCS.length}</dd></div>
@@ -266,7 +291,7 @@ export function LearningLibrary() {
             onClick={() => activate("agent")}
           >
             <span>Agent 学径</span>
-            <small>{getTrackDocs("agent").length} 篇 · 工程实践</small>
+            <small>{getTrackDocs("agent").length} 篇 · 五层地图 + 附录</small>
           </button>
           <button
             type="button"
