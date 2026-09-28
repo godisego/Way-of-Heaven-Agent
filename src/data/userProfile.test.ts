@@ -34,3 +34,34 @@ describe("prepareUserProfileForAgent", () => {
     expect(prepareUserProfileForAgent({ birthDate: "1995-08-14" } as UserProfile)).toBeNull();
   });
 });
+
+describe("v2 派生字段迁移", () => {
+  it.each(["04:30", "23:30"])("%s：重算宫位和天月德，同时保留真太阳时、晚子时、起运选择", (birthTime) => {
+    const input = {
+      birthDate: "1995-08-14", birthTime, gender: "male" as const, birthLongitude: 120.2,
+      qiYunConvention: "exact" as const, lateZiRule: "next-day" as const,
+    };
+    const fresh = calculateBazi(input);
+    const legacy = {
+      ...fresh, ruleVersion: 2,
+      mingGong: { ganZhi: "巳", wuXing: "火" },
+      shenGong: { ganZhi: "丑", wuXing: "土" },
+      shenSha: { ...fresh.shenSha, tianDe: { gan: "癸" }, yueDe: { gan: "壬" } },
+    } as unknown as typeof fresh;
+    const profile: UserProfile = {
+      ...input, birthPlace: "杭州", currentPlace: "上海", updatedAt: "2026-09-01", bazi: legacy,
+    };
+    const prepared = prepareUserProfileForAgent(profile)!;
+    expect(prepared.bazi).toEqual(fresh);
+    expect(prepared.bazi?.ruleVersion).toBe(BAZI_RULE_VERSION);
+    expect(prepared.bazi?.lateZiRule).toBe("next-day");
+    expect(prepared.bazi?.qiYun.convention).toBe("exact");
+    expect(prepared.birthLongitude).toBe(120.2);
+    expect(profile.bazi?.mingGong.ganZhi).toBe("巳");
+    if (birthTime === "04:30") {
+      expect(prepared.bazi?.mingGong.ganZhi).toBe("癸未");
+      expect(prepared.bazi?.shenGong.ganZhi).toBe("丁亥");
+      expect(prepared.bazi?.shenSha.tianDe).toBeNull();
+    }
+  });
+});

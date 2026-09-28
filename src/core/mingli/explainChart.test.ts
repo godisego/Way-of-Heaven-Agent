@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { BaziResult, BaziPillar } from "@/core/user/baziCalculator";
+import { calculateBazi, type BaziResult, type BaziPillar } from "@/core/user/baziCalculator";
 import { explainSelection, ganZhiRelation, roughStrength } from "./explainChart";
 import { liuNianGanZhi, liuNianYearOf } from "./liuNian";
 import { getEntry, kbSize, MINGLI_KB } from "./mingliKb";
 
-/** 手工构造一个自洽的盘（乙亥 甲申 丁卯 壬寅，日主丁火），不依赖 lunar-javascript 运行时 */
+/** 展示用合成夹具（含人为运程），不是出生日期的历法校验依据。 */
 function pillar(gan: string, zhi: string, hideGan: string[], shiShenGan: string, zhiShiShen: string[]): BaziPillar {
   const ganWx: Record<string, "金" | "木" | "水" | "火" | "土"> = {
     甲: "木", 乙: "木", 丙: "火", 丁: "火", 戊: "土", 己: "土", 庚: "金", 辛: "金", 壬: "水", 癸: "水",
@@ -43,9 +43,9 @@ const chart: BaziResult = {
   isForward: false,
   xiaoYun: { direction: "逆排", startGanZhi: "壬寅", steps: [{ age: 1, ganZhi: "辛丑" }] },
   taiYuan: { ganZhi: "乙亥", naYin: "山头火" },
-  mingGong: { ganZhi: "子", wuXing: "水" },
-  shenGong: { ganZhi: "丑", wuXing: "土" },
-  shenSha: { tianYi: [], wenChang: [], yiMa: [], taoHua: [], huaGai: [], jiangXing: [], tianDe: [], yueDe: [] } as unknown as BaziResult["shenSha"],
+  mingGong: { gan: "癸", zhi: "未", ganZhi: "癸未", wuXing: "土" },
+  shenGong: { gan: "丁", zhi: "亥", ganZhi: "丁亥", wuXing: "水" },
+  shenSha: { tianYi: { positions: [], branches: [] }, wenChang: null, yiMa: null, taoHua: null, huaGai: null, jiangXing: null, tianDe: null, yueDe: null },
   summary: "测试盘",
 };
 
@@ -222,7 +222,16 @@ describe("盘面总览 · 完整分析", () => {
     expect(all).toContain("印星"); // 本盘印透两干、支藏三印，必为最重
     expect(all).toContain("流年");
     expect(all).toContain("当前大运"); // 夹具大运至 2023 起步，任一现代年份均落在末步
-    expect(all).toContain("命宫子");
+    expect(all).toContain("命宫癸未");
     expect(all).toContain("山头火"); // 胎元纳音
+  });
+});
+
+describe("真实出生输入到宫位解释", () => {
+  it("使用实际计算结果验证宫位，不用手写宫位夹具证明算法", () => {
+    const actual = calculateBazi({ birthDate: "1995-08-14", birthTime: "04:30", gender: "male" });
+    const text = explainSelection(actual, { kind: "overview" }).sections.map((s) => s.body).join("");
+    expect(text).toContain("命宫癸未（宫支五行土）");
+    expect(text).toContain("身宫丁亥（宫支五行水）");
   });
 });

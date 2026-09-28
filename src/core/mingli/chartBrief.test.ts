@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { BaziResult, BaziPillar } from "@/core/user/baziCalculator";
+import { calculateBazi, type BaziResult, type BaziPillar } from "@/core/user/baziCalculator";
 import { briefForHu, briefForXuan, briefForLi } from "./chartBrief";
 
-/** 与 explainChart.test 相同的自洽夹具（乙亥 甲申 丁卯 壬寅，日主丁火） */
+/** 展示用合成夹具（含人为运程），不是出生日期的历法校验依据。 */
 function pillar(gan: string, zhi: string, hideGan: string[], shiShenGan: string, zhiShiShen: string[]): BaziPillar {
   const ganWx: Record<string, "金" | "木" | "水" | "火" | "土"> = {
     甲: "木", 乙: "木", 丙: "火", 丁: "火", 戊: "土", 己: "土", 庚: "金", 辛: "金", 壬: "水", 癸: "水",
@@ -41,8 +41,8 @@ const chart: BaziResult = {
   isForward: false,
   xiaoYun: { direction: "逆排", startGanZhi: "壬寅", steps: [{ age: 1, ganZhi: "辛丑" }] },
   taiYuan: { ganZhi: "乙亥", naYin: "山头火" },
-  mingGong: { ganZhi: "子", wuXing: "水" },
-  shenGong: { ganZhi: "丑", wuXing: "土" },
+  mingGong: { gan: "癸", zhi: "未", ganZhi: "癸未", wuXing: "土" },
+  shenGong: { gan: "丁", zhi: "亥", ganZhi: "丁亥", wuXing: "水" },
   shenSha: {} as unknown as BaziResult["shenSha"],
   summary: "测试盘",
 };
@@ -127,5 +127,22 @@ describe("briefForLi（李 · 结构性隔离）", () => {
   it("空档时给出兜底文案", () => {
     const brief = briefForLi({});
     expect(brief).toContain("未留下背景");
+  });
+});
+
+describe("真实排盘到三贤简报", () => {
+  it("未实见天德不传给模型，月德标明实际命中位置", () => {
+    const actual = calculateBazi({ birthDate: "1995-08-14", birthTime: "04:30", gender: "male" });
+    const text = briefForHu(actual, NOW);
+    expect(text).toContain("命宫 癸未 · 身宫 丁亥");
+    expect(text).not.toContain("天德（");
+    expect(text).toContain("月德（壬·时干）");
+  });
+  it("地支型天德能正确展示，不再以 gan 字段混称", () => {
+    const actual = calculateBazi({ birthDate: "2000-09-14", birthTime: "04:30", gender: "male" });
+    const text = briefForHu(actual, NOW);
+    expect(text).toContain("天德（寅·时支）");
+    expect(text).toContain("月德（庚·年干）");
+    expect(text).not.toContain("undefined");
   });
 });

@@ -44,8 +44,8 @@ const bazi: BaziResult = {
   isForward: false,
   xiaoYun: { direction: "逆排", startGanZhi: "壬寅", steps: [{ age: 1, ganZhi: "辛丑" }] },
   taiYuan: { ganZhi: "乙亥", naYin: "山头火" },
-  mingGong: { ganZhi: "子", wuXing: "水" },
-  shenGong: { ganZhi: "丑", wuXing: "土" },
+  mingGong: { gan: "癸", zhi: "未", ganZhi: "癸未", wuXing: "土" },
+  shenGong: { gan: "丁", zhi: "亥", ganZhi: "丁亥", wuXing: "水" },
   shenSha: {} as unknown as BaziResult["shenSha"],
   summary: "测试盘",
 };

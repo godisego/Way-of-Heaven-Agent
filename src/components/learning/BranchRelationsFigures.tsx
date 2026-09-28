@@ -156,7 +156,7 @@ export function TianganHeCard({ title }: { title: string }) {
         ))}
       </svg>
       <DescBlock
-        activeItem={activeItem ? { name: `${activeItem.a}己合化${activeItem.hua}`.replace("己", activeItem.b), color: wuxingColor(activeItem.hua === "土" ? "丑" : activeItem.hua === "金" ? "申" : activeItem.hua === "水" ? "子" : activeItem.hua === "木" ? "寅" : "巳"), desc: `合化${activeItem.hua}——化神需在月令或周边有根气，且两干相邻，不被克破。` } : null}
+        activeItem={activeItem ? { name: `${activeItem.a}己合化${activeItem.hua}`.replace("己", activeItem.b), color: wuxingColor(activeItem.hua === "土" ? "丑" : activeItem.hua === "金" ? "申" : activeItem.hua === "水" ? "子" : activeItem.hua === "木" ? "寅" : "巳"), desc: `配对所论化神为${activeItem.hua}。是否合化需另查月令、根气、位置与克破；相邻是部分读法重视的条件，不是见到配对就已合化。` } : null}
         defaultText={<>五对合化：<strong>甲己土</strong>、<strong>乙庚金</strong>、<strong>丙辛水</strong>、<strong>丁壬木</strong>、<strong>戊癸火</strong>。点击任一对查看化神条件。</>}
       />
     </div>
@@ -208,11 +208,11 @@ export function LiuheCard({ title }: { title: string }) {
       </svg>
       <DescBlock
         activeItem={activeItem ? {
-          name: `${activeItem.a}${activeItem.b}合${activeItem.hua ? "化" + activeItem.hua : "（合而不化）"}`,
+          name: `${activeItem.a}${activeItem.b}合${activeItem.hua ? "化" + activeItem.hua : "（化神口径有分歧）"}`,
           color: activeItem.hua ? wuxingColor(activeItem.hua === "木" ? "寅" : activeItem.hua === "火" ? "巳" : activeItem.hua === "土" ? "丑" : activeItem.hua === "金" ? "申" : "子") : COLORS.muted,
-          desc: activeItem.hua ? `化神为${activeItem.hua}——需月令或周边${activeItem.hua}气支持。` : "午未合流派不一，有合化火、合化土、合而不化三说。",
+          desc: activeItem.hua ? `配对所论化神为${activeItem.hua}。是否合化仍需按所用流派检查月令、根气与其他字；隔柱也可识别这组配对。` : "午未合流派不一，有合化火、合化土、合而不化三说。",
         } : null}
-        defaultText={<>六对合：<strong>子丑土</strong>、<strong>寅亥木</strong>、<strong>卯戌火</strong>、<strong>辰酉金</strong>、<strong>巳申水</strong>、<strong>午未</strong>（虚线表示合而不化）。点击查看。</>}
+        defaultText={<>六对合：<strong>子丑土</strong>、<strong>寅亥木</strong>、<strong>卯戌火</strong>、<strong>辰酉金</strong>、<strong>巳申水</strong>、<strong>午未</strong>（虚线表示化神口径有分歧）。点击查看。</>}
       />
     </div>
   );
@@ -266,7 +266,7 @@ export function SanheCard({ title }: { title: string }) {
         activeItem={activeTriad ? {
           name: `${activeTriad.a}-${activeTriad.b}-${activeTriad.c} 三合${activeTriad.label}`,
           color: wuxingColor(activeTriad.label.replace("局", "") === "木" ? "寅" : activeTriad.label.replace("局", "") === "火" ? "巳" : activeTriad.label.replace("局", "") === "土" ? "丑" : activeTriad.label.replace("局", "") === "金" ? "申" : "子"),
-          desc: `中字${activeTriad.b}为局神，力量集中。三字齐全才成局；缺一字为半合（如${activeTriad.a}${activeTriad.b}或${activeTriad.b}${activeTriad.c}）。`,
+          desc: `旺支${activeTriad.b}为局神。三字齐全才是完整组合，合化还需另查条件。${activeTriad.a}${activeTriad.b}或${activeTriad.b}${activeTriad.c}通常称半合；缺旺支的${activeTriad.a}${activeTriad.c}常称拱合，不能混同。`,
         } : null}
         defaultText={<>四组三合局：<strong>申子辰水</strong>、<strong>亥卯未木</strong>、<strong>寅午戌火</strong>、<strong>巳酉丑金</strong>。点击查看半合规则。</>}
       />
@@ -322,9 +322,9 @@ export function SanhuiCard({ title }: { title: string }) {
         activeItem={activeTriad ? {
           name: `${activeTriad.a}${activeTriad.b}${activeTriad.c} 三会${activeTriad.label}`,
           color: wuxingColor(activeTriad.label.replace("方", "") === "木" ? "寅" : activeTriad.label.replace("方", "") === "火" ? "巳" : activeTriad.label.replace("方", "") === "土" ? "丑" : activeTriad.label.replace("方", "") === "金" ? "申" : "子"),
-          desc: "三字齐全且位置相邻，会成一方之气。成立条件严，但成立时气势大过三合。",
+          desc: "三支在十二支序列中属于同一季节；不等于必须位于相邻三柱。先识别组合，再按流派检查月令、位置与冲克，不能固定判为强于三合。",
         } : null}
-        defaultText={<>四方会局：<strong>寅卯辰木</strong>、<strong>巳午未火</strong>、<strong>申酉戌金</strong>、<strong>亥子丑水</strong>。相邻且齐全才成立。</>}
+        defaultText={<>四方会局：<strong>寅卯辰木</strong>、<strong>巳午未火</strong>、<strong>申酉戌金</strong>、<strong>亥子丑水</strong>。先核对三字是否齐全，再查成局条件。</>}
       />
     </div>
   );
@@ -376,7 +376,7 @@ export function LiuchongCard({ title }: { title: string }) {
         activeItem={activePair ? {
           name: `${activePair.a}${activePair.b}相冲`,
           color: COLORS.cinnabar,
-          desc: "对位正冲——两字位置对位、五行相克、方向相反。冲不等于凶，可能引动移动、变化或激活。",
+          desc: "十二支圆周相隔六位的对位配对。并非全部五行相克：辰戌、丑未双方都属土。冲不等于凶，也不能仅凭配对判定现实事件。",
         } : null}
         defaultText={<>六对正冲：<strong>子午</strong>、<strong>丑未</strong>、<strong>寅申</strong>、<strong>卯酉</strong>、<strong>辰戌</strong>、<strong>巳亥</strong>（虚线＝对位相冲）。</>}
       />
@@ -400,11 +400,33 @@ export function SanxingCard({ title }: { title: string }) {
   const activeTrio = active !== null ? SANXING[active] : null;
   const inActive = (z: string) => activeTrio !== null && activeTrio.trio.includes(z);
 
-  // 三刑画法：每对相关字之间画线
+  // 三刑组用连线；自刑各自画环，避免误画成辰午酉亥彼此互刑。
   function renderTrioLines(trio: string[], i: number) {
     const dim = active !== null && active !== i;
     const color = COLORS.ink;
     const lines: React.ReactElement[] = [];
+    if (trio.length === 4) {
+      return trio.map((zhi) => {
+        const pos = dizhiPos(zhi, CX, CY, R);
+        const outwardX = (pos.x - CX) / R;
+        const outwardY = (pos.y - CY) / R;
+        return (
+          <circle
+            key={`${i}-${zhi}`}
+            cx={pos.x + outwardX * 16}
+            cy={pos.y + outwardY * 16}
+            r={12}
+            fill="none"
+            stroke={color}
+            strokeWidth={active === i ? 2.5 : 1.5}
+            strokeDasharray="3 2"
+            opacity={dim ? 0.2 : 0.8}
+            onClick={() => setActive(active === i ? null : i)}
+            style={{ cursor: "pointer" }}
+          />
+        );
+      });
+    }
     for (let m = 0; m < trio.length; m++) {
       for (let n = m + 1; n < trio.length; n++) {
         const from = dizhiPos(trio[m], CX, CY, R);
@@ -440,12 +462,12 @@ export function SanxingCard({ title }: { title: string }) {
           name: activeTrio.name,
           color: COLORS.ink,
           desc: activeTrio.trio.length === 2
-            ? "二字相刑——内部不顺、反复牵制，影响多在配合与礼节层面。"
+            ? "子卯相刑的传统名称为无礼之刑；名称不是当事人的道德评价，也不直接预示事件。"
             : activeTrio.trio.length === 4
-              ? "自刑——同字再见，结构性内耗，多见于心绪与状态反复。"
-              : "三字相刑——三方结构互不顺畅，反复牵制，多见人际关系与权责层面。",
+              ? "自刑是辰见辰、午见午、酉见酉、亥见亥四类同字重复；图中环线表示各自重复，不表示四字互刑。"
+              : "三字齐全是完整组合。部分读法也论其中两字相刑，须注明所用口径；关系识别不等于事件判断。",
         } : null}
-        defaultText={<><strong>寅巳申无恩</strong>、<strong>丑戌未恃势</strong>、<strong>子卯无礼</strong>、<strong>辰午酉亥自刑</strong>（虚线＝刑）。</>}
+        defaultText={<><strong>寅巳申无恩</strong>、<strong>丑戌未恃势</strong>、<strong>子卯无礼</strong>、<strong>辰午酉亥自刑</strong>（虚线＝刑，环线＝同字自刑）。</>}
       />
     </div>
   );
@@ -453,13 +475,13 @@ export function SanxingCard({ title }: { title: string }) {
 
 // ── 7. 地支六害 ──
 
-const LIUHAI: Array<Pair> = [
-  { a: "子", b: "未" },
-  { a: "丑", b: "午" },
-  { a: "寅", b: "巳" },
-  { a: "卯", b: "辰" },
-  { a: "申", b: "亥" },
-  { a: "酉", b: "戌" },
+const LIUHAI: Array<Pair & { derivation: string }> = [
+  { a: "子", b: "未", derivation: "子丑合：未冲丑 → 子未害。" },
+  { a: "丑", b: "午", derivation: "子丑合：午冲子 → 丑午害。" },
+  { a: "寅", b: "巳", derivation: "寅亥合：巳冲亥 → 寅巳害。" },
+  { a: "卯", b: "辰", derivation: "卯戌合：辰冲戌 → 卯辰害。" },
+  { a: "申", b: "亥", derivation: "寅亥合：申冲寅 → 申亥害。" },
+  { a: "酉", b: "戌", derivation: "卯戌合：酉冲卯 → 酉戌害。" },
 ];
 
 export function LiuhaiCard({ title }: { title: string }) {
@@ -497,7 +519,7 @@ export function LiuhaiCard({ title }: { title: string }) {
         activeItem={activePair ? {
           name: `${activePair.a}${activePair.b}相害`,
           color: COLORS.muted,
-          desc: "又称穿——六合被冲位破，形成暗中损耗。影响通常小于冲与刑。",
+          desc: `${activePair.derivation}这是配对记忆法，不要求中间的六合伙伴实际入盘；刑害等关系可以并存，不预设固定强弱排名。`,
         } : null}
         defaultText={<>六对相害：<strong>子未</strong>、<strong>丑午</strong>、<strong>寅巳</strong>、<strong>卯辰</strong>、<strong>申亥</strong>、<strong>酉戌</strong>（点线＝害）。</>}
       />

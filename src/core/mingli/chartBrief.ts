@@ -13,7 +13,7 @@
 
 import type { BaziResult } from "@/core/user/baziCalculator";
 import { shiShenOfGan, findDaYunForYear, type DaYun } from "@/core/user/baziCalculator";
-import type { ShenSha } from "@/core/user/shenSha";
+import type { ShenSha, ShenShaHit } from "@/core/user/shenSha";
 import { GAN_INFO, ZHI_INFO } from "./mingliKb";
 import { roughStrength } from "./explainChart";
 import { currentLiuNian } from "./liuNian";
@@ -46,8 +46,14 @@ function shenShaText(shenSha: BaziResult["shenSha"] | undefined | null): string 
   if (ss.taoHua) parts.push(`桃花（${ss.taoHua.branch}·${cn[String(ss.taoHua.position)] ?? ""}）`);
   if (ss.huaGai) parts.push(`华盖（${ss.huaGai.branch}·${cn[String(ss.huaGai.position)] ?? ""}）`);
   if (ss.jiangXing) parts.push(`将星（${ss.jiangXing.branch}·${cn[String(ss.jiangXing.position)] ?? ""}）`);
-  if (ss.tianDe) parts.push(`天德（${ss.tianDe.gan}）`);
-  if (ss.yueDe) parts.push(`月德（${ss.yueDe.gan}）`);
+  const appendDe = (name: string, hit: ShenShaHit | null | undefined) => {
+    // 旧版只有候选 gan，不能把候选当命中；旧档由规则版本迁移重新计算。
+    if (!hit?.target || !hit.positions?.length) return;
+    const places = hit.positions.map((p) => `${cn[p].slice(0, 1)}${hit.target.kind === "gan" ? "干" : "支"}`);
+    parts.push(`${name}（${hit.target.value}·${places.join("、")}）`);
+  };
+  appendDe("天德", ss.tianDe);
+  appendDe("月德", ss.yueDe);
   return parts.length ? parts.join("、") : "无明显神煞";
 }
 

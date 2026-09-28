@@ -567,7 +567,7 @@ function explainOverview(chart: BaziResult): ExplainCard {
       },
       {
         heading: "七 · 宫位一览",
-        body: `命宫${chart.mingGong.ganZhi}（${chart.mingGong.wuXing}）主一身格局之向；身宫${chart.shenGong.ganZhi}（${chart.shenGong.wuXing}）主后天着力处；胎元${chart.taiYuan.ganZhi}（纳音${chart.taiYuan.naYin}）。点各柱可看宫位分说。`,
+        body: `命宫${chart.mingGong.ganZhi}（宫支五行${chart.mingGong.wuXing}）；身宫${chart.shenGong.ganZhi}（宫支五行${chart.shenGong.wuXing}）；胎元${chart.taiYuan.ganZhi}（纳音${chart.taiYuan.naYin}）。命身宫按节气月支与时支推算，宫干按年干五虎遁；其象义属于传统解释。点各柱可看宫位分说。`,
       },
       {
         heading: "提醒",

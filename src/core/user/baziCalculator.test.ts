@@ -198,3 +198,37 @@ describe("真太阳时（经度校正 + 均时差）", () => {
     expect(r.deltaMinutes).toBe(Math.round(r.longitudeDeltaMinutes + r.eotMinutes));
   });
 });
+
+describe("命身宫与二德 · 真实排盘回归", () => {
+  it("1995-08-14 04:30：申月寅时得癸未命宫、丁亥身宫，未见癸不报天德", () => {
+    const r = calculateBazi({ birthDate: "1995-08-14", birthTime: "04:30", gender: "male" });
+    expect(Object.values(r.bazi).map((p) => p.ganZhi)).toEqual(["乙亥", "甲申", "丁丑", "壬寅"]);
+    expect(r.mingGong.ganZhi).toBe("癸未");
+    expect(r.shenGong.ganZhi).toBe("丁亥");
+    expect(r.shenSha.tianDe).toBeNull();
+    expect(r.shenSha.yueDe).toEqual({ target: { kind: "gan", value: "壬" }, positions: ["time"] });
+  });
+
+  it("酉月天德为寅支：2000-09-14 寅时命中、卯时不命中", () => {
+    const cfg = { birthDate: "2000-09-14", gender: "male" as const };
+    expect(calculateBazi({ ...cfg, birthTime: "04:30" }).shenSha.tianDe)
+      .toEqual({ target: { kind: "zhi", value: "寅" }, positions: ["time"] });
+    expect(calculateBazi({ ...cfg, birthTime: "06:30" }).shenSha.tianDe).toBeNull();
+  });
+
+  it("十二节气月与十二时辰的宫干宫支均与依赖独立实现一致", () => {
+    const seen = new Set<string>();
+    for (let month = 1; month <= 12; month++) {
+      for (let hour = 0; hour < 24; hour += 2) {
+        const birthDate = `2000-${String(month).padStart(2, "0")}-15`;
+        const birthTime = `${String(hour).padStart(2, "0")}:30`;
+        const r = calculateBazi({ birthDate, birthTime, gender: "male" });
+        const ec = Solar.fromYmdHms(2000, month, 15, hour, 30, 0).getLunar().getEightChar();
+        seen.add(r.bazi.month.zhi + r.bazi.time.zhi);
+        expect(r.mingGong.ganZhi, `${birthDate} ${birthTime} 命`).toBe(ec.getMingGong());
+        expect(r.shenGong.ganZhi, `${birthDate} ${birthTime} 身`).toBe(ec.getShenGong());
+      }
+    }
+    expect(seen.size).toBe(144);
+  });
+});

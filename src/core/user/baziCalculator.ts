@@ -23,7 +23,7 @@ import {
   type ShenSha,
   type ShenShaConfig,
 } from "./shenSha";
-import { calculateMingGong, calculateShenGong, calculateTaiYuan } from "./mingGong";
+import { calculateMingGong, calculateShenGong, calculateTaiYuan, type PalaceResult } from "./mingGong";
 import { applyCorrection, type SolarTimeResult } from "./solarTime";
 
 export type WuXing = "金" | "木" | "水" | "火" | "土";
@@ -146,8 +146,8 @@ export type QiYunConvention = "traditional" | "exact";
 /** 晚子时（23:00-24:00 出生）日柱归属流派 */
 export type LateZiRule = "current-day" | "next-day";
 
-/** 规则变更后使旧档案中的派生结果重算；不修改出生输入。 */
-export const BAZI_RULE_VERSION = 2;
+/** v3：命身宫及宫干、天月德实见判定。旧档重算派生结果，不修改出生输入。 */
+export const BAZI_RULE_VERSION = 3;
 
 export type BaziResult = {
   ruleVersion?: number;
@@ -199,10 +199,10 @@ export type BaziResult = {
   /** 胎元 */
   taiYuan: { ganZhi: string; naYin: string };
   /** 命宫 */
-  mingGong: { ganZhi: string; wuXing: WuXing };
+  mingGong: PalaceResult;
   /** 身宫 */
-  shenGong: { ganZhi: string; wuXing: WuXing };
-  /** 神煞（按日干 / 年干 查） */
+  shenGong: PalaceResult;
+  /** 神煞：按日干、年支、月支起，核对四柱实见。 */
   shenSha: ShenSha;
   /** 一句话总结 */
   summary: string;
@@ -413,13 +413,15 @@ export function calculateBazi(opts: {
   const timeZhi = timePillar.zhi;
 
   const taiYuanGanZhi = calculateTaiYuan(monthGan, monthZhi);
-  const mingGongResult = calculateMingGong(monthZhi, timeZhi);
-  const shenGongResult = calculateShenGong(monthZhi, timeZhi);
+  const mingGongResult = calculateMingGong(yearPillar.gan, monthZhi, timeZhi);
+  const shenGongResult = calculateShenGong(yearPillar.gan, monthZhi, timeZhi);
 
   // ── 神煞 ──
   const shenShaConfig: ShenShaConfig = {
     dayMaster: dayPillar.gan,
     yearGan: yearPillar.gan,
+    monthGan: monthPillar.gan,
+    timeGan: timePillar.gan,
     yearZhi: yearPillar.zhi,
     monthZhi: monthPillar.zhi,
     dayZhi: dayPillar.zhi,
