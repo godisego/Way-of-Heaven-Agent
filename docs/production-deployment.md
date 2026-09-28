@@ -5,9 +5,9 @@ description: 生产部署与运维——环境变量/Docker/云部署/监控/告
 
 # 生产部署与运维
 
-从"本地能跑"到"上线稳定"，中间差了这篇。不学术，用天道茶寮的真实部署做例子。
+本课用当前项目说明部署需要验证的条件，代码与命令是教学示例，不是已验证的公网生产方案。源码边界核对：2026-09-28。
 
-> **前置**：读 [API 与系统集成](/learn/api-integration) 了解 API 架构。
+> **前置**：[架构与能力边界](/learn/architecture)、[评测](/learn/agent-evaluation-observability)、[安全与治理](/learn/ai-security-governance)。当前会话、设置和部分索引仍依赖本地文件；仅配置 `VECTOR_BACKEND=supabase` 不会完成全量持久化迁移。
 
 ## 一 · 本地 vs 生产差在哪
 
@@ -25,7 +25,7 @@ description: 生产部署与运维——环境变量/Docker/云部署/监控/告
 ### 三层配置
 
 ```
-优先级从高到低：
+配置入口（具体优先级见 appConfig.ts）：
 
 1. 运行时覆盖（前端面板配置）
    └─ data/provider-settings.json（权限 0600）
@@ -35,7 +35,7 @@ description: 生产部署与运维——环境变量/Docker/云部署/监控/告
    └─ git ignore，不提交
    └─ CHAT_API_KEY=sk-xxx
 
-3. .env.example（模板，提交到 git）
+3. .env.example（仅示例，不会作为配置层自动加载）
    └─ 只有变量名，没有值
    └─ CHAT_API_KEY=your_key_here
 ```
@@ -88,6 +88,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/docs ./docs
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 EXPOSE 3000
@@ -127,35 +128,13 @@ docker stop tiandao && docker rm tiandao
   能跑就是能跑，不能跑就是不能跑
 ```
 
-## 四 · 云部署方案对比
+## 四 · 按存储条件选择部署方式
 
-| 方案 | 适合 | 成本 | 天道茶寮适配 |
-|------|------|------|-------------|
-| **Vercel** | Next.js 项目，个人/小团队 | 免费起步 | ✅ 最推荐 |
-| **自建 VPS** | 需要完全控制 | 5~20 元/月 | ✅ 适合 Docker 部署 |
-| **Railway/Render** | 全栈应用，不想折腾 | 5~10 美元/月 | ✅ 简单 |
-| **K8s** | 大规模，多服务 | 复杂+贵 | ❌ 杀鸡用牛刀 |
+先列出文档、原文件、向量、会话、设置的读写位置，再选择运行环境。当前本地 JSON 需要可写且持久的目录，并缺少跨进程写入协调；受保护的单进程环境才与现状接近。公网运行还需补身份、隔离与完整权限控制。
 
-### Vercel 部署天道茶寮
+Serverless 或无持久本地文件的环境需要改造这些存储接口，不能只把向量读取切到 Supabase。`sync:supabase` 同步的资料快照不等于会话、设置和所有上传路径已迁移，部分入口仍检查本地索引。用实例替换、重启和并发写入验证持久化与一致性。
 
-```bash
-# 1. 推到 GitHub
-git push origin main
-
-# 2. Vercel 导入项目
-# vercel.com → New Project → Import GitHub 仓库
-
-# 3. 配环境变量
-# Settings → Environment Variables → 添加 CHAT_API_KEY 等
-
-# 4. 部署
-# Vercel 自动检测 Next.js → 自动 build → 自动部署
-
-# 5. 访问
-# https://your-project.vercel.app
-```
-
-**注意**：Vercel 是无状态的——每次部署后本地文件会清空。天道茶寮的 `data/` 目录需要用 Supabase 或外部存储替代。
+平台价格、免费额度、构建和请求限制会变化，请部署时查对应官方说明；本课不提供未经核验的固定报价或默认推荐。即使构建和首页成功，也要实测上传、检索、会话恢复、删除、权限与回滚。
 
 ## 五 · 监控与告警
 
@@ -218,7 +197,7 @@ curl -X POST https://your-app.vercel.app/api/health \
 
 ### 天道茶寮怎么做灰度
 
-个人项目不需要复杂灰度。简单做法：
+以下是适用于已满足存储与访问控制条件的预览环境流程；当前项目不能因 GitHub 推送成功就视为已部署：
 
 1. 开一个 `staging` 分支
 2. 在 Vercel 部署 preview 分支
@@ -246,48 +225,20 @@ docker run -d ... tiandao-agent:v0.9  # 跑旧版本
 
 ## 八 · 成本治理
 
-AI 应用的主要成本是模型调用费。不治理的话，一个 bug 可能烧光预算。
+成本应结合模型、存储、运维、人工复核与错误损失计量；不能先假定哪项最大。
 
-### 成本构成
+### 成本账本
 
-```
-总成本
-├─ LLM API 调用费（最大头）
-│   ├─ 聊天：按 token 计费
-│   └─ Embedding：按 token 计费（便宜很多）
-├─ 服务器费
-│   ├─ Vercel：免费 ~20 美元/月
-│   └─ VPS：5~20 元/月
-├─ 数据库费
-│   └─ Supabase：免费 ~25 美元/月
-└─ 存储费
-    └─ 文档/索引存储：很便宜
-```
+每个成功任务的成本 = 模型调用 + embedding + 工具及检索 + 存储和计算 + 人工复核 + 预期错误损失，再除以成功任务数。分别记录重试、失败和尾延迟，不只记成功演示。
 
-### 降本技巧
+可评估缓存、模型路由、上下文压缩和 topK 调整；每项都需要比较节约与质量损失。缓存要区分用户权限与资料版本；mock embedding 只适合教学管线检查，不能当真实语义检索质量的低价替代。
 
-| 技巧 | 怎么做 | 节省 |
-|------|--------|------|
-| 缓存热门问题 | 相同问题 24h 内不重复调 LLM | 30~50% |
-| 分级模型 | 简单问题用小模型，复杂问题用大模型 | 40~60% |
-| 缩短 prompt | 去掉冗余指令，精简示例 | 10~20% |
-| Mock embedding | 不配真 embedding，用 mock | 100%（embedding 部分） |
-| 限制 topK | topK 从 10 降到 5 | 减少上下文 token |
-
-### 天道茶寮的成本
-
-```
-假设：每天 50 次对话
-├─ 聊天 API：50 × 0.02 元 = 1 元/天
-├─ Embedding：mock 免费
-├─ 服务器：Vercel 免费
-└─ 总计：~30 元/月
-```
+教学算例：假设每天 50 次任务，每次模型费用 0.02 元，则模型一项为每天 1 元、30 天 30 元。这里不是供应商报价，不含其他费用，也不是本项目的实测月成本。完整业务账本见[毕业实践](/learn/ai-capstone)。
 
 ## 九 · 自测
 
 1. 本地和生产环境的 6 个主要区别是什么？
-2. 环境变量的三层优先级是什么？Key 为什么不能提交到 git？
+2. 运行时设置、环境变量与示例文件有什么区别？Key 为什么不能提交到 git？
 3. Docker 解决了什么问题？"在我机器上是好的"为什么不是借口？
 4. 监控的业务指标、系统指标、AI 指标各有哪些？
 5. 灰度发布的流程是什么？为什么要灰度？

@@ -5,7 +5,7 @@ description: Jev、System One、类型化概率决策与 Agent 路由
 
 # Jev 与类型化决策模型
 
-本课位于第二层“AI 技术树”，连接第四层的路由与评测、第五层的模型选型。学完应能回答：Jev 是什么、能放进系统哪一步，以及一个看起来很自信的分类结果为什么仍然需要验证。
+本课是“模型选型与前沿案例”选修，知识归属连接第二层技术地图、第四层路由评测和第五层产品选型。前置：[分类、概率与评测基础](/learn/classification-probability-basics)、[评测与可观测性](/learn/agent-evaluation-observability)。先能计算误报与漏报、区分概率与校准，再比较 Jev。学完交一张规则 / 分类器 / LLM / Jev 对照实验设计表；没有服务访问或真实数据时明确标为待验证，不填写虚构实测成绩。
 
 > 资料核对：2026-09-21。TypeSafe 于 2026-09-15 宣布 Jev 并开放 early access。System One Model 是 TypeSafe 提出的类别名称，本课不把它当成学界统一分类。发布事实见 [官方公告](https://typesafe.ai/blog/introducing-system-one-models-and-jev)。本项目尚未接入 Jev，以下示例是教学设计，不是运行测评。
 

@@ -13,6 +13,9 @@ export type MistakeRecord = {
   questionId: string;
   /** 用户选了哪个（索引） */
   selectedIndex: number;
+  /** 旧记录无版本，不能再按重排后的选项索引解读。 */
+  revision?: number;
+  selectedText?: string;
   /** 做错时间 ISO */
   createdAt: string;
   /** 是否已重做正确 */
@@ -33,7 +36,7 @@ export function loadMistakes(): MistakeRecord[] {
   }
 }
 
-export function addMistake(questionId: string, selectedIndex: number): void {
+export function addMistake(questionId: string, selectedIndex: number, question?: QuizQuestion): void {
   if (typeof window === "undefined") return;
   const mistakes = loadMistakes();
   // 同一题只保留最新一条
@@ -41,6 +44,8 @@ export function addMistake(questionId: string, selectedIndex: number): void {
   filtered.push({
     questionId,
     selectedIndex,
+    revision: question?.revision,
+    selectedText: question?.options[selectedIndex],
     createdAt: new Date().toISOString(),
     resolved: false,
   });

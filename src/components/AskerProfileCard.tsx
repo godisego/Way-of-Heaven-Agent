@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { UserProfile, Gender } from "@/data/userProfile";
 import { isProfileComplete } from "@/data/userProfile";
-import { calculateBazi, findDaYunForYear, shiShenOfGan } from "@/core/user/baziCalculator";
+import { BAZI_RULE_VERSION, calculateBazi, findDaYunForYear, shiShenOfGan } from "@/core/user/baziCalculator";
 import { MingliPanel } from "./MingliPanel";
 import type { MingliSelection } from "@/core/mingli/explainChart";
 import { currentLiuNian } from "@/core/mingli/liuNian";
@@ -40,7 +40,8 @@ export function AskerProfileCard() {
         // 旧档自动迁移：排盘结构升级（qiYun 精确到年月日等）后，静默重排一次并回存
         const stale =
           isProfileComplete(saved) &&
-          (typeof (saved.bazi?.qiYun as { display?: unknown } | undefined)?.display !== "string" ||
+          (saved.bazi?.ruleVersion !== BAZI_RULE_VERSION ||
+            typeof (saved.bazi?.qiYun as { display?: unknown } | undefined)?.display !== "string" ||
             !Array.isArray(saved.bazi?.bazi?.year?.xunKong));
         if (stale) {
           try {
@@ -51,6 +52,8 @@ export function AskerProfileCard() {
                 birthTime: saved.birthTime,
                 gender: saved.gender,
                 birthLongitude: saved.birthLongitude,
+                qiYunConvention: saved.bazi?.qiYun?.convention === "exact" ? "exact" : "traditional",
+                lateZiRule: saved.bazi?.lateZiRule === "next-day" ? "next-day" : "current-day",
               }),
               updatedAt: new Date().toISOString(),
             };

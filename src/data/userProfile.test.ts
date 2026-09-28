@@ -1,7 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { prepareUserProfileForAgent, type UserProfile } from "./userProfile";
+import { calculateBazi, BAZI_RULE_VERSION } from "@/core/user/baziCalculator";
 
 describe("prepareUserProfileForAgent", () => {
+  it("重算旧规则档案，保留出生资料与起运口径", () => {
+    const bazi = calculateBazi({ birthDate: "1985-02-14", birthTime: "04:00", gender: "male", qiYunConvention: "exact" });
+    delete bazi.ruleVersion;
+    bazi.bazi.month.zhiShiShen[1] = "伤官";
+    const profile: UserProfile = { birthDate: "1985-02-14", birthTime: "04:00", gender: "male", birthPlace: "北京", currentPlace: "北京", updatedAt: "2026-09-01", bazi };
+    const result = prepareUserProfileForAgent(profile)!;
+    expect(result.bazi?.bazi.month.zhiShiShen[1]).toBe("食神");
+    expect(result.bazi?.ruleVersion).toBe(BAZI_RULE_VERSION);
+    expect(result.bazi?.qiYun.convention).toBe("exact");
+    expect(result.birthDate).toBe(profile.birthDate);
+    expect(profile.bazi?.bazi.month.zhiShiShen[1]).toBe("伤官");
+  });
   it("为只含基础生辰字段的 API 档案补齐排盘", () => {
     const profile = {
       birthDate: "1995-08-14",

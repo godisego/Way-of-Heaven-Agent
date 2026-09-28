@@ -2,177 +2,34 @@
 
 import { useState } from "react";
 
-/**
- * 用神取用决策流程图：从日主强弱到最终用神的判断路径。
- *
- * 5 个判断节点：
- *   1. 日主强弱（强/弱/偏旺成势/偏弱成势）
- *   2. 月令调候（寒月需火/燥月需水/无）
- *   3. 阻塞需通关（有/无）
- *   4. 病药（有病需药/无）
- *   5. 从格条件（可从/不可从）
- *
- * 输出：扶抑 / 调候 / 通关 / 病药 / 顺从 五种用神
- *
- * 围栏标记：yongshenflow
- */
-
-const COLORS = {
-  mu: "#7a9d76",
-  huo: "#c46b5e",
-  tu: "#b89970",
-  jin: "#9a9a9f",
-  shui: "#6a87a0",
-  ink: "#252a30",
-  muted: "#5f656b",
-  cinnabar: "#a8473c",
-  amber: "#d97706",
-};
-
-type Step = {
-  id: string;
-  q: string;
-  branches: { label: string; next: string | null; result?: string; color: string }[];
-};
-
-const STEPS: Step[] = [
-  {
-    id: "qiangruo",
-    q: "日主强弱判断",
-    branches: [
-      { label: "身强", next: "tiaohou", color: COLORS.mu },
-      { label: "身弱", next: "tiaohou", color: COLORS.shui },
-      { label: "偏旺成势", next: "congge", color: COLORS.cinnabar },
-      { label: "偏弱成势", next: "congge", color: COLORS.amber },
-    ],
-  },
-  {
-    id: "congge",
-    q: "可否顺从势？",
-    branches: [
-      { label: "可从", next: null, result: "顺从用神（顺势，不逆）", color: COLORS.cinnabar },
-      { label: "不可从", next: "tiaohou", color: COLORS.muted },
-    ],
-  },
-  {
-    id: "tiaohou",
-    q: "月令需调候？",
-    branches: [
-      { label: "寒月需火暖", next: "tongguan", result: "调候用神（暖）", color: COLORS.huo },
-      { label: "燥月需水润", next: "tongguan", result: "调候用神（润）", color: COLORS.shui },
-      { label: "无需调候", next: "tongguan", color: COLORS.muted },
-    ],
-  },
-  {
-    id: "tongguan",
-    q: "五行阻塞需通关？",
-    branches: [
-      { label: "有阻塞", next: "bingyao", result: "通关用神（疏通）", color: COLORS.tu },
-      { label: "无阻塞", next: "bingyao", color: COLORS.muted },
-    ],
-  },
-  {
-    id: "bingyao",
-    q: "原局有病需药？",
-    branches: [
-      { label: "有病", next: null, result: "病药用神（药治）", color: COLORS.cinnabar },
-      { label: "无病", next: null, result: "扶抑用神（生扶/克泄耗）", color: COLORS.jin },
-    ],
-  },
+/** 不同取用视角的比较卡；不把流派方法伪装成通用决策算法。 */
+const PERSPECTIVES = [
+  { id: "fuyi", title: "扶抑", question: "生扶与克泄耗的条件怎样？", detail: "结合月令、通根、透干和全局关系说明偏强或偏弱的依据。项目记分只能给粗略方向，不能据此宣布唯一用神。" },
+  { id: "tiaohou", title: "调候", question: "具体日干、月令如何讨论寒暖燥湿？", detail: "按所采用文献逐干逐月核对，并看候选五行能否发挥作用。不能用冬天一律补火、夏天一律补水替代推导。" },
+  { id: "tongguan", title: "通关", question: "相克双方之间是否有相生环节？", detail: "先指出相克双方，再检查中间五行。例如木克土，可讨论木生火、火生土。木火本来相生，不应写作木火相战。" },
+  { id: "bingyao", title: "病药", question: "该读法把哪一处视为主要矛盾？", detail: "声明作者或流派、矛盾及候选处理条件。病药是传统比喻，不是健康诊断；也不是最后覆盖所有方法的优先规则。" },
+  { id: "teshu", title: "从格与化格", question: "是否满足文献规定的特殊条件？", detail: "分别核对从弱、从旺、化气的适用条件和反例。偏强偏弱不等于已成特殊格，不能用同一条无根条件判断所有情况。" },
 ];
 
 export function YongshenFlowCard({ title }: { title: string }) {
-  const [active, setActive] = useState<string | null>(null);
-
+  const [active, setActive] = useState(PERSPECTIVES[0].id);
+  const selected = PERSPECTIVES.find((item) => item.id === active)!;
   return (
     <div className="mfig-card" style={{ background: "#fff", border: "1px solid rgba(37,42,48,0.14)", borderRadius: 8, padding: 14 }}>
-      <div className="mfig-title" style={{ fontWeight: 700, fontSize: 13, color: COLORS.ink, marginBottom: 12 }}>{title}</div>
-
-      <svg viewBox="0 0 720 460" width="100%" style={{ maxHeight: 460 }}>
-        <defs>
-          <marker id="ys-arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8 z" fill={COLORS.muted} />
-          </marker>
-        </defs>
-
-        {STEPS.map((s, i) => {
-          const x = 30 + i * 140;
-          const isActive = active === s.id;
-          return (
-            <g key={s.id} style={{ cursor: "pointer" }} onClick={() => setActive(isActive ? null : s.id)}>
-              {/* 节点框 */}
-              <rect
-                x={x}
-                y={180}
-                width={120}
-                height={60}
-                rx={6}
-                fill={isActive ? "#eff6ff" : "#f8fafc"}
-                stroke={isActive ? COLORS.cinnabar : "rgba(37,42,48,0.2)"}
-                strokeWidth={isActive ? 1.5 : 1}
-              />
-              <text x={x + 60} y={205} textAnchor="middle" fontSize={12} fontWeight={600} fill={COLORS.ink}>{s.q}</text>
-              <text x={x + 60} y={225} textAnchor="middle" fontSize={10} fill={COLORS.muted}>判断 {i + 1}</text>
-
-              {/* 分支箭头 */}
-              {s.branches.map((b, bi) => {
-                const isLast = b.next === null;
-                const yOffset = (bi - (s.branches.length - 1) / 2) * 22;
-                const targetX = isLast ? x + 120 : x + 140;
-                const targetY = isLast ? 180 + yOffset : 210;
-                const opacity = active === null || isActive ? 0.8 : 0.25;
-                return (
-                  <g key={bi} opacity={opacity}>
-                    <path
-                      d={isLast
-                        ? `M ${x + 120} 210 Q ${x + 130} 210 ${x + 135} ${180 + yOffset}`
-                        : `M ${x + 120} 210 L ${targetX - 5} ${targetY}`}
-                      stroke={b.color}
-                      strokeWidth={1.2}
-                      fill="none"
-                      markerEnd="url(#ys-arrow)"
-                    />
-                    {isLast && b.result && (
-                      <text
-                        x={x + 145}
-                        y={180 + yOffset + 4}
-                        fontSize={11}
-                        fontWeight={600}
-                        fill={b.color}
-                      >→ {b.result}</text>
-                    )}
-                    {!isLast && (
-                      <text
-                        x={x + 128}
-                        y={targetY - 4}
-                        fontSize={10}
-                        fill={b.color}
-                      >{b.label}</text>
-                    )}
-                  </g>
-                );
-              })}
-
-              {/* 节点序号 */}
-              <circle cx={x + 60} cy={172} r={10} fill={COLORS.cinnabar} />
-              <text x={x + 60} y={176} textAnchor="middle" fontSize={11} fontWeight={700} fill="#fff">{i + 1}</text>
-            </g>
-          );
-        })}
-
-        {/* 底部说明 */}
-        <text x={360} y={440} textAnchor="middle" fontSize={11} fill={COLORS.muted}>
-          判断顺序：1 强弱 → 2 从格 → 3 调候 → 4 通关 → 5 病药；后判断的优先级高于前
-        </text>
-      </svg>
-
-      <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(37,42,48,0.08)", fontSize: 11, color: COLORS.muted, lineHeight: 1.7 }}>
-        {active ? (
-          <p><strong>当前节点：</strong>{STEPS.find(s => s.id === active)?.q}。点击节点查看分支详情，再点取消。</p>
-        ) : (
-          <p><strong>用神取用五种：</strong>扶抑（生扶/克泄耗）、调候（暖/润）、通关（疏通五行）、病药（药治原局病）、顺从（从格顺势不逆）。判断按 1→5 顺序，后判断优先级高于前。</p>
-        )}
+      <div className="mfig-title" style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>{title}</div>
+      <p style={{ fontSize: 12, lineHeight: 1.7 }}>先声明文献与读法，再核对条件。以下视角可比较，没有跨流派统一的先后优先级。</p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "12px 0" }}>
+        {PERSPECTIVES.map((item) => (
+          <button key={item.id} type="button" aria-pressed={active === item.id} onClick={() => setActive(item.id)} style={{ padding: "8px 12px", borderRadius: 6, cursor: "pointer", border: "1px solid rgba(37,42,48,0.2)", background: active === item.id ? "#a8473c" : "#f8fafc", color: active === item.id ? "#fff" : "#252a30" }}>
+            {item.title}
+          </button>
+        ))}
       </div>
+      <div aria-live="polite" style={{ fontSize: 12, lineHeight: 1.8, padding: 12, background: "#f8fafc", borderRadius: 6 }}>
+        <strong>{selected.question}</strong>
+        <p style={{ margin: "6px 0 0" }}>{selected.detail}</p>
+      </div>
+      <p style={{ fontSize: 11, color: "#5f656b", lineHeight: 1.7, marginBottom: 0 }}>输出应包括：所用读法、依据、尚缺条件与候选解释。图中不自动指定用神，也不推定现实事件。</p>
     </div>
   );
 }

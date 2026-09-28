@@ -6,6 +6,8 @@ import { LEARN_DOCS, getAdjacentDocs, getLearnDoc, getTrackDocs } from "@/data/l
 import { renderMarkdownToHtml } from "@/core/utils/miniMarkdown";
 import { LearnArticle } from "@/components/learning/MingliFigureInjector";
 import { QuickAsk } from "@/components/learning/QuickAsk";
+import { LessonProgress } from "@/components/learning/LessonProgress";
+import { QuizPanel } from "@/components/learning/QuizPanel";
 import styles from "@/components/learning/LearningLibrary.module.css";
 
 export function generateStaticParams() {
@@ -26,7 +28,7 @@ export default async function LearnDocPage({ params }: { params: Promise<{ slug:
   }
   const html = renderMarkdownToHtml(markdown);
   const adjacent = getAdjacentDocs(doc);
-  const trackTitle = doc.track === "agent" ? "Agent 径" : "命理径";
+  const trackTitle = doc.track === "agent" ? "AI 与 Agent 学径" : "命理学径";
   const trackDocs = getTrackDocs(doc.track);
   const docIndex = trackDocs.findIndex((item) => item.slug === doc.slug);
   const stageTitle = doc.stage.replace(/^.+?·\s*/, "");
@@ -43,15 +45,24 @@ export default async function LearnDocPage({ params }: { params: Promise<{ slug:
 
       <header className={`learn-doc-context is-${doc.track}`}>
         <div>
-          <span className="learn-kicker">{doc.level}课程</span>
+          <span className="learn-kicker">{doc.role} · {doc.level}{doc.module ? ` · ${doc.module}` : ""}</span>
           <p>{doc.blurb}</p>
         </div>
         <div className="learn-doc-position" aria-label={`本学径第 ${docIndex + 1} 篇，共 ${trackDocs.length} 篇`}>
-          <span>课程进度</span>
+          <span>目录位置</span>
           <strong>{String(docIndex + 1).padStart(2, "0")}</strong>
           <small>/ {String(trackDocs.length).padStart(2, "0")}</small>
         </div>
       </header>
+
+      <aside className="learn-prerequisites" aria-label="学习准备">
+        <strong>前置知识</strong>
+        {doc.prerequisites.length ? <ul>{doc.prerequisites.map((slug) => {
+          const prerequisite = getLearnDoc(slug);
+          return prerequisite ? <li key={slug}><Link href={`/learn/${slug}`}>{prerequisite.title}</Link></li> : null;
+        })}</ul> : <p>可直接开始；如有不熟悉的概念，可结合术语表查阅。</p>}
+        <p>{doc.role === "项目案例" ? "本篇用于理解项目设计演进，历史状态与当前实现请按文中的版本说明区分。" : "已具备前置知识可以直接阅读，无需重复补课。"}</p>
+      </aside>
 
       {doc.quickRefs?.length ? (
         <nav className="learn-doc-quickrefs" aria-label="本文相关命理词条">
@@ -66,16 +77,21 @@ export default async function LearnDocPage({ params }: { params: Promise<{ slug:
       {/* 内容来自本仓库 docs/ 白名单，渲染前已逐行 HTML 转义；图表围栏由渲染器识别 */}
       {/* 正文：图表围栏（```wuxing 等）由 miniMarkdown 渲染为占位符，LearnArticle 注入可交互图表 */}
       <LearnArticle html={html} />
-      <nav className="learn-doc-next" aria-label="学径内上一篇和下一篇">
+      <LessonProgress slug={doc.slug} />
+      <details className="learn-quiz-panel">
+        <summary><span><small>配合文中练习使用</small>本课知识自测</span></summary>
+        <QuizPanel track={doc.track} docSlug={doc.slug} />
+      </details>
+      <nav className="learn-doc-next" aria-label={`${doc.role}路线内上一篇和下一篇`}>
         {adjacent.previous ? (
           <Link href={`/learn/${adjacent.previous.slug}`}>
-            <span>← 上一篇</span>
+            <span>← {doc.role}上一篇</span>
             <strong>{adjacent.previous.title}</strong>
           </Link>
         ) : <span />}
         {adjacent.next ? (
           <Link href={`/learn/${adjacent.next.slug}`}>
-            <span>下一篇 →</span>
+            <span>{doc.role}下一篇 →</span>
             <strong>{adjacent.next.title}</strong>
           </Link>
         ) : <span />}

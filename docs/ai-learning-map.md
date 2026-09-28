@@ -7,7 +7,7 @@ description: 五层 AI 学习地图、课程入口与分层验收
 
 这张地图是整个 AI 与 Agent 学径的共同坐标。遇到新名字，先问它解决什么问题、属于哪一层，再决定是否值得使用。阅读顺序是世界观 → 技术树 → 模型原理 → AI Engineering → 产品思维；做项目时则从第五层的用户问题出发，在各层之间往返。
 
-> 本轮课程核对日期：2026-09-21。Jev、协议与服务能力会演进；课程区分稳定原理、官方当前说明和本项目已实现能力。
+> 本轮课程结构与实现核对日期：2026-09-27；Jev 厂商资料核对日期：2026-09-21。Jev、协议与服务能力会演进；课程区分稳定原理、官方当前说明和本项目已实现能力。
 
 ## 一 · 五层各回答什么
 
@@ -19,7 +19,7 @@ description: 五层 AI 学习地图、课程入口与分层验收
 | AI Engineering | 怎样做成可运行、可恢复、可评测的系统？ | [上下文与记忆](/learn/context-memory-engineering) | 一张系统图、一条执行轨迹、一份失败回归集 |
 | AI 产品思维 | 谁为什么结果付钱？ | [Solution / FDE 交付](/learn/ai-solution-delivery) | 带基线、验收条件与收益测算的试点方案 |
 
-SQL 与 Python 留在附录，按实现需要补课。模型训练与基础设施归回第三层，不再藏在附录里。
+SQL 与 Python 是按需开发选修，不是阅读这套 TypeScript 项目的全部先修。源码实践先完成 [Web 与 API 开发先修](/learn/web-api-basics)；模型选型和概率输出先完成 [分类、概率与评测基础](/learn/classification-probability-basics)。模型训练与基础设施属于第三层进阶。
 
 ## 二 · 贯穿全程的两个案例
 
@@ -29,17 +29,31 @@ SQL 与 Python 留在附录，按实现需要补课。模型训练与基础设�
 
 这两个案例能提醒你：模型、软件控制流与业务规则共同决定产品行为。任何单个模型都不等于完整产品。
 
-## 三 · 最短主线与深入路线
+## 三 · 必修主线、先修与选修
 
-先读本页，再按下面顺序完成主线；其余已有课程是对应层的实战材料。
+五层是知识地图，不是必须从头到尾直线阅读的先修图。先选一个用户问题，学完一层就提交对应产物；做工程前先写半页业务基线，结课时再回到第五层验证价值。
 
-1. [AI 世界观](/learn/ai-worldview) → [Agent 全景图](/learn/ai-agent-panorama)。
-2. [AI 技术树](/learn/ai-technology-map) → [RAG 概念](/learn/rag-concepts) → [Agent 基础](/learn/agent-walkthrough) → [Jev 与类型化决策](/learn/jev-decision-models)。
-3. [LLM 基础](/learn/llm-fundamentals) → [模型原理](/learn/transformer-mechanics) → [训练与基础设施](/learn/model-training-infra)。
-4. [Prompt](/learn/prompt-engineering) → [上下文与记忆](/learn/context-memory-engineering) → [API 集成](/learn/api-integration) → [运行系统与协议](/learn/agent-runtime-protocols) → [评测与可观测性](/learn/agent-evaluation-observability)。
-5. [产品与场景](/learn/ai-product-scenarios) → [Solution / FDE 交付](/learn/ai-solution-delivery)。
+| 层 | 必修主线 | 可检查的产物 |
+| --- | --- | --- |
+| 世界观 | 世界观 → Agent 全景图 | 一个产品的感知、表征、预测、决策、行动拆解 |
+| 技术树 | 技术地图 → RAG 概念 → Agent 基础；按需补[分类与概率基础](/learn/classification-probability-basics) | 概念分类表、一个混淆矩阵和阈值解释 |
+| 模型原理 | LLM 基础 → Transformer 原理 | 一次生成的输入输出图，分清训练与推理 |
+| 工程 | 按下面五个模块实践 | 系统图、执行轨迹、失败回归集 |
+| 产品 | 产品与场景 → Solution / FDE 交付 → [毕业项目](/learn/ai-capstone) | 有基线、失败路径、评分量规与收益账本的试点方案 |
 
-需要源码练习时，在第四层继续：系统架构 → 向量检索 → RAG 走读 → 引用校验 → 工具循环 → 轨迹调试 → 验证计划 → 真实服务验收 → 部署与治理 → 作业 → 造一个智能体。能否跳读以验收能力判断，不以是否背完缩写判断。
+第四层内部按能力递进；每个模块先学通用方法，再选择本项目源码练习：
+
+| 模块 | 核心课 | 项目实践 / 选读 |
+| --- | --- | --- |
+| 应用基础 | [Web 与 API 先修](/learn/web-api-basics) → [Prompt](/learn/prompt-engineering) → [API 集成](/learn/api-integration) | 技术栈、系统架构；先完成练习册的环境和请求题 |
+| 检索与上下文 | [上下文与记忆](/learn/context-memory-engineering) → 向量检索 → 引用与证据 | RAG 源码走读 |
+| 工具与运行系统 | 工具循环 → [运行系统与协议](/learn/agent-runtime-protocols) | 工具参数、停止条件、写入恢复设计 |
+| 评测与调试 | [评测与可观测性](/learn/agent-evaluation-observability) → 轨迹调试 | 失败集、项目验证计划与 M5 案例 |
+| 部署与治理 | 安全治理 → 生产部署 | 部署边界、数据权限、备份与回滚演练 |
+
+**选修规则**：训练基础设施适合继续研究模型训练的读者；SQL / Python 按数据任务补课；[Jev](/learn/jev-decision-models) 是前沿产品案例，先完成分类概率与评测课再读详细接口、校准和对比实验。必修掌握的是如何比较决策方案，不是记住某个厂商名称。
+
+**项目案例规则**：目标蓝图、验证计划与 M5 验收材料保留项目演进背景，不作为通用学科分类或当前功能承诺。阅读时先看版本说明，再对照当前源码。独立实战用 [毕业项目示范与评分量规](/learn/ai-capstone) 验收；勾选已读、答对一道选择题都不能代替项目产物。
 
 ## 四 · 以后分析 AI 产品的固定九问
 

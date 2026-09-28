@@ -95,7 +95,7 @@ export const CONCEPTS: Record<string, Concept> = {
   概率校准: {
     term: "概率校准",
     explanation: "在代表性样本集合上，检查预测概率与实际发生频率是否匹配。不能凭一个 confidence 值保证单次判断正确。",
-    where: "docs/jev-decision-models.md",
+    where: "docs/classification-probability-basics.md",
   },
   ROI: {
     term: "ROI / 用户价值",
@@ -110,13 +110,13 @@ export const CONCEPTS: Record<string, Concept> = {
   入库: {
     term: "入库",
     explanation:
-      "把 PDF 加载进知识库的整个流程。\n含:按页解析 → 切 chunk → embedding → 写向量库。",
+      "把资料加载进知识库的流程。\nPDF 按页、Markdown / TXT 按章节解析，再切 chunk、生成 embedding 并写入索引。",
     where: "src/core/ingestion/ingestionPipeline.ts",
   },
   Embedding: {
     term: "Embedding",
     explanation:
-      "把一段文字变成一串数字（向量）。\n语义相近的文本向量距离近，不相关的远。\n天道智能体可调用 OpenAI 兼容 Embedding 接口，mock 模式则使用本地哈希向量。",
+      "把一段文字变成数值向量，用于相似度检索等任务。\n相关性取决于模型、输入和领域，需要用样本验证。\n本项目可调用兼容接口，mock 模式使用哈希向量，只用于功能联调。",
     where: "src/core/providers/openAICompatibleProvider.ts",
   },
   embedding: {
@@ -184,7 +184,7 @@ export const CONCEPTS: Record<string, Concept> = {
   grounded: {
     term: "grounded",
     explanation:
-      "让 LLM 回答必须建立在给定资料上，不能凭记忆编造。\n天道智能体用 system prompt、来源台账和程序校验共同约束。",
+      "要求回答建立在给定资料上，并能核对来源支持关系。\n本项目用提示词、来源台账和程序规则约束；来源位置合法不自动证明结论被原文支持。",
     where: "src/core/providers/anthropicProvider.ts",
   },
   状态机: {
@@ -229,7 +229,7 @@ export const CONCEPTS: Record<string, Concept> = {
   停止条件: {
     term: "停止条件",
     explanation:
-      "Agent 循环的刹车，本项目六个：步数上限 / 单次调用超时 / 总超时 / 重复调用 / 模型自报收束 / 不调工具。\n先设计怎么停，再设计怎么跑。",
+      "用步数、耗时、重复调用、模型收束与取消等条件限制执行。\n本项目总耗时预算在取证循环检查，并非含起草与重试的端到端硬时限；达到预算也不等于任务完成。",
     where: "src/core/agent/orchestrator.ts",
   },
   执行轨迹: {
@@ -241,7 +241,7 @@ export const CONCEPTS: Record<string, Concept> = {
   分库检索: {
     term: "分库检索",
     explanation:
-      "带权限的检索：一次大召回后按思想传统标签把证据分给三位。\n谁的专库是空的，谁就必须说「暂未入藏」。",
+      "按思想传统标签和角色允许范围筛选、分配证据。\n这是角色材料路由，不能代替按用户或租户实现的访问控制；空库行为也需实际验证。",
     where: "src/core/retrieval/retrieveContext.ts",
   },
   声口校验: {
@@ -253,19 +253,19 @@ export const CONCEPTS: Record<string, Concept> = {
   人设三件套: {
     term: "人设三件套",
     explanation:
-      "neverSay 负面清单、styleSample 声口微样本、contrast 分界线。\n样本示范远胜形容词描述。",
+      "neverSay 负面清单、styleSample 声口样例、contrast 角色分界线。\n用可检查的禁区和示例表达风格目标，再通过评测确认效果。",
     where: "src/data/mentors.ts",
   },
   材料隔离: {
     term: "材料隔离",
     explanation:
-      "输入端防人设漂移：排盘简报三档分发——胡全量、玄只拿气机语言、李完全隔离。\n拿不到的信息永远不会说漏。",
+      "排盘简报按角色生成不同版本：胡全量、玄只取气机语言、李不注入简报。\n当前角色共享一次生成上下文，因此这不是进程或模型调用层面的隐私隔离。",
     where: "src/core/mingli/chartBrief.ts",
   },
   多智能体: {
     term: "Multi-agent",
     explanation:
-      "多个各有独立上下文的 Agent 经消息协作。\n三贤是一次生成的三个角色而非 multi-agent——成本与必要性权衡后的刻意选择。",
+      "多个具有各自职责和执行逻辑的 Agent 协作，可能通过消息或共享状态交换信息。\n本项目三贤是一次生成中的角色分工，不等于三个独立运行的 Agent。",
   },
   评测: {
     term: "Evals",
@@ -281,19 +281,19 @@ export const CONCEPTS: Record<string, Concept> = {
   十神: {
     term: "十神",
     explanation:
-      "任一天干与日主的生克关系名：生我=印、我生=食伤、克我=官杀、我克=财、同我=比劫，各分阴阳。",
+      "传统规则中其他天干相对日主的生克关系名：生我=印、我生=食伤、克我=官杀、我克=财、同我=比劫。\n我生且同阴阳为食神，异阴阳为伤官；关系换算不等于人生预测已经验证。",
     where: "src/core/mingli/mingliKb.ts",
   },
   真太阳时: {
     term: "真太阳时",
     explanation:
-      "经度差（每度 4 分钟）+ 均时差（EOT）的出生时刻校正；跨日时日柱随之换日。",
+      "本项目以北京时间为输入，加相对东经 120° 的经度差（每度 4 分钟）和近似均时差 EOT。\n跨日和晚子时需结合所选日界口径；不自动处理海外时区或历史夏令时。",
     where: "src/core/user/solarTime.ts",
   },
   起运: {
     term: "起运",
     explanation:
-      "按出生到相邻节气的距离折算的上运时间，本系统精确到『几年几个月几天』。\n默认 3 天=1 年折算，可切精确制。",
+      "按传统规则把出生到所选相邻节的时间间隔折算成起运年龄，顺逆方向影响取前一节或后一节。\n本项目显示年、月、日，可选按天或按分钟折算；输出更细不代表预测更准确。",
     where: "src/core/user/baziCalculator.ts",
   },
 };

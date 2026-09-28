@@ -44,12 +44,12 @@ export function wuxingDiagramSvg(): string {
   // 相生箭头（相邻顺时针）
   const shengArrows = nodes.map((n, i) => {
     const next = nodes[(i + 1) % nodes.length];
-    return arrowLine(n.pos, next.pos, "#7a9d76", 1.4, "none", 22);
+    return arrowLine(n.pos, next.pos, "#7a9d76", 1.4, "none", 22, "wx-gen");
   }).join("");
   // 相克箭头（隔一位）
   const keArrows = nodes.map((n, i) => {
     const target = nodes[(i + 2) % nodes.length];
-    return arrowLine(polar(CX, CY, R - 26, n.angle), polar(CX, CY, R - 26, target.angle), CINNABAR, 1.1, "5 3", 22);
+    return arrowLine(polar(CX, CY, R - 26, n.angle), polar(CX, CY, R - 26, target.angle), CINNABAR, 1.1, "5 3", 22, "wx-ke");
   }).join("");
 
   const circles = nodes
@@ -87,11 +87,11 @@ export function shishenDiagramSvg(): string {
   const CY = 130;
   // 日主在中心，五类十神环绕
   const items = [
-    { name: "比劫", sub: "同我", color: "#9a9a9f", angle: -90, rel: "与我同类", dir: "neither" },
-    { name: "食伤", sub: "我生", color: "#7a9d76", angle: -18, rel: "我生出的", dir: "out" },
-    { name: "财星", sub: "我克", color: "#b89970", angle: 54, rel: "我支配的", dir: "out" },
-    { name: "官杀", sub: "克我", color: "#c46b5e", angle: 126, rel: "约束我的", dir: "in" },
-    { name: "印星", sub: "生我", color: "#6a87a0", angle: 198, rel: "生养我的", dir: "in" },
+    { name: "比劫", sub: "同我", color: "#9a9a9f", angle: -90, relation: "same", dir: "neither" },
+    { name: "食伤", sub: "我生", color: "#7a9d76", angle: -18, relation: "sheng", dir: "out" },
+    { name: "财星", sub: "我克", color: "#b89970", angle: 54, relation: "ke", dir: "out" },
+    { name: "官杀", sub: "克我", color: "#c46b5e", angle: 126, relation: "ke", dir: "in" },
+    { name: "印星", sub: "生我", color: "#6a87a0", angle: 198, relation: "sheng", dir: "in" },
   ];
   const R = 78;
   const nodes = items.map((it) => ({ ...it, pos: polar(CX, CY, R, it.angle) }));
@@ -100,12 +100,13 @@ export function shishenDiagramSvg(): string {
   const arrows = nodes
     .map((n) => {
       if (n.dir === "neither") return "";
-      const color = n.dir === "out" ? "#7a9d76" : CINNABAR;
-      const dash = n.dir === "out" ? "none" : "5 3";
+      const color = n.relation === "sheng" ? "#7a9d76" : CINNABAR;
+      const dash = n.relation === "sheng" ? "none" : "5 3";
+      const marker = n.relation === "sheng" ? "ss-sheng" : "ss-ke";
       if (n.dir === "out") {
-        return arrowLine({ x: CX, y: CY }, n.pos, color, 1.2, dash, 18);
+        return arrowLine({ x: CX, y: CY }, n.pos, color, 1.2, dash, 18, marker);
       }
-      return arrowLine(n.pos, { x: CX, y: CY }, color, 1.2, dash, 18);
+      return arrowLine(n.pos, { x: CX, y: CY }, color, 1.2, dash, 18, marker);
     })
     .join("");
 
@@ -124,8 +125,8 @@ export function shishenDiagramSvg(): string {
   <figure class="mingli-fig">
     <svg viewBox="0 0 260 250" role="img" aria-label="十神关系图（以日主为轴）">
       <defs>
-        <marker id="ss-out" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#7a9d76"/></marker>
-        <marker id="ss-in" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="${CINNABAR}"/></marker>
+        <marker id="ss-sheng" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#7a9d76"/></marker>
+        <marker id="ss-ke" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="${CINNABAR}"/></marker>
       </defs>
       ${arrows}
       <circle cx="${CX}" cy="${CY}" r="22" fill="${INK}" opacity="0.9"/>
@@ -134,8 +135,8 @@ export function shishenDiagramSvg(): string {
       ${circles}
     </svg>
     <figcaption>
-      <span class="mingli-fig-legend"><i style="background:#7a9d76"></i>实线＝我出去（食伤泄秀·财星受克）</span>
-      <span class="mingli-fig-legend"><i style="background:${CINNABAR}"></i>虚线＝来找我（官杀克身·印星生身）</span>
+      <span class="mingli-fig-legend"><i style="background:#7a9d76"></i>实线＝相生（我生食伤·印星生我）</span>
+      <span class="mingli-fig-legend"><i style="background:${CINNABAR}"></i>虚线＝相克（我克财星·官杀克我）</span>
     </figcaption>
   </figure>`;
 }
@@ -148,6 +149,7 @@ function arrowLine(
   width: number,
   dash: string,
   offset: number,
+  marker: string,
 ): string {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
@@ -156,7 +158,6 @@ function arrowLine(
   const sy = from.y + (dy / dist) * offset;
   const ex = to.x - (dx / dist) * offset;
   const ey = to.y - (dy / dist) * offset;
-  const marker = color === "#7a9d76" ? (dash === "none" ? "wx-gen" : "ss-out") : dash === "5 3" ? "wx-ke" : "ss-in";
   return `<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="${color}" stroke-width="${width}" stroke-dasharray="${dash}" opacity="0.55" marker-end="url(#${marker})"/>`;
 }
 

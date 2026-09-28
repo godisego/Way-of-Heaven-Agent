@@ -9,7 +9,7 @@
  * 存储走 localStorage（src/data/userProfileStore.ts），将来切 Supabase 时只换 store 实现。
  */
 
-import { calculateBazi, findDaYunForYear, type BaziResult } from "@/core/user/baziCalculator";
+import { BAZI_RULE_VERSION, calculateBazi, findDaYunForYear, type BaziResult } from "@/core/user/baziCalculator";
 import { currentLiuNian } from "@/core/mingli/liuNian";
 
 export type Gender = "male" | "female";
@@ -56,7 +56,7 @@ export function prepareUserProfileForAgent(
   profile: UserProfile | null | undefined,
 ): UserProfile | null {
   if (!isProfileComplete(profile)) return null;
-  if (profile.bazi) return profile;
+  if (profile.bazi?.ruleVersion === BAZI_RULE_VERSION) return profile;
 
   return {
     ...profile,
@@ -65,6 +65,8 @@ export function prepareUserProfileForAgent(
       birthTime: profile.birthTime,
       gender: profile.gender,
       birthLongitude: profile.birthLongitude,
+      qiYunConvention: profile.bazi?.qiYun?.convention === "exact" ? "exact" : "traditional",
+      lateZiRule: profile.bazi?.lateZiRule === "next-day" ? "next-day" : "current-day",
     }),
     updatedAt: profile.updatedAt || new Date().toISOString(),
   };

@@ -37,7 +37,7 @@ const LAYERS: Layer[] = [
     id: "foundation",
     name: "阴阳五行",
     subtitle: "哲学基石",
-    coreQuestion: "世界由什么组成？气的循环规律是什么？",
+    coreQuestion: "传统文本用哪些阴阳五行概念组织解释？",
     lesson: "阴阳五行入门",
     color: COLORS.mu,
   },
@@ -53,7 +53,7 @@ const LAYERS: Layer[] = [
     id: "chart",
     name: "四柱八字",
     subtitle: "盘面层",
-    coreQuestion: "出生那一刻的气的快照长什么样？",
+    coreQuestion: "出生输入按约定历法怎样换算为四柱？",
     lesson: "八字盘面解剖",
     color: COLORS.tu,
   },
@@ -68,8 +68,8 @@ const LAYERS: Layer[] = [
   {
     id: "algorithm",
     name: "格局 · 用神",
-    subtitle: "算法层",
-    coreQuestion: "这是什么类型的系统？需要什么才能平衡？",
+    subtitle: "解释层",
+    coreQuestion: "采用哪种流派定义？取用的条件与分歧是什么？",
     lesson: "格局取用与用神详法",
     color: COLORS.cinnabar,
   },
@@ -83,9 +83,9 @@ const LAYERS: Layer[] = [
   },
   {
     id: "output",
-    name: "断盘结论",
+    name: "推导记录",
     subtitle: "输出层",
-    coreQuestion: "综合以上，如何回到现实处境给观察建议？",
+    coreQuestion: "如何记录规则、推导条件、来源与证据限制？",
     lesson: "七步读盘工作流",
     color: COLORS.shui,
   },
@@ -231,7 +231,7 @@ export function SystemOverviewCard({ title }: { title?: string }) {
           </div>
         ) : (
           <p>
-            命理系统七层结构：<strong>底层是哲学基石，顶层是断盘输出</strong>。每层只回答一个核心问题，上层依赖下层。点任一层看详情。命理学习的正道是<strong>自底向上</strong>——先基石再符号再盘面，最后到算法与输出。
+            本课程的传统命理概念图：<strong>底层是传统概念，顶层是有条件的推导</strong>。每层只回答一个核心问题，上层依赖下层。点任一层看详情。本课程建议<strong>自底向上</strong>——先基石再符号再盘面，最后比较解释与推导；可复算规则不等于现实预测有效。
           </p>
         )}
       </div>

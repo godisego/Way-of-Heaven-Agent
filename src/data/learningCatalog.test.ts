@@ -19,18 +19,37 @@ describe("learning curriculum integrity", () => {
     }
   });
 
-  it("keeps five layers contiguous and previous/next inside each track", () => {
+  it("keeps five layers contiguous and navigation within the chosen learning route", () => {
     const agentDocs = getTrackDocs("agent");
     const stages = agentDocs.map((doc) => doc.stage).filter((stage, i, all) => i === 0 || stage !== all[i - 1]);
-    expect(stages).toEqual([...AGENT_LAYERS.map((layer) => layer.stage), "附录 · 基础知识"]);
+    expect(stages).toEqual([...AGENT_LAYERS.map((layer) => layer.stage), "案例 · 项目演进", "附录 · 基础知识"]);
     for (const track of ["agent", "mingli"] as const) {
       const docs = getTrackDocs(track);
-      docs.forEach((doc, index) => {
+      docs.forEach((doc) => {
+        const route = docs.filter((item) => item.role === doc.role);
+        const index = route.findIndex((item) => item.slug === doc.slug);
         const adjacent = getAdjacentDocs(doc);
-        expect(adjacent.previous?.slug).toBe(docs[index - 1]?.slug);
-        expect(adjacent.next?.slug).toBe(docs[index + 1]?.slug);
+        expect(adjacent.previous?.slug).toBe(route[index - 1]?.slug);
+        expect(adjacent.next?.slug).toBe(route[index + 1]?.slug);
       });
     }
+  });
+
+  it("offers resolvable, acyclic prerequisites and a practical assessment for each track", () => {
+    const visit = (slug: string, ancestors: string[] = []) => {
+      expect(ancestors, `prerequisite cycle: ${[...ancestors, slug].join(" → ")}`).not.toContain(slug);
+      const doc = LEARN_DOCS.find((item) => item.slug === slug);
+      expect(doc, slug).toBeDefined();
+      doc!.prerequisites.forEach((prior) => visit(prior, [...ancestors, slug]));
+    };
+    LEARN_DOCS.forEach((doc) => visit(doc.slug));
+    for (const slug of ["ai-capstone", "bazi-capstone"]) {
+      expect(LEARN_DOCS.find((doc) => doc.slug === slug)?.role).toBe("必修");
+    }
+    const jev = LEARN_DOCS.find((doc) => doc.slug === "jev-decision-models")!;
+    expect(jev.role).toBe("选修");
+    expect(jev.prerequisites).toContain("agent-evaluation-observability");
+    LEARN_DOCS.filter((doc) => doc.stage === "四 · AI Engineering").forEach((doc) => expect(doc.module, doc.slug).toBeTruthy());
   });
 
   it("connects quizzes to their actual lessons and valid answers", () => {
@@ -39,7 +58,7 @@ describe("learning curriculum integrity", () => {
       const doc = LEARN_DOCS.find((item) => item.slug === question.docSlug);
       expect(doc, question.id).toBeDefined();
       expect(doc?.track, question.id).toBe(question.track);
-      if (question.track === "agent") expect(question.stage, question.id).toBe(doc?.stage);
+      expect(question.stage, question.id).toBe(doc?.stage);
       expect(question.correctIndex).toBeGreaterThanOrEqual(0);
       expect(question.correctIndex).toBeLessThan(question.options.length);
     }

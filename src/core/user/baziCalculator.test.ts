@@ -1,6 +1,55 @@
 import { describe, expect, it } from "vitest";
-import { calculateBazi, findDaYunForYear, type DaYun } from "./baziCalculator";
+import { Solar } from "lunar-javascript";
+import { calculateBazi, findDaYunForYear, shiShenOfGan, type DaYun } from "./baziCalculator";
 import { correctSolarTime, equationOfTime } from "./solarTime";
+
+describe("十神规则与教材回归", () => {
+  it("我生同阴阳为食神，异阴阳为伤官", () => {
+    expect(shiShenOfGan("甲", "丙")).toBe("食神");
+    expect(shiShenOfGan("甲", "丁")).toBe("伤官");
+    expect(shiShenOfGan("乙", "丁")).toBe("食神");
+    expect(shiShenOfGan("乙", "丙")).toBe("伤官");
+  });
+
+  it("十日主乘十天干的 100 种映射均与 lunar 独立查表一致", () => {
+    const covered = new Set<string>();
+    // 连续十天遍历十日干；每一天的十二时辰遍历十种时干。
+    for (let day = 10; day < 20; day++) {
+      for (let hour = 0; hour < 24; hour += 2) {
+        const ec = Solar.fromYmdHms(2000, 6, day, hour, 0, 0).getLunar().getEightChar();
+        const pair = ec.getDayGan() + ec.getTimeGan();
+        covered.add(pair);
+        expect(shiShenOfGan(ec.getDayGan(), ec.getTimeGan()), pair).toBe(ec.getTimeShiShenGan());
+      }
+    }
+    expect(covered.size).toBe(100);
+  });
+
+  it.each(["current-day", "next-day"] as const)("%s：外显与藏干沿用同一日主且与依赖结果一致", (lateZiRule) => {
+    for (let day = 10; day < 20; day++) {
+      const r = calculateBazi({ birthDate: `2000-06-${day}`, birthTime: "23:30", gender: "male", lateZiRule });
+      const ec = Solar.fromYmdHms(2000, 6, day, 23, 30, 0).getLunar().getEightChar();
+      ec.setSect(lateZiRule === "next-day" ? 1 : 2);
+      const hidden = [ec.getYearShiShenZhi(), ec.getMonthShiShenZhi(), ec.getDayShiShenZhi(), ec.getTimeShiShenZhi()];
+      const pillars = [r.bazi.year, r.bazi.month, r.bazi.day, r.bazi.time];
+      pillars.forEach((pillar, index) => {
+        expect(pillar.zhiShiShen).toEqual(hidden[index]);
+        expect(pillar.zhiShiShen).toEqual(pillar.hideGan.map((gan) => shiShenOfGan(r.dayMaster, gan)));
+        if (index !== 2) expect(pillar.shiShenGan).toBe(shiShenOfGan(r.dayMaster, pillar.gan));
+      });
+    }
+  });
+
+  it("统一毕业案例可复算，透丙与寅藏丙都为食神", () => {
+    const r = calculateBazi({ birthDate: "1985-02-14", birthTime: "04:00", gender: "male", lateZiRule: "current-day", qiYunConvention: "traditional" });
+    expect([r.bazi.year, r.bazi.month, r.bazi.day, r.bazi.time].map((p) => p.ganZhi)).toEqual(["乙丑", "戊寅", "甲申", "丙寅"]);
+    expect(r.bazi.time.shiShenGan).toBe("食神");
+    expect(r.bazi.month.zhiShiShen).toEqual(["比肩", "食神", "偏财"]);
+    expect(r.isForward).toBe(false);
+    expect(r.qiYun).toMatchObject({ years: 3, months: 3, days: 20, startAge: 4 });
+    expect(findDaYunForYear(r.daYun, 2026)?.ganZhi).toBe("甲戌");
+  });
+});
 
 describe("findDaYunForYear", () => {
   const daYun: DaYun[] = [

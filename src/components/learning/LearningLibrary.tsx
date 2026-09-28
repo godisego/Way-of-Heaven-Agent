@@ -10,6 +10,7 @@ import { QUIZ_QUESTIONS } from "@/data/quizQuestions";
 import { MistakeBook } from "@/components/learning/MistakeBook";
 import { kbSize } from "@/core/mingli/mingliKb";
 import { startLesson } from "@/components/learning/tourController";
+import { loadReadProgress, PROGRESS_EVENT } from "./learningProgress";
 import {
   PENDING_LIBRARY_TOUR_KEY,
   showFinalOnboardingHint,
@@ -22,13 +23,13 @@ const TRACK_COPY: Record<LearnTrack, { eyebrow: string; title: string; blurb: st
     eyebrow: "AI 与 Agent 五层学径",
     title: "从 AI 世界观，到系统设计与产品交付",
     blurb: "统一用五层地图学习：先把概念放对位置，再理解模型、搭建系统，最后验证用户价值。",
-    outcome: "能解释模型与 Jev 的分工，设计可评测的 Agent，并算清一次业务试点的收益与代价。",
+    outcome: "通过毕业实践，展示模型选型、Agent 系统设计、失败评测与业务收益测算能力。",
   },
   mingli: {
     eyebrow: "命理系统学径",
-    title: "从盘面字段，到独立完成一次读盘",
+    title: "从盘面字段，到有依据地解释传统规则",
     blurb: "先认全四柱、干支与藏干，再建立十神和强弱坐标，最后叠加大运、流年与现实校准。",
-    outcome: "能按七步流程解释一张盘，并清楚区分传统定义、项目算法和未覆盖边界。",
+    outcome: "通过统一案例，展示输入核验、十神换算与推导能力，并区分传统解释、项目算法和现实证据。",
   },
 };
 
@@ -44,14 +45,14 @@ function viewFromHash(hash: string): LearnView {
   return "agent";
 }
 
-function DocRow({ doc, sequence }: { doc: LearnDoc; sequence: number }) {
+function DocRow({ doc, sequence, read }: { doc: LearnDoc; sequence: number; read: boolean }) {
   return (
     <Link className="learn-lesson-row" href={`/learn/${doc.slug}`}>
       <span className="learn-lesson-number">{String(sequence).padStart(2, "0")}</span>
       <span className="learn-lesson-copy">
         <span className="learn-lesson-title">
           <strong>{doc.title}</strong>
-          <em>{doc.level}</em>
+          <em>{doc.role} · {doc.level}{read ? " · 已读" : ""}</em>
         </span>
         <span className="learn-lesson-blurb">{doc.blurb}</span>
         {doc.quickRefs?.length ? (
@@ -67,6 +68,20 @@ function Curriculum({ track, onOpenQuick }: { track: LearnTrack; onOpenQuick: ()
   const docs = getTrackDocs(track);
   const copy = TRACK_COPY[track];
   const stages = Array.from(new Set(docs.map((doc) => doc.stage)));
+  const [coreOnly, setCoreOnly] = useState(false);
+  const [read, setRead] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    const sync = () => setRead(loadReadProgress());
+    sync();
+    window.addEventListener(PROGRESS_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(PROGRESS_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+  const coreDocs = docs.filter((doc) => doc.role === "必修");
+  const visibleDocs = coreOnly ? coreDocs : docs;
 
   return (
     <section className={`learn-curriculum learn-curriculum-${track}`} id={`${track}-curriculum`}>
@@ -92,11 +107,21 @@ function Curriculum({ track, onOpenQuick }: { track: LearnTrack; onOpenQuick: ()
         </div>
       </header>
 
+      <div className="learn-route-controls">
+        <div className="learn-route-actions" aria-label="课程范围">
+          <button type="button" aria-pressed={!coreOnly} onClick={() => setCoreOnly(false)}>全部课程</button>
+          <button type="button" aria-pressed={coreOnly} onClick={() => setCoreOnly(true)}>必修主线</button>
+          <Link href={`/learn/${track === "agent" ? "ai-capstone" : "bazi-capstone"}`}>毕业实践与评分标准 →</Link>
+        </div>
+        <p>必修已读 {coreDocs.filter((doc) => read[doc.slug]).length} / {coreDocs.length} 篇 · 全部已读 {docs.filter((doc) => read[doc.slug]).length} / {docs.length} 篇。读完后手动标记，记录保存在此浏览器。</p>
+        <small>按前置提示补课；选修用于拓展，项目案例记录设计演进。阅读、自测和实践分别评价。</small>
+      </div>
+
       {track === "agent" ? (
         <section className="learn-ai-map" aria-label="AI 学习五层地图">
           <div className="learn-ai-map-intro">
             <div>
-              <span className="learn-kicker">统一学习地图 · 2026-09-21 更新</span>
+              <span className="learn-kicker">统一学习地图 · 2026-09-28 课程整理</span>
               <h3>每遇到一个新概念，先找到它的位置</h3>
             </div>
             <Link href="/learn/ai-learning-map">阅读地图与分层验收 →</Link>
@@ -113,7 +138,7 @@ function Curriculum({ track, onOpenQuick }: { track: LearnTrack; onOpenQuick: ()
               </li>
             ))}
           </ol>
-          <p>新课：<Link href="/learn/jev-decision-models">Jev 与类型化决策</Link> · <Link href="/learn/context-memory-engineering">上下文与记忆</Link> · <Link href="/learn/agent-runtime-protocols">MCP / A2A / Skills</Link> · <Link href="/learn/agent-evaluation-observability">评测与可观测性</Link></p>
+          <p>按需补课：<Link href="/learn/web-api-basics">Web 与 API</Link> · <Link href="/learn/classification-probability-basics">分类、概率与评测</Link>。前沿选修：<Link href="/learn/jev-decision-models">Jev 与类型化决策</Link>。</p>
         </section>
       ) : null}
 
@@ -121,19 +146,21 @@ function Curriculum({ track, onOpenQuick }: { track: LearnTrack; onOpenQuick: ()
         <aside className="learn-stage-rail" data-tour-id="learn-stage-rail" aria-label={`${copy.eyebrow}阶段目录`}>
           <span>课程阶段</span>
           <nav>
-            {stages.map((stage, index) => (
+            {stages.map((stage, index) => visibleDocs.some((doc) => doc.stage === stage) ? (
               <a key={stage} href={`#${track}-stage-${index + 1}`}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 {stage.replace(/^.+?·\s*/, "")}
               </a>
-            ))}
+            ) : null)}
           </nav>
           <small>{docs.length} 篇 · {stages.length} 个阶段</small>
         </aside>
 
         <div className="learn-course-flow" data-tour-id="learn-course-flow">
           {stages.map((stage, stageIndex) => {
-            const stageDocs = docs.filter((doc) => doc.stage === stage);
+            const stageDocs = visibleDocs.filter((doc) => doc.stage === stage);
+            if (!stageDocs.length) return null;
+            const modules = Array.from(new Set(stageDocs.map((doc) => doc.module ?? "")));
             return (
               <section className="learn-stage" id={`${track}-stage-${stageIndex + 1}`} key={stage}>
                 <header className="learn-stage-head">
@@ -141,15 +168,14 @@ function Curriculum({ track, onOpenQuick }: { track: LearnTrack; onOpenQuick: ()
                   <h3>{stage.replace(/^.+?·\s*/, "")}</h3>
                   <small>{stageDocs.length} 篇</small>
                 </header>
-                <div className="learn-lesson-list">
-                  {stageDocs.map((doc) => (
-                    <DocRow
-                      key={doc.slug}
-                      doc={doc}
-                      sequence={docs.findIndex((item) => item.slug === doc.slug) + 1}
-                    />
-                  ))}
-                </div>
+                {modules.map((module) => <div key={module} className="learn-course-module">
+                  {module && <h4>{module}</h4>}
+                  <div className="learn-lesson-list">
+                    {stageDocs.filter((doc) => (doc.module ?? "") === module).map((doc) => (
+                      <DocRow key={doc.slug} doc={doc} sequence={docs.findIndex((item) => item.slug === doc.slug) + 1} read={read[doc.slug] === true} />
+                    ))}
+                  </div>
+                </div>)}
               </section>
             );
           })}
@@ -183,7 +209,7 @@ function Curriculum({ track, onOpenQuick }: { track: LearnTrack; onOpenQuick: ()
       <details className="learn-quiz-panel" data-tour-id="learn-quiz">
         <summary>
           <span>
-            <small>检测学力</small>
+            <small>知识检查 · 配合实践评价</small>
             自测练习
           </span>
           <em>{QUIZ_QUESTIONS.filter((q) => q.track === track).length} 题</em>
@@ -270,7 +296,7 @@ export function LearningLibrary() {
         <div className="learn-home-copy">
           <span className="learn-kicker">系统课程库</span>
           <h1>学习馆</h1>
-          <p>AI 与 Agent 五层地图、命理系统学径，以及随时可查的术语。讲义、自测与互动图都在本地，无需 Key。</p>
+          <p>两条学径：AI 与 Agent、传统命理。另设命理速查工具，辅助阅读。讲义、自测与互动图无需 Key。</p>
         </div>
         <dl className="learn-overview-stats" aria-label="学习馆内容统计">
           <div><dt>课程讲义</dt><dd>{LEARN_DOCS.length}</dd></div>
@@ -290,8 +316,8 @@ export function LearningLibrary() {
             className={activeView === "agent" ? "is-active is-agent" : "is-agent"}
             onClick={() => activate("agent")}
           >
-            <span>Agent 学径</span>
-            <small>{getTrackDocs("agent").length} 篇 · 五层地图 + 附录</small>
+            <span>AI 与 Agent 学径</span>
+            <small>课程 · {getTrackDocs("agent").length} 篇 · 五层地图</small>
           </button>
           <button
             type="button"
@@ -303,7 +329,7 @@ export function LearningLibrary() {
             onClick={() => activate("mingli")}
           >
             <span>命理学径</span>
-            <small>{getTrackDocs("mingli").length} 篇 · 系统读盘</small>
+            <small>课程 · {getTrackDocs("mingli").length} 篇 · 规则与推导</small>
           </button>
           <button
             type="button"
@@ -314,8 +340,8 @@ export function LearningLibrary() {
             className={activeView === "quick" ? "is-active is-quick" : "is-quick"}
             onClick={() => activate("quick")}
           >
-            <span>命理速查</span>
-            <small>{kbSize()} 词 · 交叉索引</small>
+            <span>配套工具 · 命理速查</span>
+            <small>{kbSize()} 词 · 供两条学径交叉查阅</small>
           </button>
         </nav>
 

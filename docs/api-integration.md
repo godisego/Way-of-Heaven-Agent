@@ -7,7 +7,7 @@ description: API 与系统集成——HTTP/REST/JSON/鉴权/Webhook/MCP/插件�
 
 AI 不能停在网页 Demo 里——得接进产品。这篇讲清楚怎么把 AI 能力变成 API，怎么把外部能力接进 AI。
 
-> **前置**：读 [LLM 基础原理](/learn/llm-fundamentals) 里的 Function Calling 部分。
+> **前置**：[Web 与 API 开发先修](/learn/web-api-basics)、[LLM 基础原理](/learn/llm-fundamentals)。本课属于第四层“应用基础”；先能读懂 HTTP 请求、JSON 和异步函数，再进入接口集成。
 
 ## 一 · 为什么智能体需要 API
 

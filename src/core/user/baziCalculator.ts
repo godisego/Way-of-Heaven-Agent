@@ -14,7 +14,7 @@
  *  7. 神煞：天乙贵人 / 文昌 / 驿马 / 桃花 / 华盖 / 将星 / 天德 / 月德
  *  8. 胎元 / 命宫 / 身宫：派生计算
  *
- * ⚠️ 排盘结果用于「人格参考 / 命理讨论」，不替代专业命理师判断。
+ * 排盘结果用于传统文化学习；规则可复算不等于人格、健康或人生预测已获验证。
  */
 
 import { Solar, Lunar, type EightChar, type Yun, type DaYun as LDaYun } from "lunar-javascript";
@@ -78,19 +78,18 @@ function wuXingSheng(a: WuXing, b: WuXing): boolean {
  * 十神查表（以日干为"我"）：
  *  - 同我同阴/阳 → 比肩
  *  - 同我异阴/阳 → 劫财
- *  - 我生同阴/阳 → 伤官；我生异 → 食神
+ *  - 我生同阴/阳 → 食神；我生异 → 伤官
  *  - 我克同阴/阳 → 偏财；我克异 → 正财
  *  - 克我同阴/阳 → 七杀；克我异 → 正官
  *  - 生我同阴/阳 → 偏印；生我异 → 正印
  */
 export function shiShenOfGan(dayGan: string, otherGan: string): string {
-  if (dayGan === otherGan) return "比肩";
   const dayWx = GAN_WUXING[dayGan];
   const otherWx = GAN_WUXING[otherGan];
   if (!dayWx || !otherWx) return "未知";
   const sameYy = GAN_YINYANG[dayGan] === GAN_YINYANG[otherGan];
   if (dayWx === otherWx) return sameYy ? "比肩" : "劫财";
-  if (wuXingSheng(dayWx, otherWx)) return sameYy ? "伤官" : "食神";
+  if (wuXingSheng(dayWx, otherWx)) return sameYy ? "食神" : "伤官";
   if (wuXingKe(dayWx, otherWx)) return sameYy ? "偏财" : "正财";
   if (wuXingKe(otherWx, dayWx)) return sameYy ? "七杀" : "正官";
   if (wuXingSheng(otherWx, dayWx)) return sameYy ? "偏印" : "正印";
@@ -147,7 +146,12 @@ export type QiYunConvention = "traditional" | "exact";
 /** 晚子时（23:00-24:00 出生）日柱归属流派 */
 export type LateZiRule = "current-day" | "next-day";
 
+/** 规则变更后使旧档案中的派生结果重算；不修改出生输入。 */
+export const BAZI_RULE_VERSION = 2;
+
 export type BaziResult = {
+  ruleVersion?: number;
+  lateZiRule?: LateZiRule;
   solar: {
     /** 原始北京时间 */
     birthDate: string;
@@ -441,6 +445,8 @@ export function calculateBazi(opts: {
     `小运${xiaoYun.direction}：1 岁 ${xiaoYun.steps[0].ganZhi}、2 岁 ${xiaoYun.steps[1].ganZhi}…`;
 
   return {
+    ruleVersion: BAZI_RULE_VERSION,
+    lateZiRule: opts.lateZiRule ?? "current-day",
     solar: {
       birthDate: opts.birthDate,
       birthTime: opts.birthTime,

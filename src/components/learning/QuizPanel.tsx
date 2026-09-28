@@ -1,125 +1,103 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { QUIZ_QUESTIONS, type QuizQuestion } from "@/data/quizQuestions";
 import { addMistake, resolveMistake } from "@/data/mistakeBook";
+import { loadQuizAnswers, saveQuizAnswers, quizSummary, type QuizAnswers } from "./quizProgress";
 
-type QuizPanelProps = {
-  track: "agent" | "mingli";
-};
+type QuizPanelProps = { track: "agent" | "mingli"; docSlug?: string };
 
-type AnswerState = {
-  questionId: string;
-  selectedIndex: number;
-  isCorrect: boolean;
-};
+export function QuizPanel({ track, docSlug }: QuizPanelProps) {
+  return <QuizSession key={`${track}:${docSlug ?? "all"}`} track={track} docSlug={docSlug} />;
+}
 
-/**
- * 自测练习面板 —— 学生答题后即时判对错，错题自动入错题本。
- */
-export function QuizPanel({ track }: QuizPanelProps) {
-  const questions = useMemo(() => QUIZ_QUESTIONS.filter((q) => q.track === track), [track]);
-  const [answers, setAnswers] = useState<Record<string, AnswerState>>({});
+function QuizSession({ track, docSlug }: QuizPanelProps) {
+  const questions = useMemo(() => QUIZ_QUESTIONS.filter((q) => q.track === track && (!docSlug || q.docSlug === docSlug)), [track, docSlug]);
+  const [answers, setAnswers] = useState<QuizAnswers>({});
+  const [ready, setReady] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  useEffect(() => {
+    setAnswers(loadQuizAnswers(questions));
+    setReady(true);
+  }, [questions]);
 
-  const handleAnswer = useCallback((question: QuizQuestion, selectedIndex: number) => {
-    const isCorrect = selectedIndex === question.correctIndex;
-    setAnswers((prev) => ({ ...prev, [question.id]: { questionId: question.id, selectedIndex, isCorrect } }));
-    if (!isCorrect) {
-      addMistake(question.id, selectedIndex);
-    } else {
-      resolveMistake(question.id);
-    }
-  }, []);
-
-  const answeredCount = Object.keys(answers).length;
-  const correctCount = Object.values(answers).filter((a) => a.isCorrect).length;
-  const wrongCount = answeredCount - correctCount;
-
-  if (questions.length === 0) {
-    return <p className="quiz-empty">本学径暂无自测题。</p>;
+  function save(next: QuizAnswers) {
+    setAnswers(next);
+    setSaveError(!saveQuizAnswers(questions, next));
   }
+  function handleAnswer(q: QuizQuestion, selectedIndex: number) {
+    if (!ready || answers[q.id]) return;
+    save({ ...answers, [q.id]: { selectedIndex, revision: q.revision } });
+    if (selectedIndex !== q.correctIndex) addMistake(q.id, selectedIndex, q);
+    else resolveMistake(q.id);
+  }
+  function retry(id?: string) {
+    const next = { ...answers };
+    if (id) delete next[id];
+    save(id ? next : {});
+    setShowResults(false);
+  }
+  const result = quizSummary(questions, answers);
+  if (!questions.length) return <p className="quiz-empty">本学径暂无自测题。</p>;
 
   return (
     <div className="quiz-panel">
-      <div className="quiz-stats">
-        <span>已答 <strong>{answeredCount}</strong></span>
-        <span>正确 <strong>{correctCount}</strong></span>
-        <span className="quiz-stats-wrong">错误 <strong>{wrongCount}</strong></span>
-        <span>正确率 <strong>{answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0}%</strong></span>
+      <p>知识自测用于查漏补缺。答题记录只存此浏览器；完成自测后，请继续毕业实践。</p>
+      {saveError && <p role="status">答题结果暂未保存到浏览器，刷新后可能丢失。</p>}
+      <div className="quiz-stats" aria-live="polite">
+        <span>已答 <strong>{result.answered} / {questions.length}</strong></span>
+        <span>正确 <strong>{result.correct}</strong></span>
+        <span className="quiz-stats-wrong">错误 <strong>{result.wrong}</strong></span>
+        <span>未答 <strong>{result.remaining}</strong></span>
+        <span>已答正确率 <strong>{result.answered ? Math.round(result.correct / result.answered * 100) : 0}%</strong></span>
       </div>
-
       <ol className="quiz-list">
         {questions.map((q, idx) => {
           const answer = answers[q.id];
-          const isAnswered = !!answer;
+          const answered = !!answer;
+          const correct = answer?.selectedIndex === q.correctIndex;
           return (
             <li key={q.id} className="quiz-item">
-              <p className="quiz-item-meta">
-                第 {idx + 1} 题 · {q.stage} · {q.level}
-              </p>
+              <p className="quiz-item-meta">第 {idx + 1} 题 · {q.stage} · {q.level}</p>
               <p className="quiz-item-question">{q.question}</p>
-              <ul className="quiz-options">
+              <ul className="quiz-options" aria-label={`第 ${idx + 1} 题选项`}>
                 {q.options.map((option, optIdx) => {
-                  const isSelected = isAnswered && answer.selectedIndex === optIdx;
-                  const isCorrect = optIdx === q.correctIndex;
-                  let className = "quiz-option";
-                  if (isSelected) className += " selected";
-                  if (isAnswered && isCorrect) className += " correct";
-                  if (isAnswered && isSelected && !isCorrect) className += " wrong";
+                  const selected = answered && answer.selectedIndex === optIdx;
+                  const className = ["quiz-option", selected && "selected", answered && optIdx === q.correctIndex && "correct", selected && !correct && "wrong"].filter(Boolean).join(" ");
                   return (
-                    <li
-                      key={optIdx}
-                      className={className}
-                      onClick={() => !isAnswered && handleAnswer(q, optIdx)}
-                      role="button"
-                      tabIndex={0}
-                    >
-                      <span className="quiz-option-letter">{String.fromCharCode(65 + optIdx)}.</span>
-                      <span>{option}</span>
+                    <li key={optIdx}>
+                      <button type="button" className={className} disabled={!ready || answered} onClick={() => handleAnswer(q, optIdx)}>
+                        <span className="quiz-option-letter">{String.fromCharCode(65 + optIdx)}.</span>
+                        <span>{option}</span>
+                      </button>
                     </li>
                   );
                 })}
               </ul>
-              {isAnswered && (
-                <div className={`quiz-explain ${answer.isCorrect ? "quiz-explain-correct" : "quiz-explain-wrong"}`}>
-                  <p>
-                    <strong>{answer.isCorrect ? "✓ 正确！" : "✗ 答错了"}</strong>
-                    {!answer.isCorrect && (
-                      <span> · 正确答案是 <strong>{String.fromCharCode(65 + q.correctIndex)}</strong></span>
-                    )}
-                  </p>
+              {answered && (
+                <div className={`quiz-explain ${correct ? "quiz-explain-correct" : "quiz-explain-wrong"}`}>
+                  <p><strong>{correct ? "✓ 正确！" : "✗ 答错了"}</strong>{!correct && <span> · 正确答案是 <strong>{String.fromCharCode(65 + q.correctIndex)}</strong></span>}</p>
                   <p className="quiz-explain-text">{q.explanation}</p>
-                  {q.docSlug && (
-                    <Link href={`/learn/${q.docSlug}`} className="quiz-doc-link">
-                      → 回看讲义
-                    </Link>
-                  )}
+                  {q.docSlug && <Link href={`/learn/${q.docSlug}`} className="quiz-doc-link">→ 回看讲义</Link>}
+                  <button type="button" className="quiz-retry-btn" onClick={() => retry(q.id)}>重做本题</button>
                 </div>
               )}
             </li>
           );
         })}
       </ol>
-
-      {answeredCount > 0 && !showResults && (
-        <button className="quiz-submit-btn" onClick={() => setShowResults(true)}>
-          查看测试结果
-        </button>
-      )}
-
-      {showResults && (
-        <div className="quiz-results-banner">
-          <p>
-            共 {answeredCount} 题 · 正确 {correctCount} · 错误 {wrongCount} · 正确率{" "}
-            {Math.round((correctCount / answeredCount) * 100)}%
-          </p>
-          <p className="quiz-results-hint">
-            {wrongCount > 0 ? "错题已自动收入错题本，可在上方回看。" : "全部正确！你已掌握本学径核心知识。"}
-          </p>
-        </div>
-      )}
+      {result.answered > 0 && <div className="learn-route-actions">
+        <button type="button" className="quiz-submit-btn" onClick={() => setShowResults(true)}>查看本轮结果</button>
+        <button type="button" className="quiz-retry-btn" onClick={() => retry()}>重新练习当前题组</button>
+      </div>}
+      {showResults && <div className="quiz-results-banner" role="status">
+        <p>已答 {result.answered} / {questions.length} 题 · 正确 {result.correct} · 错误 {result.wrong}</p>
+        <p className="quiz-results-hint">{result.message}</p>
+        {result.wrong > 0 && <p>错题已收入错题本，可回看讲义后重做。</p>}
+        <Link href={`/learn/${track === "agent" ? "ai-capstone" : "bazi-capstone"}`}>查看毕业实践与评分标准 →</Link>
+      </div>}
     </div>
   );
 }

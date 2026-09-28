@@ -51,7 +51,7 @@ export const AGENT_LESSONS: Lesson[] = [
         popover: {
           title: "④ 向量化（embedding）",
           description:
-            "索引 = 把每个 chunk 交给 embedding 模型，变成一根高维向量（真实模型通常上千维）；语义相近的文本，向量方向也相近。\n环境变量 USE_MOCK_EMBEDDING=1 会换成词法 mock——管道全真、语义打折，专供免 Key 学习。⚠️ 换模型必须重建索引：不同模型的向量空间互不相通。",
+            "索引 = 把每个 chunk 交给 embedding 模型，变成一根高维向量（维度取决于具体模型）；向量相似度可用于候选召回，但是否相关仍要评测。\n环境变量 USE_MOCK_EMBEDDING=1 会换成词法 mock——管道全真、语义打折，专供免 Key 学习。⚠️ 换模型必须重建索引：不同模型的向量空间互不相通。",
           side: "left",
         },
       },
@@ -60,16 +60,16 @@ export const AGENT_LESSONS: Lesson[] = [
         popover: {
           title: "⑤ 检索：RAG 的命门",
           description:
-            "你的问题也被同一个模型向量化，然后与库里全部 chunk 算余弦相似度，取最相近的 topK 条。\n记住一句话：检索对了，小模型也答得准；检索错了，再大的模型也只能一本正经地编。\n源码：src/core/retrieval/retrieveContext.ts。",
+            "你的问题也被同一个模型向量化，然后与库里全部 chunk 算余弦相似度，取最相近的 topK 条。\n检索质量影响回答上限；即使命中正确材料，仍需核对生成是否得到材料支持。\n源码：src/core/retrieval/retrieveContext.ts。",
           side: "left",
         },
       },
       {
         element: "[data-tour-id='chat-input']",
         popover: {
-          title: "⑥ 三贤分库：带权限的检索",
+          title: "⑥ 三贤分库：来源范围",
           description:
-            "本项目多一步：一次大召回（topK×6）后，按文档的「思想传统」标签把证据分成三份——\n李只拿存在主义/斯多葛，老胡拿易经/中华典籍，玄拿道家/中华典籍；未标注的三人共享。\n谁的专库是空的，谁就必须说「暂未入藏」——检索层就把「越权引用」的路堵死了一半。",
+            "本项目多一步：一次大召回（topK×6）后，按文档的「思想传统」标签把证据分成三份——\n李只拿存在主义/斯多葛，老胡拿易经/中华典籍，玄拿道家/中华典籍；未标注的三人共享。\n专库为空时要求说明缺少材料。思想传统标签限制角色引用范围，不是用户权限控制。",
           side: "left",
         },
       },
@@ -78,7 +78,7 @@ export const AGENT_LESSONS: Lesson[] = [
         popover: {
           title: "⑦ 拼上下文 → 生成",
           description:
-            "命中的 chunk 按固定格式拼进 prompt：每条带 cite_as（书名 + 位置），并标注「仅某某可引用」。\n随人设铁律一起发给模型，生成三段对谈。注意：生成到这里只是初稿——RAG 的下半场是校验（下一课）。",
+            "命中的 chunk 按固定格式拼进 prompt：每条带 cite_as（书名 + 位置），并标注「仅某某可引用」。\n随人设铁律一起发给模型，按所选在席角色生成对谈。注意：生成到这里只是初稿——RAG 的下半场是校验（下一课）。",
           side: "left",
         },
       },
@@ -87,7 +87,7 @@ export const AGENT_LESSONS: Lesson[] = [
         popover: {
           title: "⑧ 校验后才是答案",
           description:
-            "回答按【角色】拆成三段，每条 [《书名》, 位置] 与本轮证据逐一比对；「出典」区能点开原文。\n引用对不上 = 整组作废。这一刀怎么切、为什么这么切，第二课细讲。",
+            "回答按所选【角色】拆段，每条 [《书名》, 位置] 与本轮证据逐一比对；「出典」区能点开原文。\n引用对不上 = 整组作废。这一刀怎么切、为什么这么切，第二课细讲。",
           side: "left",
         },
       },
@@ -95,7 +95,7 @@ export const AGENT_LESSONS: Lesson[] = [
         popover: {
           title: "心法",
           description:
-            "RAG 的可信度 = 检索质量 × 校验强度。\n实操作业：.env.local 里加 USE_MOCK_EMBEDDING=1，上传 data/samples/存在主义笔记.md，问「怎么理解自欺？请给出出处」，把出典点开对一次原文。\n深读：docs/rag-beginner-walkthrough.md。",
+            "检索、生成和验证共同影响回答质量；不存在本项目已证明的可信度乘法公式。\n实操作业：.env.local 里加 USE_MOCK_EMBEDDING=1，上传 data/samples/存在主义笔记.md，问「怎么理解自欺？请给出出处」，把出典点开对一次原文。\n深读：docs/rag-beginner-walkthrough.md。",
         },
       },
     ],
@@ -110,7 +110,7 @@ export const AGENT_LESSONS: Lesson[] = [
         popover: {
           title: "Agent 径 · 第二课 可信链",
           description:
-            "大模型的本性是「补全出看似合理的文本」——资料不够时它不会闭嘴，会编。这叫幻觉。\n本系统立了三道关：①提示词禁令（软）②程序化校验（硬）③定向重试（自纠）。任何一道都会漏，叠起来才稳。",
+            "模型可能生成流畅但不真实的内容；资料不足时既可能拒答，也可能编造，需要验证。\n本系统立了三道关：①提示词禁令（软）②程序化校验（硬）③定向重试（自纠）。任何一道都会漏，叠起来才稳。",
         },
       },
       {
@@ -127,7 +127,7 @@ export const AGENT_LESSONS: Lesson[] = [
         popover: {
           title: "第二道 · 程序化校验（引用）",
           description:
-            "代码解析每条 [《书名》, 位置]，在检索证据里精确匹配书名与位置；再按发言人查库权——李引《周易》？越库，违规。\n关键设计：一条假引用 = 整组引用作废。若只删假的留真的，模型会学会「三真夹一假」蒙混——宁可全无，不可半假。\n源码：src/core/retrieval/citationPolicy.ts。",
+            "代码解析每条 [《书名》, 位置]，在检索证据里精确匹配书名与位置；再按发言人查库权——李引《周易》？越库，违规。\n关键设计：一条假引用 = 整组引用作废。避免有效引用给其余无效引用造成背书；这是输出策略，不是在对模型重新训练。\n源码：src/core/retrieval/citationPolicy.ts。",
           side: "left",
         },
       },
@@ -143,9 +143,9 @@ export const AGENT_LESSONS: Lesson[] = [
       {
         element: "[data-tour-id='chat-submit']",
         popover: {
-          title: "第三道 · 定向重试（仅一次）",
+          title: "第三道 · 定向重试（RAG 一次）",
           description:
-            "两类违规合并成一张「问题清单」，逐条列给模型，要求整体重写——这是一次带反馈的自我修正（self-correct）。\n为什么只重试一次？防止无限循环烧 token 、也防止模型反复试探校验边界。重试后仍不合格：引用清空 + 界面警告，宁可素答，不可假引。\n源码：src/core/retrieval/answerWithCitations.ts。",
+            "两类违规合并成一张「问题清单」，逐条列给模型，要求整体重写——这是一次带反馈的自我修正（self-correct）。\n固定 RAG 最多重试一次，Agent 生成最多重试两次；循环预算和生成重试分别计数。重试后仍不合格：引用清空 + 界面警告，宁可素答，不可假引。\n源码：src/core/retrieval/answerWithCitations.ts。",
           side: "left",
         },
       },
@@ -169,7 +169,7 @@ export const AGENT_LESSONS: Lesson[] = [
         popover: {
           title: "小结",
           description:
-            "三道关各管一层：提示词管「意图」，校验管「事实」，重试管「纠错」，出典管「监督」。\n深读：docs/rag-citation-design.md。下一课：Agent 如何自己决定查什么——工具循环。",
+            "三道关各管一层：提示词管「意图」，校验管「来源坐标与规则」，重试管「纠错」，出典管「监督」。\n深读：docs/rag-citation-design.md。下一课：Agent 如何自己决定查什么——工具循环。",
         },
       },
     ],
@@ -201,15 +201,15 @@ export const AGENT_LESSONS: Lesson[] = [
         popover: {
           title: "铁律与自查",
           description:
-            "system prompt 里另有铁律：恰好三段、顺序固定（老胡→李→玄）、互换署名必须违和、各用专属自称、李禁命理语汇、禁 AI 自指；交稿前还要过一遍「自查清单」。\n把「格式要求」写成「违和判据」，模型才知道错在哪。",
+            "system prompt 里另有铁律：只生成在席角色，默认全席顺序为老胡→李→玄、互换署名必须违和、各用专属自称、李禁命理语汇、禁 AI 自指；交稿前还要过一遍「自查清单」。\n把「格式要求」写成「违和判据」，模型才知道错在哪。",
           side: "left",
         },
       },
       {
         popover: {
-          title: "材料隔离：连输入都分人",
+          title: "材料分发：角色使用范围",
           description:
-            "防漂移不只在输出端——输入端就分了餐：你的排盘简报分三档发放，老胡拿全量、玄只拿「气机」语言、李完全隔离（他连你的生辰都看不见）。\n李说不出干支，因为他根本没拿到——这比任何禁令都可靠。\n源码：src/core/mingli/chartBrief.ts。",
+            "排盘简报按角色标注使用范围：老胡全量、玄取气机、李不使用。\n默认角色共享一次模型上下文，不能保证模型看不到其他角色的材料；这是提示词与输出规则分工，不是隐私隔离。\n源码：src/core/mingli/chartBrief.ts。",
         },
       },
       {
@@ -225,7 +225,7 @@ export const AGENT_LESSONS: Lesson[] = [
         popover: {
           title: "小结",
           description:
-            "人设工程 = 三件套（示范）+ 铁律（判据）+ 材料隔离（输入端）+ 声口校验（输出端兜底）。\n四层里最容易被忽视、也最有效的，是材料隔离——拿不到的信息，永远不会说漏。",
+            "人设工程 = 三件套（示范）+ 铁律（判据）+ 材料隔离（输入端）+ 声口校验（输出端兜底）。\n资料最小化有帮助，但角色标签不能替代访问控制；共享上下文也不能作为不泄露的保证。",
         },
       },
     ],
@@ -247,7 +247,7 @@ export const AGENT_LESSONS: Lesson[] = [
         popover: {
           title: "三个工具，各有说明书",
           description:
-            "本项目给收集阶段的模型三个工具：\n· search_library(query, topK, tradition?)——按语义检索藏书，可限定思想传统；\n· read_source_unit(documentId, pageNumber)——精读某文档的一整页，且只能读检索结果里出现过的文档（白名单防越权）；\n· ready_to_answer(sufficient, missing?)——模型自报「证据够了 / 还缺什么」。\n工具描述里都写清「何时该用我」——工具设计的一半功夫在文案。\n源码：src/core/agent/tools.ts。",
+            "本项目给收集阶段的模型三个工具：\n· search_library(query, topK, tradition?)——按语义检索藏书，可限定思想传统；\n· read_source_unit(documentId, pageNumber)——精读某文档的一整页，且只能读检索结果里出现过的文档（文档范围检查，不能代替多用户鉴权）；\n· ready_to_answer(sufficient, missing?)——模型自报「证据够了 / 还缺什么」。\n工具描述里都写清「何时该用我」——工具设计的一半功夫在文案。\n源码：src/core/agent/tools.ts。",
         },
       },
       {
@@ -268,7 +268,7 @@ export const AGENT_LESSONS: Lesson[] = [
         popover: {
           title: "六个刹车：停机比循环更重要",
           description:
-            "没有刹车的 Agent 循环会烧钱失控。本项目六个停止条件：\n最多 6 步 / 单次模型调用 45s / 全程 90s / 同参数重复调用 / 模型主动 ready_to_answer / 模型不调工具（裸文本一律丢弃）。\n设计 Agent 时先想「它怎么停」，再想「它怎么跑」。\n源码：src/core/agent/orchestrator.ts。",
+            "没有刹车的 Agent 循环会烧钱失控。本项目六个停止条件：\n最多 6 次注册表调用 / 单次调度模型请求 45s / 取证循环边界检查 90s 预算 / 同参数重复调用 / 模型主动 ready_to_answer / 模型不调工具（裸文本一律丢弃）。\n90 秒不是整轮回答的硬截止，后续生成另计；工具等待超时也不保证底层工作已取消。\n源码：src/core/agent/orchestrator.ts。",
         },
       },
       {
@@ -297,14 +297,14 @@ export const AGENT_LESSONS: Lesson[] = [
   {
     id: "agent-5",
     no: "五",
-    title: "Agent 全景图：六大件与本项目坐标",
+    title: "Agent 全景图：六个设计问题",
     minutes: 4,
     steps: () => [
       {
         popover: {
           title: "Agent 径 · 第五课 全景图",
           description:
-            "一个「完整体」Agent 通常由六大件构成：工具使用 Tool use、规划 Planning、记忆 Memory、反思 Reflection、多智能体 Multi-agent、评测 Evals。\n本课把每一件放到这个项目的坐标上——已有的讲实现，没有的讲「为什么暂时不要」。学 Agent 的正确姿势，是对每一件都问一句：这个系统为什么有 / 没有它？",
+            "从六个设计问题审视 Agent：工具、规划、记忆、反馈修正、多智能体和评测。它们不是完整性清单，多智能体和反思并非每个任务必需。\n本课把每一件放到这个项目的坐标上——已有的讲实现，没有的讲「为什么暂时不要」。学 Agent 的正确姿势，是对每一件都问一句：这个系统为什么有 / 没有它？",
         },
       },
       {
@@ -323,30 +323,30 @@ export const AGENT_LESSONS: Lesson[] = [
       },
       {
         popover: {
-          title: "③ Reflection —— 实现了一半",
+          title: "③ Reflection —— 有反馈修正",
           description:
-            "引用/声口校验失败 → 把问题清单喂回模型定向重试一次：这是「有反馈的自我修正」。\n与真 Reflexion 的差别在「谁发现错误」：这里是确定性程序发现（可靠但只能查规则内的错）；Reflexion 是模型评估自己并跨轮记住教训（覆盖广但会自欺）。\n工程取舍：能用程序判的错，绝不劳驾模型自省。",
+            "引用/声口校验失败 → 把问题清单喂回模型，按路径限次重试：这是「有反馈的自我修正」。\n跨尝试保留并使用反馈记忆，与单次生成重试不同；反馈既可来自程序也可来自模型。本项目没有实现完整的跨任务反思记忆。\n工程取舍：能用程序判的错，绝不劳驾模型自省。",
         },
       },
       {
         popover: {
-          title: "④ Memory —— 尚未实现",
+          title: "④ Memory —— 会话上下文已实现",
           description:
-            "当前每轮对话无状态；你的问者档与藏书算「长期记忆」的雏形（结构化、用户自管），但三贤不记得你上周问过什么。\n记忆是能力也是负担：要解决存什么、忘什么、脏记忆污染与隐私。roadmap 里排在工具循环可视化之后——先看得见思考，再谈记住思考。",
+            "当前会话会带最近消息，较长历史用滚动摘要压缩并保存；刷新可恢复会话，摘要失败有规则回退。\n这不等于可跨所有会话检索的长期记忆。摘要可能失真，历史回答也不是本轮典籍证据。源码：src/core/conversation/contextBuilder.ts。",
         },
       },
       {
         popover: {
           title: "⑤ Multi-agent —— 刻意没做",
           description:
-            "三贤是「一次生成里的三个角色」，不是三个独立 Agent 协作——真 multi-agent 要各自独立上下文 + 消息传递 + 协调机制。\n为什么不拆？成本 ×3、人设一致性更难、当前任务（一问三答）根本用不上。\n这是本项目最想教的一课：工程判断比概念堆砌重要——multi-agent 是手段，不是荣誉。",
+            "三贤是「一次生成里的三个角色」，不是三个独立 Agent 协作——真 multi-agent 要各自独立上下文 + 消息传递 + 协调机制。\n为什么不拆？独立调用会增加协调与调用开销，具体成本需测量；当前任务没有证明拆分能带来收益。\n这是本项目最想教的一课：工程判断比概念堆砌重要——multi-agent 是手段，不是荣誉。",
         },
       },
       {
         popover: {
           title: "⑥ Evals —— 有了验收起点",
           description:
-            "没有评测，改提示词就全凭手感：这次像是好了？下次谁知道。\n项目已有 M5 五场景真实服务验收与大量确定性单测，这是起点；系统化评测还需扩成固定问题集 + 可判定指标 + 每次改动回归。\n评测不是收尾工作，而是把「玩具」变「工程」的分界线。",
+            "没有评测，改提示词就全凭手感：这次像是好了？下次谁知道。\n项目已有 M5 五场景验收脚本与确定性单测；本轮课程校对没有重新执行真实服务验收，这是起点；系统化评测还需扩成固定问题集 + 可判定指标 + 每次改动回归。\n评测不是收尾工作，而是把「玩具」变「工程」的分界线。",
         },
       },
       {

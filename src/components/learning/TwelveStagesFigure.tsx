@@ -144,7 +144,7 @@ export function TwelveStagesCard({ title }: { title: string }) {
             <span style={{ color: COLORS.muted }}>·长生在{y.start}</span>
           </span>
         ))}
-        <div style={{ marginTop: 4, fontSize: 10, color: COLORS.muted }}>（阴干长生位流派分歧大，本图只列阳干通行口径）</div>
+        <div style={{ marginTop: 4, fontSize: 10, color: COLORS.muted }}>（本图采用五阳干顺行及火土同宫口径；阶段名是传统比喻，不指现实生死）</div>
       </div>
     </div>
   );

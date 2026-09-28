@@ -1269,3 +1269,41 @@ body[data-learning="true"] .concept-tip:hover {
   color: var(--muted);
   font-size: 13px;
 }
+
+/* Course roles, prerequisites and explicit reading records. */
+.learn-route-controls, .learn-prerequisites, .learn-reading-record {
+  padding: 16px 20px;
+  margin: 20px 0;
+  border: 1px solid var(--line, #ddd5c8);
+  border-radius: 8px;
+  background: var(--surface-2, #f7f5f2);
+}
+.learn-route-controls p, .learn-reading-record p, .learn-prerequisites p {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.learn-route-controls small { display: block; margin-top: 6px; line-height: 1.7; }
+.learn-route-controls .learn-route-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.learn-route-controls button, .learn-reading-record button, .quiz-retry-btn {
+  border: 1px solid var(--line, #ddd5c8);
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: var(--surface, #fffdf8);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.learn-route-controls button[aria-pressed="true"], .learn-reading-record button[aria-pressed="true"] {
+  border-color: var(--accent, #8a5f38);
+  background: var(--surface-3, #eee8df);
+}
+.learn-prerequisites ul { display: flex; flex-wrap: wrap; gap: 8px 24px; padding-left: 20px; }
+.learn-course-module h4 { margin: 18px 16px 8px; color: var(--ink-muted, #736757); font-size: 14px; }
+.quiz-option { width: 100%; text-align: left; color: inherit; font-family: inherit; background: transparent; }
+.quiz-option:disabled { cursor: default; opacity: 1; }
+.quiz-option:focus-visible, .quiz-retry-btn:focus-visible { outline: 2px solid var(--accent, #8a5f38); outline-offset: 2px; }
+.quiz-retry-btn { margin: 8px; }
+
+.learn-route-controls a { color: var(--ink, #252a30); text-underline-offset: 3px; }

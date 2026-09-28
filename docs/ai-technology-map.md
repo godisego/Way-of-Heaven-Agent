@@ -75,7 +75,7 @@ LLM 常见做法是先预训练，再用监督微调或偏好相关方法进行�
 
 **LLM 不等于 NLP 全部；Transformer 也不只用于 LLM。** 例如视觉 Transformer 将图像块作为输入。多模态模型会跨越语言与视觉领域，这不要求我们给它选一个唯一抽屉。[Vision Transformer 原始论文](https://arxiv.org/abs/2010.11929)
 
-还可以增加“任务与输出”的观察轴：有的模型面向开放文本生成，有的面向分类、打分或结构化决策。**这不是互斥、完整的模型分类；LLM 同样能执行分类与决策任务。** TypeSafe 在 2026 年 9 月发布的 Jev 应放在这个轴上理解：官方定位强调类型约束下的概率决策，“System One Models”是该厂商使用的名称。它不是与机器学习平级的新学科，也不是完整 Agent。详见 [Jev 与决策模型](/learn/jev-decision-models)。[TypeSafe 官方发布](https://typesafe.ai/blog/introducing-system-one-models-and-jev)
+还可以增加“任务与输出”的观察轴：有的模型面向开放文本生成，有的面向分类、打分或结构化决策。**这不是互斥、完整的模型分类；LLM 同样能执行分类与决策任务。** TypeSafe 在 2026 年 9 月发布的 Jev 应放在这个轴上理解：官方定位强调类型约束下的概率决策，“System One Models”是该厂商使用的名称。它不是与机器学习平级的新学科，也不是完整 Agent。第二层先学 [分类与概率基础](/learn/classification-probability-basics)；完成工程评测课后，可选读 [Jev 与决策模型](/learn/jev-decision-models)。[TypeSafe 官方发布](https://typesafe.ai/blog/introducing-system-one-models-and-jev)
 
 ## 四 · RAG 与 Agent 应该放在哪里
 

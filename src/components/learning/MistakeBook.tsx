@@ -6,7 +6,7 @@ import { loadMistakes, clearMistakes, MISTAKES_EVENT, resolveMistake, type Mista
 import { getQuizById } from "@/data/quizQuestions";
 
 /**
- * 错题本 —— 展示做错过的题目，支持"回看讲义"和"标记已掌握"。
+ * 错题本 —— 展示做错过的题目，支持"回看讲义"和"标记已复习"。
  *
  * 数据纯 localStorage，不上传服务器。
  */
@@ -85,7 +85,9 @@ export function MistakeBook() {
               <p className="mistake-item-question">{q.question}</p>
               <div className="mistake-answers">
                 <p className="mistake-wrong">
-                  你的答案：{String.fromCharCode(65 + m.selectedIndex)} · {q.options[m.selectedIndex]}
+                  {m.revision === q.revision && m.selectedText
+                    ? `你的答案：${String.fromCharCode(65 + m.selectedIndex)} · ${m.selectedText}`
+                    : "旧版题目记录：选项或内容已更新，请回自测重做。"}
                 </p>
                 <p className="mistake-right">
                   正确答案：{String.fromCharCode(65 + q.correctIndex)} · {q.options[q.correctIndex]}
@@ -99,7 +101,7 @@ export function MistakeBook() {
                   </Link>
                 )}
                 <button className="mistake-resolve-btn" onClick={() => resolveMistake(m.questionId)}>
-                  标记已掌握
+                  标记已复习
                 </button>
               </div>
             </li>
