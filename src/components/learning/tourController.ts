@@ -92,8 +92,15 @@ function resolveSteps(steps: DriveStep[]): DriveStep[] {
   });
 }
 
-/** 启动一课。走到最后一步后退出才记为完成（中途 ESC 不算）。 */
-export function startLesson(id: LessonId, onComplete?: () => void): void {
+/**
+ * 启动一课。走到最后一步后退出才记为完成（中途 ESC 不算）；
+ * 中途关闭时触发 onDismissed，让调用方有机会收尾（如持久化「已看过」）。
+ */
+export function startLesson(
+  id: LessonId,
+  onComplete?: () => void,
+  onDismissed?: () => void,
+): void {
   if (typeof window === "undefined") return;
   const lesson = getLesson(id);
   if (!lesson) return;
@@ -121,6 +128,8 @@ export function startLesson(id: LessonId, onComplete?: () => void): void {
       if (reached >= steps.length - 1) {
         markLessonDone(id);
         onComplete?.();
+      } else {
+        onDismissed?.();
       }
     },
   });

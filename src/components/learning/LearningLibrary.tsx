@@ -149,7 +149,7 @@ function Curriculum({ track, onOpenQuick }: { track: LearnTrack; onOpenQuick: ()
             {stages.map((stage, index) => visibleDocs.some((doc) => doc.stage === stage) ? (
               <a key={stage} href={`#${track}-stage-${index + 1}`}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
-                {stage.replace(/^.+?·\s*/, "")}
+                <span className="learn-stage-name">{stage.replace(/^.+?·\s*/, "")}</span>
               </a>
             ) : null)}
           </nav>

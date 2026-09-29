@@ -85,10 +85,16 @@ export function showFinalOnboardingHint(): void {
 
 /** 启动完整首次引导。 */
 export async function startOnboardingChain(): Promise<void> {
-  await new Promise<void>((resolve) => {
-    startLesson("onboarding-home", resolve);
+  const finished = await new Promise<boolean>((resolve) => {
+    startLesson(
+      "onboarding-home",
+      () => resolve(true),
+      () => resolve(false),
+    );
   });
+  // 走完或中途关闭都记「已看过」：否则用户关掉引导后每次刷新都会重弹。
   markOnboardingSeen();
+  if (!finished) return;
   await delay(220);
 
   const visitLibrary = await chooseNext({
@@ -116,7 +122,12 @@ export async function startProviderOnboarding(): Promise<void> {
   }
   await delay(360);
   await new Promise<void>((resolve) => {
-    startLesson("onboarding-provider", resolve);
+    startLesson(
+      "onboarding-provider",
+      resolve,
+      resolve,
+    );
   });
+  // 中途关闭同样视为已看过，避免每次回首页重新弹出。
   markOnboardingSeen();
 }

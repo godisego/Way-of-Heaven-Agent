@@ -85,6 +85,12 @@ export function AskerProfileCard() {
       setError("出生日期 / 时间 / 出生地 / 现居地 都是必填。");
       return;
     }
+    // 出生时刻不能在未来：人还没出生就没有「当下」的盘
+    const birthMoment = new Date(`${draft.birthDate}T${draft.birthTime}`);
+    if (Number.isNaN(birthMoment.getTime()) || birthMoment.getTime() > Date.now()) {
+      setError("出生日期 / 时间不能晚于现在，请检查是否填错。");
+      return;
+    }
     // 如果用户没填经度但选了出生地，尝试查表
     let longitude = draft.birthLongitude;
     if (longitude === undefined && draft.birthPlace) {
@@ -178,6 +184,7 @@ function ProfileForm({
           <input
             type="date"
             value={draft.birthDate}
+            max={new Date().toISOString().slice(0, 10)}
             onChange={(e) => onChange("birthDate", e.target.value)}
             required
           />

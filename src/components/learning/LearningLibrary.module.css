@@ -357,7 +357,8 @@
 
 .home :global(.learn-stage-rail a) {
   display: grid;
-  grid-template-columns: 26px 1fr;
+  /* minmax(0,1fr)：标题列可收缩但不会把长混排标题挤成一字一行 */
+  grid-template-columns: 26px minmax(0, 1fr);
   gap: 7px;
   padding: 7px 2px;
   color: var(--ink-soft);
@@ -373,6 +374,14 @@
   color: var(--muted-faint);
   font-family: var(--font-latin);
   font-size: 10px;
+}
+
+/* 阶段名：真实网格项 + 悬挂缩进，双语长标题在序号列右侧整段换行 */
+.home :global(.learn-stage-rail a .learn-stage-name) {
+  min-width: 0;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
 }
 
 .home :global(.learn-stage-rail small) {
